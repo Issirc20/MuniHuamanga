@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Servicio de Formularios</name>
-    <description>Generación de formatos de Declaración Jurada, Defensa Civil y firma digital</description>
+    <description>Generación de formatos oficiales en PDF (Declaración Jurada, ITSE y Voucher SAT con código de barras)</description>
 
     <dependencies>
         <dependency>
@@ -35,6 +35,16 @@
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
+        </dependency>
+
+        <!-- ZXing para generación de código de barras Code 128 en el voucher SAT -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
         </dependency>
 
         <dependency>

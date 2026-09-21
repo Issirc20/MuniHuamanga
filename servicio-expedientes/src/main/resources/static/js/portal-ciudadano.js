@@ -105,6 +105,22 @@ async function consultarTramite() {
     // Actualizar timeline
     actualizarTimeline(exp.estado);
 
+    // Configurar botones de descarga de documentos PDF (Sprint 2)
+    const btnDj = document.getElementById('btnDescargarDj');
+    if (btnDj) {
+      btnDj.href = `${API_BASE}/${exp.id}/documentos/declaracion-jurada`;
+    }
+
+    const btnVch = document.getElementById('btnDescargarVoucher');
+    if (btnVch) {
+      if (exp.montoTasa) {
+        btnVch.style.display = 'inline-flex';
+        btnVch.href = `${API_BASE}/${exp.id}/documentos/voucher-sat`;
+      } else {
+        btnVch.style.display = 'none';
+      }
+    }
+
     // Cargar Historial
     cargarHistorial(exp.id);
 

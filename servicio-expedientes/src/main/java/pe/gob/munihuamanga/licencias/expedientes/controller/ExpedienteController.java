@@ -4,7 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,12 +23,17 @@ import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
+import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
+import pe.gob.munihuamanga.licencias.expedientes.service.CalculadoraDeTasa;
+import pe.gob.munihuamanga.licencias.expedientes.service.DocumentoPdfService;
 import pe.gob.munihuamanga.licencias.expedientes.service.ExpedienteService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -35,12 +42,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/expedientes")
 @RequiredArgsConstructor
-@Tag(name = "Expedientes", description = "Endpoints para la gestión, seguimiento y transiciones del trámite de licencia")
+@Tag(name = "Expedientes", description = "Endpoints para la gestión, seguimiento, formatos PDF y transiciones del trámite")
 public class ExpedienteController {
 
     private final ExpedienteService expedienteService;
     private final ExpedienteMapper expedienteMapper;
     private final AuditoriaService auditoriaService;
+    private final CalculadoraDeTasa calculadoraDeTasa;
+    private final DocumentoPdfService documentoPdfService;
 
     @PostMapping
     @Operation(summary = "Mesa de Partes Virtual: Registrar nueva solicitud de licencia")
@@ -85,6 +94,40 @@ public class ExpedienteController {
     @Operation(summary = "Auditoría: Consultar historial cronológico de estados y motivos")
     public ResponseEntity<List<HistorialEstadoDto>> obtenerHistorial(@PathVariable UUID id) {
         return ResponseEntity.ok(expedienteMapper.toHistorialDtoList(auditoriaService.obtenerHistorial(id)));
+    }
+
+    @GetMapping("/{id}/desglose-tasa")
+    @Operation(summary = "US-06: Consultar desglose de conceptos tributarios TUPA según nivel de riesgo")
+    public ResponseEntity<Map<String, BigDecimal>> obtenerDesgloseTasa(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        NivelRiesgo riesgo = exp.getNivelRiesgo() != null ? exp.getNivelRiesgo() : NivelRiesgo.BAJO;
+        return ResponseEntity.ok(calculadoraDeTasa.calcularDesglose(riesgo));
+    }
+
+    @GetMapping("/{id}/documentos/declaracion-jurada")
+    @Operation(summary = "US-05: Descargar en PDF el Anexo 1 oficial: Declaración Jurada para Licencia")
+    public ResponseEntity<byte[]> descargarDeclaracionJurada(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarDeclaracionJurada(dto);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=DeclaracionJurada-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/{id}/documentos/voucher-sat")
+    @Operation(summary = "US-07: Descargar en PDF la Orden de Pago SAT con código de barras")
+    public ResponseEntity<byte[]> descargarVoucherSat(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        VoucherDto voucher = expedienteService.generarVoucher(id);
+        byte[] pdf = documentoPdfService.generarVoucherSatPdf(voucher);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=VoucherSAT-" + voucher.getVoucherId() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
     }
 
     @PostMapping("/{id}/clasificacion-riesgo")

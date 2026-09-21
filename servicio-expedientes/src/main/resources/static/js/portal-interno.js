@@ -49,6 +49,8 @@ async function cargarExpedientes(soloAlerta = false) {
           <td>
             <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
               ${renderAcciones(exp)}
+              <a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/declaracion-jurada" target="_blank" title="Descargar Declaración Jurada">📄 DJ</a>
+              ${exp.montoTasa ? `<a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/voucher-sat" target="_blank" title="Descargar Voucher SAT">🧾 Voucher</a>` : ''}
               <button class="btn btn-secondary btn-sm" onclick="verHistorial('${exp.id}')">📜 Trazabilidad</button>
             </div>
           </td>
