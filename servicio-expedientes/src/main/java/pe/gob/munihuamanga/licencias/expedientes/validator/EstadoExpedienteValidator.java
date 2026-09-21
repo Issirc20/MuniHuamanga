@@ -3,6 +3,7 @@ package pe.gob.munihuamanga.licencias.expedientes.validator;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.exception.TransicionInvalidaException;
+import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -12,7 +13,7 @@ import java.util.Set;
 
 /**
  * Componente que valida las transiciones válidas de la máquina de estados del expediente
- * según el flujo normativo de la Ley N° 28976 y el modelo de arquitectura C4.
+ * según el flujo normativo de la Ley N° 28976, D.S. 002-2018-PCM y el modelo de arquitectura C4.
  */
 @Component
 public class EstadoExpedienteValidator {
@@ -66,6 +67,25 @@ public class EstadoExpedienteValidator {
         Set<EstadoExpediente> permitidos = TRANSICIONES_PERMITIDAS.getOrDefault(actual, Collections.emptySet());
         if (!permitidos.contains(nuevo)) {
             throw new TransicionInvalidaException(actual, nuevo);
+        }
+    }
+
+    /**
+     * Valida los requisitos de fondo exigidos por la Ley N° 28976 antes de emitir resolución favorable.
+     */
+    public void validarAprobacion(Expediente expediente) {
+        if (expediente == null) {
+            throw new IllegalArgumentException("El expediente no puede ser nulo.");
+        }
+
+        validarTransicion(expediente.getEstado(), EstadoExpediente.APROBADO);
+
+        if (expediente.getNivelRiesgo() == null) {
+            throw new TransicionInvalidaException("No se puede aprobar: falta registrar la clasificación de riesgo ITSE por parte de Defensa Civil.");
+        }
+
+        if (expediente.getVoucherId() == null) {
+            throw new TransicionInvalidaException("No se puede aprobar: el administrado aún no ha cancelado la tasa administrativa ante el SAT.");
         }
     }
 }

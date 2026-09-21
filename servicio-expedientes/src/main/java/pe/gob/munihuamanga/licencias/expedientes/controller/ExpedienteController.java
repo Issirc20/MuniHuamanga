@@ -20,6 +20,7 @@ import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
+import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
@@ -63,11 +64,20 @@ public class ExpedienteController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar expedientes (bandeja interna de gestión)")
-    public ResponseEntity<List<ExpedienteResponseDto>> listarExpedientes(@RequestParam(required = false) UUID solicitanteId) {
-        List<Expediente> lista = (solicitanteId != null)
-                ? expedienteService.listarPorSolicitante(solicitanteId)
-                : expedienteService.listarTodos();
+    @Operation(summary = "Listar expedientes con filtros opcionales de estado y alertas de vencimiento")
+    public ResponseEntity<List<ExpedienteResponseDto>> listarExpedientes(
+            @RequestParam(required = false) UUID solicitanteId,
+            @RequestParam(required = false) EstadoExpediente estado,
+            @RequestParam(required = false) Boolean conAlerta
+    ) {
+        List<Expediente> lista;
+        if (solicitanteId != null) {
+            lista = expedienteService.listarPorSolicitante(solicitanteId);
+        } else if (estado != null || conAlerta != null) {
+            lista = expedienteService.listarConFiltros(estado, conAlerta);
+        } else {
+            lista = expedienteService.listarTodos();
+        }
         return ResponseEntity.ok(expedienteMapper.toDtoList(lista));
     }
 

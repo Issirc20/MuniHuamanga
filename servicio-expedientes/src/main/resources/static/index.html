@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MuniHuamanga — Sistema de Licencias de Funcionamiento</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .hero {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .portal-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+    .portal-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .portal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .portal-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="shield-icon">🏛️</div>
+      <div>
+        <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Sistema de Gestión Documentaria del Trámite de Licencia de Funcionamiento</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="hero">
+      <span class="badge badge-formatos" style="margin-bottom: 1rem;">Ley N° 28976 & D.S. N° 046-2017-PCM</span>
+      <h2 style="font-size: 2rem; color: var(--primary); font-weight: 800; margin-bottom: 0.75rem;">
+        Digitalización Integral del Trámite de Licencia Municipal
+      </h2>
+      <p style="max-width: 750px; margin: 0 auto; color: var(--text-muted); line-height: 1.6;">
+        Plataforma tecnológica orientada a la celeridad administrativa, reducción de plazos a 15 días hábiles,
+        emisión de licencias con firma digital y verificación pública inmediata mediante código QR.
+      </p>
+    </div>
+
+    <div class="portal-cards">
+      <!-- Tarjeta 1: Ciudadano -->
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon">👥</div>
+          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Portal Ciudadano</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Diseñado para administrados y MYPES. Permite registrar digitalmente la solicitud en Mesa de Partes Virtual y realizar el seguimiento cronológico en tiempo real.
+          </p>
+        </div>
+        <a href="portal-ciudadano.html" class="btn btn-primary">Ingresar al Portal Ciudadano →</a>
+      </div>
+
+      <!-- Tarjeta 2: Interno -->
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon">🏢</div>
+          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Sistema Interno de Gestión</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Bandeja de evaluación para la Gerencia de Licencias. Registro de dictamen ITSE de Defensa Civil, cálculo automático de tasa TUPA, validación de pago SAT y aprobación con emisión de QR.
+          </p>
+        </div>
+        <a href="portal-interno.html" class="btn btn-primary" style="background: #0284c7;">Ingresar a Gestión Interna →</a>
+      </div>
+
+      <!-- Tarjeta 3: Swagger / OpenAPI -->
+      <div class="portal-card">
+        <div>
+          <div class="portal-icon">⚡</div>
+          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Documentación de APIs</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            Especificación técnica interactiva OpenAPI / Swagger 3 de todos los endpoints REST expuestos por los microservicios de la solución.
+          </p>
+        </div>
+        <a href="/swagger-ui.html" target="_blank" class="btn btn-secondary">Abrir Swagger UI →</a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <p>Municipalidad Provincial de Huamanga — Portal Institucional de Licencias de Funcionamiento</p>
+  </footer>
+
+</body>
+</html>

@@ -61,6 +61,12 @@ public class Expediente {
     @Column(name = "area_metros_cuadrados", precision = 10, scale = 2)
     private BigDecimal areaMetrosCuadrados;
 
+    @Column(name = "correo_electronico", length = 120)
+    private String correoElectronico;
+
+    @Column(name = "telefono", length = 20)
+    private String telefono;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 30)
     private EstadoExpediente estado;
@@ -83,6 +89,18 @@ public class Expediente {
 
     @Column(name = "fecha_limite", nullable = false)
     private LocalDateTime fechaLimite;
+
+    /**
+     * Determina si según la Ley N° 28976 y D.S. 002-2018-PCM corresponde ITSE previa o posterior.
+     */
+    public String getTipoItse() {
+        if (nivelRiesgo == null) {
+            return "POR_CLASIFICAR";
+        }
+        return (nivelRiesgo == NivelRiesgo.BAJO || nivelRiesgo == NivelRiesgo.MEDIO)
+                ? "ITSE_POSTERIOR"
+                : "ITSE_PREVIA";
+    }
 
     /**
      * Actualiza el estado del expediente.

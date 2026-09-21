@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Ciudadano — Licencia de Funcionamiento | MuniHuamanga</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Encabezado Institucional -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="shield-icon">🏛️</div>
+      <div>
+        <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Portal Ciudadano — Trámite Digital de Licencia de Funcionamiento (Ley N° 28976)</p>
+      </div>
+    </div>
+    <nav class="app-nav">
+      <a href="portal-ciudadano.html" class="active">Portal Ciudadano</a>
+      <a href="portal-interno.html">Gestión Interna</a>
+      <a href="/swagger-ui.html" target="_blank">Swagger API</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- Navegación por pestañas -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+      <button id="tabBtnRegistro" class="btn btn-primary" onclick="mostrarPestana('registro')">
+        📝 Mesa de Partes Virtual (Nueva Solicitud)
+      </button>
+      <button id="tabBtnSeguimiento" class="btn btn-secondary" onclick="mostrarPestana('seguimiento')">
+        🔍 Seguimiento en Línea de Expediente
+      </button>
+    </div>
+
+    <!-- Sección 1: Formulario de Mesa de Partes Virtual -->
+    <section id="secRegistro" class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Mesa de Partes Virtual: Registro de Solicitud</h2>
+          <p class="hint">Complete los datos de su establecimiento conforme a la Ley Marco de Licencia de Funcionamiento (TUO D.S. N° 046-2017-PCM).</p>
+        </div>
+        <span class="badge badge-formatos">Procedimiento Digital</span>
+      </div>
+
+      <form id="formRegistro" onsubmit="registrarSolicitud(event)">
+        <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 1rem;">1. Datos del Solicitante o Representante Legal</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombreTitular">Nombres y Apellidos del Titular *</label>
+            <input type="text" id="nombreTitular" required placeholder="Ej: Juan Carlos Perez Quispe">
+          </div>
+
+          <div class="form-group">
+            <label for="documentoIdentidad">Documento de Identidad (DNI o RUC) *</label>
+            <input type="text" id="documentoIdentidad" required maxlength="11" placeholder="DNI (8 dígitos) o RUC (11 dígitos)">
+            <span class="hint">Ej: 45879632 (DNI) o 20601234567 (RUC)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="razonSocial">Razón Social (Solo personas jurídicas)</label>
+            <input type="text" id="razonSocial" placeholder="Ej: INVERSIONES HUAMANGA S.A.C.">
+          </div>
+
+          <div class="form-group">
+            <label for="telefono">Teléfono Celular *</label>
+            <input type="tel" id="telefono" required maxlength="9" placeholder="9XXXXXXXX">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="correoElectronico">Correo Electrónico para Notificaciones *</label>
+            <input type="email" id="correoElectronico" required placeholder="correo@ejemplo.com">
+            <span class="hint">Se le notificará cada avance y resolución de su trámite.</span>
+          </div>
+        </div>
+
+        <h3 style="font-size: 1rem; color: var(--primary); margin: 2rem 0 1rem;">2. Datos del Establecimiento Comercial</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombreComercial">Nombre Comercial del Negocio *</label>
+            <input type="text" id="nombreComercial" required placeholder="Ej: Cafetería y Panadería El Huamanguino">
+          </div>
+
+          <div class="form-group">
+            <label for="giroNegocio">Giro o Actividad Económica *</label>
+            <input type="text" id="giroNegocio" required placeholder="Ej: Venta de abarrotes, bazar o artesanía">
+          </div>
+
+          <div class="form-group">
+            <label for="direccionEstablecimiento">Dirección del Establecimiento en Huamanga *</label>
+            <input type="text" id="direccionEstablecimiento" required placeholder="Ej: Jr. 28 de Julio N° 340, Ayacucho">
+          </div>
+
+          <div class="form-group">
+            <label for="areaMetrosCuadrados">Área Total en Metros Cuadrados (m²) *</label>
+            <input type="number" id="areaMetrosCuadrados" required min="1" step="0.01" placeholder="Ej: 45.00">
+            <span class="hint">Determina la inspección ITSE de Defensa Civil</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+          <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
+            <input type="checkbox" id="chkVeracidad" required style="width: auto;">
+            <span>Declaro bajo juramento que los datos ingresados son auténticos y se sujetan al principio de presunción de veracidad (Ley N° 27444).</span>
+          </label>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary" id="btnEnviar">
+            🚀 Enviar Solicitud a Mesa de Partes
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Sección 2: Seguimiento Ciudadano en Línea -->
+    <section id="secSeguimiento" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Consulta y Seguimiento de Trámite en Línea</h2>
+          <p class="hint">Ingrese su número de expediente para conocer el estado y días restantes de su trámite.</p>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; margin-bottom: 2rem; max-width: 600px;">
+        <input type="text" id="inputBuscarTramite" placeholder="Ej: EXP-2026-00001" style="flex: 1;" value="EXP-2026-00001">
+        <button class="btn btn-primary" onclick="consultarTramite()">🔎 Consultar Estado</button>
+      </div>
+
+      <div id="resultadoConsulta" style="display: none;">
+        <!-- Línea de Tiempo de Estados C4 -->
+        <div class="timeline" id="timelinePasos">
+          <div class="timeline-step" id="step-FORMATOS_GENERADOS">
+            <div class="timeline-node">1</div>
+            <div class="timeline-label">Solicitud Ingresada</div>
+          </div>
+          <div class="timeline-step" id="step-DOCUMENTOS_VALIDADOS">
+            <div class="timeline-node">2</div>
+            <div class="timeline-label">ITSE & Tasa Validada</div>
+          </div>
+          <div class="timeline-step" id="step-EN_EVALUACION_FINAL">
+            <div class="timeline-node">3</div>
+            <div class="timeline-label">Pago SAT & Evaluación</div>
+          </div>
+          <div class="timeline-step" id="step-APROBADO">
+            <div class="timeline-node">4</div>
+            <div class="timeline-label">Licencia Emitida (QR)</div>
+          </div>
+        </div>
+
+        <!-- Ficha de Datos del Trámite -->
+        <div class="form-grid" style="margin-top: 2rem; background: #fdfdfd; padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
+          <div>
+            <strong>Número de Trámite:</strong>
+            <p id="resNumeroTramite" style="font-size: 1.1rem; color: var(--primary); font-weight: 700;">-</p>
+          </div>
+          <div>
+            <strong>Estado Actual:</strong>
+            <p id="resEstadoBadge">-</p>
+          </div>
+          <div>
+            <strong>Titular / Razón Social:</strong>
+            <p id="resTitular">-</p>
+          </div>
+          <div>
+            <strong>Giro Comercial:</strong>
+            <p id="resGiro">-</p>
+          </div>
+          <div>
+            <strong>Dirección:</strong>
+            <p id="resDireccion">-</p>
+          </div>
+          <div>
+            <strong>Nivel de Riesgo ITSE:</strong>
+            <p id="resNivelRiesgo">-</p>
+          </div>
+          <div>
+            <strong>Tasa Administrativa TUPA:</strong>
+            <p id="resMontoTasa" style="font-weight: 700; color: var(--success);">-</p>
+          </div>
+          <div>
+            <strong>Plazo Legal (Ley N° 28976):</strong>
+            <p id="resPlazoRestante">-</p>
+          </div>
+        </div>
+
+        <!-- Historial de Auditoría -->
+        <h3 style="font-size: 1rem; color: var(--primary); margin: 2rem 0 1rem;">Historial Cronológico de Transiciones (Auditoría)</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Estado Anterior</th>
+                <th>Nuevo Estado</th>
+                <th>Responsable</th>
+                <th>Motivo / Sustento</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialBody">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Municipalidad Provincial de Huamanga — Portal de Trámites Digitales</p>
+    <p style="font-size: 0.75rem; margin-top: 0.25rem;">Gerencia de Licencias y Autorizaciones | Ley N° 28976 / TUO D.S. N° 046-2017-PCM</p>
+  </footer>
+
+  <script src="js/portal-ciudadano.js"></script>
+</body>
+</html>

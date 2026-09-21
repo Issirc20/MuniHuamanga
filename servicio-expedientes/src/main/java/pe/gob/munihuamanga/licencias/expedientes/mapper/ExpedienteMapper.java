@@ -21,6 +21,7 @@ public interface ExpedienteMapper {
 
     @Mapping(target = "diasHabilesRestantes", source = "fechaLimite", qualifiedByName = "calcularDiasHabiles")
     @Mapping(target = "alertaVencimiento", source = "fechaLimite", qualifiedByName = "evaluarAlertaVencimiento")
+    @Mapping(target = "tipoItse", expression = "java(expediente.getTipoItse())")
     ExpedienteResponseDto toDto(Expediente expediente);
 
     List<ExpedienteResponseDto> toDtoList(List<Expediente> expedientes);

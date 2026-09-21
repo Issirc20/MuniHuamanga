@@ -12,6 +12,7 @@ import pe.gob.munihuamanga.licencias.common.dto.CrearExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
+import pe.gob.munihuamanga.licencias.common.exception.TransicionInvalidaException;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.validator.EstadoExpedienteValidator;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -67,6 +69,8 @@ class ExpedienteServiceTest {
                 .giroNegocio("Venta de abarrotes al por menor")
                 .direccionEstablecimiento("Jr. 28 de Julio 345, Ayacucho")
                 .areaMetrosCuadrados(new BigDecimal("45.00"))
+                .correoElectronico("juan.perez@gmail.com")
+                .telefono("966987654")
                 .estado(EstadoExpediente.FORMATOS_GENERADOS)
                 .fechaCreacion(LocalDateTime.now())
                 .fechaLimite(LocalDateTime.now().plusDays(21))
@@ -84,6 +88,8 @@ class ExpedienteServiceTest {
                 .giroNegocio("Venta de abarrotes")
                 .direccionEstablecimiento("Jr. 28 de Julio 345")
                 .areaMetrosCuadrados(new BigDecimal("45.00"))
+                .correoElectronico("juan.perez@gmail.com")
+                .telefono("966987654")
                 .build();
 
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -140,9 +146,25 @@ class ExpedienteServiceTest {
     }
 
     @Test
-    @DisplayName("Debe aprobar expediente y generar código QR único para la licencia")
-    void testAprobarExpediente() {
+    @DisplayName("Debe lanzar excepción si se intenta aprobar un expediente sin voucher pagado")
+    void testBloquearAprobacionSinPago() {
         expedienteBase.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
+        expedienteBase.setNivelRiesgo(NivelRiesgo.BAJO);
+        expedienteBase.setVoucherId(null); // No ha pagado
+
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+
+        assertThrows(TransicionInvalidaException.class, () -> expedienteService.aprobar(expedienteId));
+    }
+
+    @Test
+    @DisplayName("Debe aprobar expediente cuando cumple con ITSE y pago, generando código QR único")
+    void testAprobarExpedienteConforme() {
+        expedienteBase.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
+        expedienteBase.setNivelRiesgo(NivelRiesgo.MEDIO);
+        expedienteBase.setVoucherId("VCH-2026-123456"); // Pagado
+        expedienteBase.setMontoTasa(new BigDecimal("218.00"));
+
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(invocation -> invocation.getArgument(0));
 

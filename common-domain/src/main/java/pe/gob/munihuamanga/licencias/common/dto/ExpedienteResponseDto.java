@@ -27,9 +27,12 @@ public class ExpedienteResponseDto {
     private String giroNegocio;
     private String direccionEstablecimiento;
     private BigDecimal areaMetrosCuadrados;
+    private String correoElectronico;
+    private String telefono;
 
     private EstadoExpediente estado;
     private NivelRiesgo nivelRiesgo;
+    private String tipoItse; // "ITSE_POSTERIOR" o "ITSE_PREVIA"
     private BigDecimal montoTasa;
     private String voucherId;
     private String licenciaQrCode;

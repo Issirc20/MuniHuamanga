@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Interno — Gerencia de Licencias | MuniHuamanga</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 0.25rem 0;
+    }
+    .kpi-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Encabezado Institucional -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="shield-icon">🏛️</div>
+      <div>
+        <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Sistema Interno — Gerencia de Licencias y Autorizaciones</p>
+      </div>
+    </div>
+    <nav class="app-nav">
+      <a href="portal-ciudadano.html">Portal Ciudadano</a>
+      <a href="portal-interno.html" class="active">Gestión Interna</a>
+      <a href="/swagger-ui.html" target="_blank">Swagger API</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- Fila de Indicadores Clave (KPIs) -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">TOTAL EXPEDIENTES</div>
+        <div class="kpi-value" id="kpiTotal">0</div>
+        <span class="hint">Registrados en el sistema</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">EN EVALUACIÓN / TRÁMITE</div>
+        <div class="kpi-value" id="kpiTramite" style="color: var(--accent);">0</div>
+        <span class="hint">Pendientes de resolución</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">LICENCIAS EMITIDAS (QR)</div>
+        <div class="kpi-value" id="kpiAprobados" style="color: var(--success);">0</div>
+        <span class="hint">Expedientes aprobados</span>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">EN ALERTA DE PLAZO (RNF-22)</div>
+        <div class="kpi-value" id="kpiAlertas" style="color: var(--danger);">0</div>
+        <span class="hint">Quedan ≤ 3 días hábiles</span>
+      </div>
+    </div>
+
+    <!-- Bandeja de Expedientes -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Bandeja de Trámites de Licencia de Funcionamiento</h2>
+          <p class="hint">Control de plazos legales (15 días hábiles) y máquina de estados según la Ley N° 28976.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <select id="filtroEstado" onchange="cargarExpedientes()" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+            <option value="">Todos los estados</option>
+            <option value="FORMATOS_GENERADOS">Formatos Generados</option>
+            <option value="DOCUMENTOS_VALIDADOS">Documentos Validados</option>
+            <option value="EN_EVALUACION_FINAL">En Evaluación Final</option>
+            <option value="APROBADO">Aprobados</option>
+            <option value="RECHAZADO">Rechazados</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="cargarExpedientes(true)">
+            ⚠️ Ver en Alerta
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="cargarExpedientes()">
+            🔄 Refrescar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>N° Trámite</th>
+              <th>Titular / Razón Social</th>
+              <th>Giro Comercial</th>
+              <th>Estado</th>
+              <th>Riesgo ITSE</th>
+              <th>Tasa TUPA</th>
+              <th>Plazo (15 días)</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaExpedientesBody">
+            <!-- Cargado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal Clasificación ITSE (Defensa Civil) -->
+  <div id="modalItse" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="card-title">Dictamen ITSE — Defensa Civil</h3>
+        <button class="modal-close" onclick="cerrarModal('modalItse')">&times;</button>
+      </div>
+      <input type="hidden" id="itseExpedienteId">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="selectNivelRiesgo">Nivel de Riesgo Determinado (ITSE) *</label>
+        <select id="selectNivelRiesgo">
+          <option value="BAJO">BAJO (Tasa S/. 154.50 — ITSE Posterior)</option>
+          <option value="MEDIO" selected>MEDIO (Tasa S/. 218.00 — ITSE Posterior)</option>
+          <option value="ALTO">ALTO (Tasa S/. 345.20 — ITSE Previa)</option>
+          <option value="MUY_ALTO">MUY ALTO (Tasa S/. 480.00 — ITSE Previa)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtInformeItse">Número de Informe Técnico ITSE</label>
+        <input type="text" id="txtInformeItse" value="INF-ITSE-2026-0342">
+      </div>
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="txtObsItse">Observaciones Técnicas</label>
+        <textarea id="txtObsItse" rows="2" placeholder="Establecimiento cumple condiciones básicas de seguridad"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalItse')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarClasificacionItse()">Confirmar Dictamen ITSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Pago SAT -->
+  <div id="modalPago" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="card-title">Validación de Pago de Tasa — SAT Huamanga</h3>
+        <button class="modal-close" onclick="cerrarModal('modalPago')">&times;</button>
+      </div>
+      <input type="hidden" id="pagoExpedienteId">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtVoucherId">Código de Voucher SAT *</label>
+        <input type="text" id="txtVoucherId" placeholder="Ej: VCH-2026-000123">
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtOperacionSat">Número de Operación Bancaria / Caja *</label>
+        <input type="text" id="txtOperacionSat" value="OP-SAT-889922">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalPago')">Cancelar</button>
+        <button class="btn btn-success" onclick="confirmarPagoSat()">Registrar Pago</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Rechazar Expediente -->
+  <div id="modalRechazo" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="card-title" style="color: var(--danger);">Rechazar Solicitud de Licencia</h3>
+        <button class="modal-close" onclick="cerrarModal('modalRechazo')">&times;</button>
+      </div>
+      <input type="hidden" id="rechazoExpedienteId">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="txtMotivoRechazo">Motivo Legal o Técnico del Rechazo *</label>
+        <textarea id="txtMotivoRechazo" rows="3" required placeholder="Detalle el sustento de la denegatoria según Ley N° 28976..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalRechazo')">Cancelar</button>
+        <button class="btn btn-danger" onclick="confirmarRechazo()">Confirmar Rechazo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Auditoría / Historial -->
+  <div id="modalHistorial" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h3 class="card-title">Línea de Tiempo y Auditoría Inmutable</h3>
+        <button class="modal-close" onclick="cerrarModal('modalHistorial')">&times;</button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Transición</th>
+              <th>Usuario</th>
+              <th>Motivo / Sustento</th>
+            </tr>
+          </thead>
+          <tbody id="tablaModalHistorial"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Municipalidad Provincial de Huamanga — Sistema de Gestión Documentaria de Licencias</p>
+  </footer>
+
+  <script src="js/portal-interno.js"></script>
+</body>
+</html>

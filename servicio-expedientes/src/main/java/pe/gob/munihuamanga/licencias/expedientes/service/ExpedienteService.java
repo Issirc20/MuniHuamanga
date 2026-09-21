@@ -21,6 +21,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * Servicio central de gestión de expedientes según el Diagrama C4 y Diagrama de Clases.
@@ -49,13 +50,15 @@ public class ExpedienteService {
                 .id(expedienteId)
                 .numeroTramite(numeroTramite)
                 .solicitanteId(dto.getSolicitanteId())
-                .nombreTitular(dto.getNombreTitular())
-                .documentoIdentidad(dto.getDocumentoIdentidad())
-                .razonSocial(dto.getRazonSocial())
-                .nombreComercial(dto.getNombreComercial())
-                .giroNegocio(dto.getGiroNegocio())
-                .direccionEstablecimiento(dto.getDireccionEstablecimiento())
+                .nombreTitular(dto.getNombreTitular().trim())
+                .documentoIdentidad(dto.getDocumentoIdentidad().trim())
+                .razonSocial(dto.getRazonSocial() != null ? dto.getRazonSocial().trim() : null)
+                .nombreComercial(dto.getNombreComercial().trim())
+                .giroNegocio(dto.getGiroNegocio().trim())
+                .direccionEstablecimiento(dto.getDireccionEstablecimiento().trim())
                 .areaMetrosCuadrados(dto.getAreaMetrosCuadrados())
+                .correoElectronico(dto.getCorreoElectronico() != null ? dto.getCorreoElectronico().trim() : null)
+                .telefono(dto.getTelefono() != null ? dto.getTelefono().trim() : null)
                 .estado(EstadoExpediente.FORMATOS_GENERADOS)
                 .fechaCreacion(fechaCreacion)
                 .fechaLimite(fechaLimite)
@@ -68,7 +71,7 @@ public class ExpedienteService {
                 null,
                 EstadoExpediente.FORMATOS_GENERADOS,
                 dto.getNombreTitular(),
-                "Ingreso digital de solicitud y formatos autogenerados"
+                "Ingreso digital de solicitud y formatos autogenerados (Mesa de Partes Virtual)"
         );
 
         log.info("Expediente creado exitosamente: ID={}, Número={}", guardado.getId(), guardado.getNumeroTramite());
@@ -95,12 +98,14 @@ public class ExpedienteService {
 
         expedienteRepository.save(expediente);
 
+        String tipoItse = (nivel == NivelRiesgo.BAJO || nivel == NivelRiesgo.MEDIO) ? "ITSE POSTERIOR" : "ITSE PREVIA";
+
         auditoriaService.registrarTransicion(
                 id,
                 actual,
                 nuevo,
                 "DEFENSA_CIVIL",
-                String.format("Registro de clasificación de riesgo: %s. Tasa calculada: S/. %s", nivel, montoTasa)
+                String.format("Clasificación de riesgo: %s (%s). Tasa TUPA calculada: S/. %s", nivel, tipoItse, montoTasa)
         );
 
         log.info("Clasificación de riesgo registrada para expediente {}: Nivel={}, Tasa={}", id, nivel, montoTasa);
@@ -168,15 +173,17 @@ public class ExpedienteService {
     /**
      * Dictamen final favorable por parte de la Gerencia de Licencias: transiciona a APROBADO
      * y genera el código QR único para la licencia digital.
+     * Valida precondiciones legales antes de emitir la licencia.
      */
     @Transactional
     public void aprobar(UUID id) {
         Expediente expediente = obtenerPorId(id);
 
+        // Validación estricta de precondiciones legales (pago efectuado y riesgo clasificado)
+        estadoExpedienteValidator.validarAprobacion(expediente);
+
         EstadoExpediente actual = expediente.getEstado();
         EstadoExpediente nuevo = EstadoExpediente.APROBADO;
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
 
         String qrCodeUnico = "LIC-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         expediente.setLicenciaQrCode(qrCodeUnico);
@@ -215,7 +222,7 @@ public class ExpedienteService {
                 actual,
                 nuevo,
                 "GERENCIA_LICENCIAS",
-                "Expediente RECHAZADO. Motivo: " + (motivo != null ? motivo : "No especificado")
+                "Expediente RECHAZADO. Motivo formal: " + (motivo != null ? motivo : "No especificado")
         );
 
         log.warn("Expediente {} RECHAZADO. Motivo: {}", id, motivo);
@@ -236,6 +243,23 @@ public class ExpedienteService {
     @Transactional(readOnly = true)
     public List<Expediente> listarTodos() {
         return expedienteRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Expediente> listarConFiltros(EstadoExpediente estado, Boolean conAlerta) {
+        List<Expediente> list = (estado != null)
+                ? expedienteRepository.findByEstado(estado)
+                : expedienteRepository.findAll();
+
+        if (Boolean.TRUE.equals(conAlerta)) {
+            LocalDate hoy = LocalDate.now();
+            list = list.stream().filter(e -> {
+                long dias = calcularDiasHabiles(hoy, e.getFechaLimite().toLocalDate());
+                return dias <= 3 && e.getEstado() != EstadoExpediente.APROBADO && e.getEstado() != EstadoExpediente.RECHAZADO;
+            }).collect(Collectors.toList());
+        }
+
+        return list;
     }
 
     @Transactional(readOnly = true)
@@ -260,5 +284,19 @@ public class ExpedienteService {
             }
         }
         return LocalDateTime.of(fecha, LocalTime.of(18, 0));
+    }
+
+    private long calcularDiasHabiles(LocalDate inicio, LocalDate fin) {
+        if (inicio.isAfter(fin)) return 0;
+        long dias = 0;
+        LocalDate curr = inicio;
+        while (!curr.isAfter(fin)) {
+            DayOfWeek d = curr.getDayOfWeek();
+            if (d != DayOfWeek.SATURDAY && d != DayOfWeek.SUNDAY) {
+                dias++;
+            }
+            curr = curr.plusDays(1);
+        }
+        return dias;
     }
 }
