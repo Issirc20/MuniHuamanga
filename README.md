@@ -183,8 +183,8 @@ git commit -m "feat(sprint-0): inicializar arquitectura base, modulos C4, docker
 # 4. Asignar la rama principal
 git branch -M main
 
-# 5. Vincular a tu repositorio remoto de GitHub (reemplaza con tu URL)
-git remote add origin https://github.com/TU_USUARIO/muni-huamanga-licencias.git
+# 5. Vincular a tu repositorio remoto de GitHub:
+git remote add origin https://github.com/Issirc20/MuniHuamanga.git
 
 # 6. Subir los cambios a GitHub
 git push -u origin main
