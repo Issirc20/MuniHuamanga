@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Base de Datos PostgreSQL 15 (Persistencia relacional - Primario)
+  postgres:
+    image: postgres:15-alpine
+    container_name: muni_licencias_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: muni_licencias_db
+      POSTGRES_USER: muni_user
+      POSTGRES_PASSWORD: muni_pass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U muni_user -d muni_licencias_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - muni_network
+
+  # Interfaz de gestión visual de base de datos
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: muni_licencias_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@munihuamanga.gob.pe
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - muni_network
+
+networks:
+  muni_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

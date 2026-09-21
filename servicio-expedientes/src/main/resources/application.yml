@@ -1,0 +1,53 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: servicio-expedientes
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/muni_licencias_db}
+    username: ${SPRING_DATASOURCE_USERNAME:muni_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:muni_pass123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# Configuración de Tasas TUPA según Ley N° 28976 (RNF-17: configurable sin redeploy)
+tupa:
+  tasas:
+    bajo: 154.50
+    medio: 218.00
+    alto: 345.20
+    muy-alto: 480.00
+
+# URLs de microservicios e integraciones
+integraciones:
+  servicio-formularios:
+    url: ${URL_SERVICIO_FORMULARIOS:http://localhost:8082}
+  servicio-verificacion:
+    url: ${URL_SERVICIO_VERIFICACION:http://localhost:8083}
+  adaptador-integracion:
+    url: ${URL_ADAPTADOR_INTEGRACION:http://localhost:8084}
+
+# Observabilidad (RNF-21)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Documentación OpenAPI / Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

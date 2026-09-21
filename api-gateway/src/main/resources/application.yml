@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      routes:
+        # Microservicio de Expedientes (Núcleo)
+        - id: servicio-expedientes
+          uri: ${URL_EXPEDIENTES:http://localhost:8081}
+          predicates:
+            - Path=/api/expedientes/**
+
+        # Microservicio de Formularios y Firma
+        - id: servicio-formularios
+          uri: ${URL_FORMULARIOS:http://localhost:8082}
+          predicates:
+            - Path=/api/formularios/**
+
+        # Microservicio de Verificación y QR
+        - id: servicio-verificacion
+          uri: ${URL_VERIFICACION:http://localhost:8083}
+          predicates:
+            - Path=/api/licencias/**, /api/public/**
+
+        # Adaptador de Integración (Fase 2: SAT, Defensa Civil, Edificaciones)
+        - id: adaptador-integracion
+          uri: ${URL_ADAPTADOR:http://localhost:8084}
+          predicates:
+            - Path=/api/integraciones/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
