@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificación Oficial de Licencia de Funcionamiento — MuniHuamanga</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .verify-container {
+      max-width: 760px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .verify-card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .verify-header {
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+      color: white;
+      padding: 1.75rem;
+      text-align: center;
+    }
+    .verify-badge-valid {
+      background: var(--success);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.4);
+      margin-top: 1rem;
+    }
+    .verify-badge-invalid {
+      background: var(--danger);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.4);
+      margin-top: 1rem;
+    }
+    .verify-body {
+      padding: 2rem;
+    }
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .data-item {
+      background: var(--bg-main);
+      padding: 1rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+    .data-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+    .data-val {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+    .qr-security-box {
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: 1.5rem;
+      gap: 1rem;
+    }
+    .qr-preview-img {
+      background: white;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .search-bar-box {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .search-bar-box input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .search-bar-box input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .legal-notice {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="shield-icon">🏛️</div>
+      <div>
+        <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Portal Público de Verificación de Licencias de Funcionamiento (RNF-20)</p>
+      </div>
+    </div>
+    <div>
+      <a href="index.html" class="btn btn-secondary">← Inicio</a>
+    </div>
+  </header>
+
+  <main class="verify-container">
+
+    <div class="search-bar-box">
+      <input type="text" id="inputCodigo" placeholder="Ej: LIC-2026-XXXXXXXX" autofocus />
+      <button class="btn btn-primary" id="btnConsultar">Verificar Licencia</button>
+    </div>
+
+    <div id="loadingBox" style="display: none; text-align: center; padding: 2rem;">
+      <p style="font-size: 1.1rem; color: var(--text-muted);">Consultando el padrón municipal en tiempo real...</p>
+    </div>
+
+    <div id="resultadoBox" style="display: none;">
+      <!-- Contenido inyectado dinámicamente por verificar-licencia.js -->
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>© 2026 Municipalidad Provincial de Huamanga — Gerencia de Desarrollo Económico y Licencias.</p>
+    <p>Portal de Consulta Pública de Solo Lectura — Ley N° 28976 / TUO D.S. N° 046-2017-PCM.</p>
+  </footer>
+
+  <script src="js/verificar-licencia.js"></script>
+</body>
+</html>

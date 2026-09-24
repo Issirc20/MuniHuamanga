@@ -121,6 +121,31 @@ async function consultarTramite() {
       }
     }
 
+    // Configurar Licencia Aprobada (Sprint 3: US-09, US-10, US-12)
+    const boxLicencia = document.getElementById('boxLicenciaAprobada');
+    const btnLic = document.getElementById('btnDescargarLicencia');
+    const btnVerif = document.getElementById('btnVerificarPublico');
+
+    if (exp.estado === 'APROBADO' && exp.licenciaQrCode) {
+      if (boxLicencia) {
+        boxLicencia.style.display = 'flex';
+        document.getElementById('txtCodigoLicencia').innerText = `Licencia N°: ${exp.licenciaQrCode}`;
+        document.getElementById('imgQrLicencia').src = `${API_BASE}/${exp.id}/qr?size=130`;
+      }
+      if (btnLic) {
+        btnLic.style.display = 'inline-flex';
+        btnLic.href = `${API_BASE}/${exp.id}/documentos/licencia`;
+      }
+      if (btnVerif) {
+        btnVerif.style.display = 'inline-flex';
+        btnVerif.href = `verificar-licencia.html?codigo=${encodeURIComponent(exp.licenciaQrCode)}`;
+      }
+    } else {
+      if (boxLicencia) boxLicencia.style.display = 'none';
+      if (btnLic) btnLic.style.display = 'none';
+      if (btnVerif) btnVerif.style.display = 'none';
+    }
+
     // Cargar Historial
     cargarHistorial(exp.id);
 

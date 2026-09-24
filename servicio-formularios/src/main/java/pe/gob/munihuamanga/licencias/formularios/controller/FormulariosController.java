@@ -51,4 +51,15 @@ public class FormulariosController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
+
+    @PostMapping("/licencia")
+    @Operation(summary = "US-09: Generar PDF oficial del Certificado de Licencia de Funcionamiento con QR y Sello Digital")
+    public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
+        byte[] pdf = generadorDocumentoService.generarLicenciaPdf(expediente);
+        String codigo = expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : expediente.getNumeroTramite();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 }

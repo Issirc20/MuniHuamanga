@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.munihuamanga.licencias.common.dto.CrearExpedienteDto;
+import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -298,5 +299,47 @@ public class ExpedienteService {
             curr = curr.plusDays(1);
         }
         return dias;
+    }
+
+    /**
+     * US-11 / RNF-20: Consulta pública de autenticidad y estado de licencia para ciudadanos y fiscalizadores.
+     */
+    @Transactional(readOnly = true)
+    public VerificacionLicenciaDto verificarLicencia(String codigoLicencia) {
+        if (codigoLicencia == null || codigoLicencia.trim().isEmpty()) {
+            return VerificacionLicenciaDto.builder()
+                    .valida(false)
+                    .estado("CÓDIGO INVÁLIDO")
+                    .mensajeVerificacion("Debe proporcionar un código de licencia válido.")
+                    .build();
+        }
+
+        return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
+                .map(exp -> {
+                    boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
+                    return VerificacionLicenciaDto.builder()
+                            .numeroLicencia(exp.getLicenciaQrCode())
+                            .numeroTramite(exp.getNumeroTramite())
+                            .titular(exp.getNombreTitular())
+                            .documentoIdentidad(exp.getDocumentoIdentidad())
+                            .razonSocial(exp.getRazonSocial())
+                            .nombreComercial(exp.getNombreComercial())
+                            .giro(exp.getGiroNegocio())
+                            .direccion(exp.getDireccionEstablecimiento())
+                            .nivelRiesgo(exp.getNivelRiesgo())
+                            .estado(esAprobado ? "VIGENTE / AUTORIZADA" : "NO VIGENTE (" + exp.getEstado() + ")")
+                            .fechaEmision(exp.getFechaCreacion())
+                            .valida(esAprobado)
+                            .mensajeVerificacion(esAprobado
+                                    ? "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga (Vigencia Indeterminada - Art. 11 Ley N° 28976)."
+                                    : "El trámite asociado a este código no se encuentra en estado APROBADO.")
+                            .build();
+                })
+                .orElseGet(() -> VerificacionLicenciaDto.builder()
+                        .numeroLicencia(codigoLicencia)
+                        .valida(false)
+                        .estado("NO ENCONTRADA")
+                        .mensajeVerificacion("El código de licencia consultado no se encuentra registrado en el padrón municipal de Huamanga.")
+                        .build());
     }
 }

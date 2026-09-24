@@ -80,7 +80,10 @@ function renderAcciones(exp) {
     `;
   }
   if (exp.estado === 'APROBADO') {
-    return `<span class="badge badge-aprobado">QR: ${exp.licenciaQrCode || 'EMITIDA'}</span>`;
+    return `
+      <a class="btn btn-primary btn-sm" href="${API_BASE}/${exp.id}/documentos/licencia" target="_blank" style="background: #059669; border-color: #059669;">📜 Licencia PDF</a>
+      <a class="btn btn-secondary btn-sm" href="verificar-licencia.html?codigo=${encodeURIComponent(exp.licenciaQrCode || '')}" target="_blank">🔍 Ver QR</a>
+    `;
   }
   return '';
 }

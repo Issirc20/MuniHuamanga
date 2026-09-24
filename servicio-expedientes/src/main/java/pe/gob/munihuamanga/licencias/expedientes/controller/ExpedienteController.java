@@ -21,6 +21,7 @@ import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
+import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -128,6 +129,35 @@ public class ExpedienteController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=VoucherSAT-" + voucher.getVoucherId() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    @GetMapping("/{id}/documentos/licencia")
+    @Operation(summary = "US-09: Descargar en PDF el Certificado Oficial de Licencia de Funcionamiento con QR y Sello Digital")
+    public ResponseEntity<byte[]> descargarLicencia(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        if (exp.getEstado() != EstadoExpediente.APROBADO) {
+            throw new IllegalStateException("La licencia solo puede emitirse cuando el expediente ha sido APROBADO por la Gerencia de Licencias.");
+        }
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);
+
+        String codigo = exp.getLicenciaQrCode() != null ? exp.getLicenciaQrCode() : exp.getNumeroTramite();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
+    @Operation(summary = "US-10: Obtener la imagen PNG del código QR único de la licencia emitida")
+    public ResponseEntity<byte[]> obtenerImagenQrExpediente(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "300") int size
+    ) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        String codigo = exp.getLicenciaQrCode() != null ? exp.getLicenciaQrCode() : exp.getNumeroTramite();
+        byte[] qr = documentoPdfService.generarImagenQr(codigo, size, size);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(qr);
     }
 
     @PostMapping("/{id}/clasificacion-riesgo")

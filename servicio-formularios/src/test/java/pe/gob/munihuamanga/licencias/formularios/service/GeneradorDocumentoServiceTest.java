@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -97,5 +98,44 @@ class GeneradorDocumentoServiceTest {
         assertTrue(pdfBytes.length > 1000);
         String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
         assertTrue(pdfHeader.startsWith("%PDF-"));
+    }
+
+    @Test
+    @DisplayName("US-09: Debe generar PDF válido de Licencia Oficial con QR y Sello Digital")
+    void testGenerarLicenciaPdf() {
+        ExpedienteResponseDto exp = ExpedienteResponseDto.builder()
+                .numeroTramite("EXP-2026-00001")
+                .licenciaQrCode("LIC-2026-A1B2C3D4")
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("42567891")
+                .razonSocial("INVERSIONES AYACUCHO S.A.C.")
+                .nombreComercial("Boutique Huamanga")
+                .giroNegocio("Venta de artesanías")
+                .direccionEstablecimiento("Jr. 9 de Diciembre 142")
+                .areaMetrosCuadrados(new BigDecimal("35.50"))
+                .nivelRiesgo(NivelRiesgo.BAJO)
+                .tipoItse("ITSE_POSTERIOR")
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = generador.generarLicenciaPdf(exp);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 1000, "El PDF de la licencia debe ser mayor a 1KB");
+        String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
+        assertTrue(pdfHeader.startsWith("%PDF-"));
+    }
+
+    @Test
+    @DisplayName("US-10: Debe generar imagen PNG válida del Código QR")
+    void testGenerarImagenQr() {
+        byte[] qrBytes = generador.generarImagenQr("LIC-2026-A1B2C3D4", 150, 150);
+
+        assertNotNull(qrBytes);
+        assertTrue(qrBytes.length > 200);
+        assertEquals((byte) 0x89, qrBytes[0]);
+        assertEquals((byte) 'P', qrBytes[1]);
+        assertEquals((byte) 'N', qrBytes[2]);
+        assertEquals((byte) 'G', qrBytes[3]);
     }
 }

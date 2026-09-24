@@ -20,4 +20,6 @@ public interface ExpedienteRepository extends JpaRepository<Expediente, UUID> {
     List<Expediente> findBySolicitanteId(UUID solicitanteId);
 
     List<Expediente> findByEstado(EstadoExpediente estado);
+
+    Optional<Expediente> findByLicenciaQrCode(String licenciaQrCode);
 }

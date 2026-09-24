@@ -60,6 +60,41 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             log.info("Expediente de prueba creado: EXP-2026-00001 (ID: {})", id);
+
+            // Expediente de prueba 2: APROBADO con Licencia Oficial emitida y Código QR
+            UUID id2 = UUID.randomUUID();
+            String codLicencia = "LIC-2026-00000002";
+            Expediente expAprobado = Expediente.builder()
+                    .id(id2)
+                    .numeroTramite("EXP-2026-00002")
+                    .licenciaQrCode(codLicencia)
+                    .voucherId("VCH-2026-123456")
+                    .solicitanteId(UUID.fromString("e23ac10b-58cc-4372-a567-0e02b2c3d999"))
+                    .nombreTitular("Carlos Raúl Mendoza Gutiérrez")
+                    .documentoIdentidad("20608765432")
+                    .razonSocial("CONSORCIO GASTRONÓMICO DE HUAMANGA S.A.C.")
+                    .nombreComercial("Restaurante Tradición Ayacuchana")
+                    .giroNegocio("Restaurante, café y servicios afines")
+                    .direccionEstablecimiento("Portal Constitución N° 12, Plaza Mayor de Huamanga, Ayacucho")
+                    .areaMetrosCuadrados(new BigDecimal("145.00"))
+                    .estado(EstadoExpediente.APROBADO)
+                    .nivelRiesgo(NivelRiesgo.MEDIO)
+                    .montoTasa(new BigDecimal("218.00"))
+                    .fechaCreacion(LocalDateTime.now().minusDays(5))
+                    .fechaLimite(LocalDateTime.now().plusDays(15))
+                    .build();
+
+            expedienteRepository.save(expAprobado);
+
+            auditoriaService.registrarTransicion(
+                    id2,
+                    EstadoExpediente.EN_EVALUACION_FINAL,
+                    EstadoExpediente.APROBADO,
+                    "GERENCIA_LICENCIAS",
+                    "Expediente evaluado conforme y APROBADO. Licencia emitida con QR: " + codLicencia
+            );
+
+            log.info("Expediente de prueba aprobado creado: EXP-2026-00002 con Licencia {}", codLicencia);
         }
     }
 }
