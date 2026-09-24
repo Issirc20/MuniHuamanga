@@ -27,6 +27,9 @@ class VerificacionPublicaTest {
     @Mock
     private ExpedienteRepository expedienteRepository;
 
+    @Mock
+    private MetricasExpedienteService metricasExpedienteService;
+
     @InjectMocks
     private ExpedienteService expedienteService;
 

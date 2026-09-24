@@ -50,6 +50,9 @@ class ExpedienteServiceTest {
     @Mock
     private AuditoriaService auditoriaService;
 
+    @Mock
+    private MetricasExpedienteService metricasExpedienteService;
+
     @InjectMocks
     private ExpedienteService expedienteService;
 

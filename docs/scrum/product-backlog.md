@@ -34,9 +34,9 @@
 | **US-10** | **Generación de Código QR e Imagen**<br>*Como sistema, quiero generar la imagen gráfica del código QR para estamparla en la licencia digital.* | - Genera PNG mediante librería ZXing (RNF-13).<br>- Apunta a la URL pública de verificación municipal. | 5 | Sprint 3 (Completado) |
 | **US-11** | **Portal Público de Verificación de Licencia**<br>*Como fiscalizador o ciudadano, quiero escanear el QR y consultar la autenticidad de la licencia en tiempo real.* | - Endpoint público `/api/public/licencias/{codigo}` (RNF-20).<br>- Responde en < 3 segundos (RNF-02).<br>- Expone únicamente datos públicos de vigencia. | 5 | Sprint 3 (Completado) |
 | **US-12** | **Seguimiento Ciudadano en Línea**<br>*Como solicitante, quiero consultar en qué estado se encuentra mi expediente ingresando mi número de trámite.* | - Endpoint `/api/expedientes/tramite/{numeroTramite}` (RNF-14).<br>- Muestra días hábiles restantes y alerta si está próximo a vencer (RNF-22). | 5 | Sprint 3 (Completado) |
-| **US-13** | **Adaptador de Integración Fase 2**<br>*Como arquitecto de software, quiero un adaptador desacoplado para integrar a futuro SAT, Defensa Civil y Edificaciones.* | - Expone interfaces y stubs para simulación de dictamen ITSE y validación bancaria.<br>- Sin modificar el código de los microservicios centrales (RNF-19). | 8 | Sprint 4 |
-| **US-14** | **Monitoreo y Métricas de Rendimiento**<br>*Como administrador del sistema, quiero métricas de salud y tiempo de atención de expedientes.* | - Actuator, Prometheus y endpoints de métricas activos (RNF-21). | 5 | Sprint 4 |
-| **US-15** | **Pruebas de Carga (150 usuarios concurrentes)**<br>*Como equipo de QA, quiero validar que el sistema soporte ≥ 150 usuarios concurrentes cumpliendo RNF-01.* | - Script de pruebas de carga con JMeter / k6.<br>- Cobertura de pruebas unitarias ≥ 75% (RNF-18). | 5 | Sprint 4 |
+| **US-13** | **Adaptador de Integración Fase 2**<br>*Como arquitecto de software, quiero un adaptador desacoplado para integrar a futuro SAT, Defensa Civil y Edificaciones.* | - Expone interfaces y stubs para simulación de dictamen ITSE y validación bancaria.<br>- Sin modificar el código de los microservicios centrales (RNF-19). | 8 | Sprint 4 (Completado) |
+| **US-14** | **Monitoreo y Métricas de Rendimiento**<br>*Como administrador del sistema, quiero métricas de salud y tiempo de atención de expedientes.* | - Actuator, Prometheus y endpoints de métricas activos (RNF-21). | 5 | Sprint 4 (Completado) |
+| **US-15** | **Pruebas de Carga (150 usuarios concurrentes)**<br>*Como equipo de QA, quiero validar que el sistema soporte ≥ 150 usuarios concurrentes cumpliendo RNF-01.* | - Script de pruebas de carga con JMeter / k6 / JUnit / PowerShell.<br>- Cobertura de pruebas unitarias ≥ 75% (RNF-18). | 5 | Sprint 4 (Completado) |
 
 ---
 
@@ -49,11 +49,12 @@ gantt
     section Sprint 0 (Setup)
     Arquitectura, multi-módulo, Docker, BD, C4       :done, 2026-09-21, 5d
     section Sprint 1
-    Mesa de Partes, Registro, Máquina de Estados, Auditoría :active, 2026-09-26, 10d
+    Mesa de Partes, Registro, Máquina de Estados, Auditoría :done, 2026-09-26, 10d
     section Sprint 2
-    Formatos PDF, Tasas TUPA, Vouchers SAT, Registro Pago   :2026-10-06, 10d
+    Formatos PDF, Tasas TUPA, Vouchers SAT, Registro Pago   :done, 2026-10-06, 10d
     section Sprint 3
-    Evaluación Gerencia, Emisión QR, API Verificación, Tracking :2026-10-16, 10d
+    Evaluación Gerencia, Emisión QR, API Verificación, Tracking :done, 2026-10-16, 10d
     section Sprint 4
-    Adaptador Fase 2, Métricas, Pruebas de Carga 150 conn   :2026-10-26, 10d
+    Adaptador Fase 2, Métricas, Pruebas de Carga 150 conn   :done, 2026-10-26, 10d
 ```
+

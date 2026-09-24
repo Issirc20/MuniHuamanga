@@ -36,6 +36,7 @@ public class ExpedienteService {
     private final EstadoExpedienteValidator estadoExpedienteValidator;
     private final CalculadoraDeTasa calculadoraDeTasa;
     private final AuditoriaService auditoriaService;
+    private final MetricasExpedienteService metricasExpedienteService;
 
     /**
      * Registra un nuevo expediente en el sistema e inicia en estado FORMATOS_GENERADOS.
@@ -76,6 +77,7 @@ public class ExpedienteService {
         );
 
         log.info("Expediente creado exitosamente: ID={}, Número={}", guardado.getId(), guardado.getNumeroTramite());
+        metricasExpedienteService.registrarCreacion();
         return guardado;
     }
 
@@ -201,6 +203,7 @@ public class ExpedienteService {
         );
 
         log.info("Expediente {} APROBADO exitosamente con código QR: {}", id, qrCodeUnico);
+        metricasExpedienteService.registrarAprobacion();
     }
 
     /**
@@ -227,6 +230,7 @@ public class ExpedienteService {
         );
 
         log.warn("Expediente {} RECHAZADO. Motivo: {}", id, motivo);
+        metricasExpedienteService.registrarRechazo();
     }
 
     @Transactional(readOnly = true)
@@ -306,6 +310,7 @@ public class ExpedienteService {
      */
     @Transactional(readOnly = true)
     public VerificacionLicenciaDto verificarLicencia(String codigoLicencia) {
+        metricasExpedienteService.registrarConsultaPublica();
         if (codigoLicencia == null || codigoLicencia.trim().isEmpty()) {
             return VerificacionLicenciaDto.builder()
                     .valida(false)

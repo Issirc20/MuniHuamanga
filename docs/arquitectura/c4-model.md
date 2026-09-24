@@ -89,7 +89,7 @@ graph TD
 
     gateway["API Gateway"]:::ext
 
-    subgraph ServicioExpedientes ["Servicio de Expedientes [Límite del contenedor]"]
+    subgraph ServicioExpedientes ["Servicio de Expedientes (Límite del contenedor)"]
         controller["ExpedienteController<br>[Spring REST Controller]<br>Expone endpoints para crear, consultar y actualizar"]:::comp
         service["ExpedienteService<br>[Spring Service]<br>Orquesta la lógica de negocio y las transiciones"]:::comp
         mapper["ExpedienteMapper<br>[MapStruct]<br>Convierte entre entidades y DTOs"]:::comp
@@ -104,7 +104,7 @@ graph TD
     adaptadorIntegracion["Adaptador de Integración"]:::ext
     postgres[("PostgreSQL 15")]:::db
 
-    gateway -->|REST / JSON| controller
+    gateway -->|"REST / JSON"| controller
     controller --> service
     controller --> mapper
 
@@ -114,11 +114,11 @@ graph TD
     service --> expedienteRepo
     auditoria --> historialRepo
 
-    service -.->|Solicita generación de formatos [REST]| servicioFormularios
-    service -.->|Registra dictamen / pago [REST]| adaptadorIntegracion
+    service -.->|"Solicita generación de formatos (REST)"| servicioFormularios
+    service -.->|"Registra dictamen / pago (REST)"| adaptadorIntegracion
 
-    expedienteRepo -->|SQL / JDBC| postgres
-    historialRepo -->|SQL / JDBC| postgres
+    expedienteRepo -->|"SQL / JDBC"| postgres
+    historialRepo -->|"SQL / JDBC"| postgres
 ```
 
 ---
