@@ -177,4 +177,83 @@ class ExpedienteServiceTest {
         assertNotNull(expedienteBase.getLicenciaQrCode());
         verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.EN_EVALUACION_FINAL), eq(EstadoExpediente.APROBADO), any(), any());
     }
+
+    @Test
+    @DisplayName("Debe crear expediente completo con datos de Anexo 1 y Anexo 4")
+    void testCrearExpedienteConAnexo1Y4() {
+        CrearExpedienteDto dto = CrearExpedienteDto.builder()
+                .solicitanteId(UUID.randomUUID())
+                .tipoPersona(pe.gob.munihuamanga.licencias.common.enums.TipoPersona.JURIDICA)
+                .tipoDocumento(pe.gob.munihuamanga.licencias.common.enums.TipoDocumento.RUC)
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("20601234567")
+                .razonSocial("INVERSIONES LOS RETABLOS S.A.C.")
+                .partidaSunarp("11029384")
+                .asientoSunarp("A0001")
+                .dniRepresentante("42567891")
+                .nombreRepresentante("María Quispe Huamán")
+                .modalidadTramite(pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite.LICENCIA_INDETERMINADA)
+                .nombreComercial("Boutique Artesanal Huamanga")
+                .giroNegocio("Venta de artesanías")
+                .ciiuCodigo("4773")
+                .direccionEstablecimiento("Jr. 9 de Diciembre 142")
+                .tipoVia("Jr.")
+                .nombreVia("9 de Diciembre")
+                .numeroVivienda("142")
+                .urbanizacion("Centro Histórico")
+                .areaMetrosCuadrados(new BigDecimal("35.50"))
+                .aforoPersonas(15)
+                .funcionEdificacion(pe.gob.munihuamanga.licencias.common.enums.FuncionEdificacion.COMERCIO)
+                .correoElectronico("contacto@losretablos.pe")
+                .telefono("966123456")
+                .anexo4Condiciones(pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto.builder()
+                        .aforoPersonas(15)
+                        .areaTerreno(new BigDecimal("40.00"))
+                        .extintoresOperativos(true)
+                        .pozoTierraVigente(true)
+                        .build())
+                .build();
+
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Expediente creado = expedienteService.crearExpediente(dto);
+
+        assertNotNull(creado);
+        assertEquals(pe.gob.munihuamanga.licencias.common.enums.TipoPersona.JURIDICA, creado.getTipoPersona());
+        assertEquals("20601234567", creado.getDocumentoIdentidad());
+        assertEquals("11029384", creado.getPartidaSunarp());
+        assertEquals(pe.gob.munihuamanga.licencias.common.enums.FuncionEdificacion.COMERCIO, creado.getFuncionEdificacion());
+        assertNotNull(creado.getAnexo4Condiciones());
+        assertEquals(15, creado.getAnexo4Condiciones().getAforoPersonas());
+    }
+
+    @Test
+    @DisplayName("Debe registrar clasificación ITSE con número de informe y observaciones")
+    void testRegistrarClasificacionItseConInforme() {
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expedienteService.registrarClasificacionRiesgo(expedienteId, NivelRiesgo.MEDIO, "INF-ITSE-2026-0045", "Conforme");
+
+        assertEquals(EstadoExpediente.DOCUMENTOS_VALIDADOS, expedienteBase.getEstado());
+        assertEquals(NivelRiesgo.MEDIO, expedienteBase.getNivelRiesgo());
+        assertEquals("INF-ITSE-2026-0045", expedienteBase.getNumeroInformeItse());
+        assertNotNull(expedienteBase.getFechaInformeItse());
+    }
+
+    @Test
+    @DisplayName("Debe registrar pago de tasa con número de operación SAT")
+    void testRegistrarPagoConOperacionSat() {
+        expedienteBase.setEstado(EstadoExpediente.DOCUMENTOS_VALIDADOS);
+        expedienteBase.setNivelRiesgo(NivelRiesgo.BAJO);
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expedienteService.registrarPago(expedienteId, "VCH-2026-000123", "OP-SAT-998877");
+
+        assertEquals(EstadoExpediente.EN_EVALUACION_FINAL, expedienteBase.getEstado());
+        assertEquals("VCH-2026-000123", expedienteBase.getVoucherId());
+        assertEquals("OP-SAT-998877", expedienteBase.getNumeroOperacionSat());
+        assertNotNull(expedienteBase.getFechaPagoSat());
+    }
 }

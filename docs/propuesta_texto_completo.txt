@@ -1,0 +1,555 @@
+PROPUESTA
+V1.1
+Sistema de Gestión Documentaria del Trámite de Licencia de Funcionamiento
+Fase 1: digitalización del trámite a cargo de la Gerencia de Licencias, con firma digital y licencia verificable por código QR
+-
+arquitectura lista para integrar a futuro al SAT, Defensa Civil y Edificaciones
+Institución:
+Municipalidad (Gerencia de Licencias)
+Marco normativo:
+Ley
+N°
+28976 – Ley Marco de Licencia de Funcionamiento (TUO D.S.
+N°
+046-2017-PCM)
+Enfoque:
+Gestión documentaria, firma digital y verificación de licencias por código QR
+Capacidad objetivo:
+≥ 150 usuarios concurrentes (escala municipal realista)
+Arquitectura:
+Microservicios Java/Spring Boot + PostgreSQL, modelada con C4 (Contexto y Contenedores), con adaptador de integración para una Fase 2
+1. Proceso de Desarrollo del Proyecto
+El proyecto se ejecutará bajo una metodología ágil (Scrum), organizada en seis fases que se retroalimentan de forma iterativa a lo largo de
+sprints
+de construcción, permitiendo incorporar hallazgos de pruebas y monitoreo en ciclos posteriores.
+Figura 1
+-
+Proceso de desarrollo del proyecto
+1.1 Descripción de las fases
+Levantamiento de requerimientos: talleres con la Subgerencia de Licencias y Trámites, Defensa Civil y la Gerencia de Edificaciones para mapear el flujo real del expediente.
+Análisis y diseño de arquitectura: definición de la solución conceptual, modelado C4 (Contexto y Contenedores) y del motor de
+workflow
+.
+Construcción (
+sprints
+ágiles): implementación incremental de los microservicios en Java, priorizando primero el módulo de expedientes y el motor de derivaciones.
+Pruebas: ejecución de pruebas funcionales, de carga y de seguridad antes de cada despliegue.
+Despliegue: publicación de nuevas versiones mediante un pipeline de integración y despliegue continuo (CI/CD).
+Monitoreo y mejora continua: análisis de tiempos de atención por área, retroalimentando el backlog de nuevos
+sprints
+.
+2. Contexto Normativo y Justificación de Viabilidad
+El otorgamiento de la licencia de funcionamiento en el Perú se rige por la Ley
+N°
+28976, Ley Marco de Licencia de Funcionamiento, y su Texto Único Ordenado aprobado por el Decreto Supremo
+N°
+046-2017-PCM. Esta norma constituye la base legal que justifica el proceso modelado en la presente propuesta.
+La licencia se tramita como un procedimiento único de evaluación previa, sujeto a silencio administrativo positivo si la municipalidad no resuelve dentro del plazo establecido.
+El plazo máximo legal para el otorgamiento de la licencia es de quince (15) días hábiles, lo que sustenta el requerimiento RNF-22 de alertas por vencimiento de plazo.
+Cuando el giro del establecimiento lo requiere, la evaluación incluye la verificación de las condiciones de seguridad de la edificación mediante la Inspección Técnica de Seguridad en Edificaciones (ITSE), a cargo del órgano de Defensa Civil de la municipalidad.
+Cuando la inspección identifica observaciones de carácter estructural, corresponde una evaluación adicional por parte del área técnica de edificaciones antes de resolver el expediente.
+2.1 Alcance por fases
+Tras una revisión del proceso real con la Gerencia de Licencias, el alcance del proyecto se ha acotado a un desarrollo incremental por fases. Esto reduce el riesgo de implementación y permite entregar valor desde la primera etapa:
+Fase 1 (alcance de esta propuesta): digitaliza únicamente el proceso a cargo de la Gerencia de Licencias — solicitud, generación de formatos, cálculo de tasa, generación de
+voucher
+, evaluación final, emisión de la licencia firmada digitalmente y su verificación pública por código QR.
+Fase 2 (fuera de alcance, prevista en el diseño): integración directa con el SAT (validación de pago en línea), Defensa Civil (clasificación de riesgo digital), Gerencia de Edificaciones (certificación de zonificación digital) y Fiscalización. Mientras tanto, estos pasos se realizan de forma física y se registran manualmente en el sistema a través del Adaptador de Integración.
+Esta separación es, en sí misma, una decisión de arquitectura: el sistema se diseña con un componente explícito de integración (ver sección 5.2) para que incorporar cada entidad externa en el futuro no requiera rediseñar los servicios ya construidos.
+2.2 Por qué esta propuesta es más viable que la anterior
+La propuesta previa (plataforma de trámites para RENIEC) fue observada por sobredimensionar la arquitectura frente al problema real: proponía
+sharding
+, un clúster
+Kubernetes
+multi-nodo
+y 1,000 usuarios concurrentes para una entidad nacional, sin un proceso de negocio acotado que lo sustentara. La presente propuesta corrige ese problema:
+Se ancla a un proceso real, documentado en una norma específica (Ley
+N°
+28976), con actores, plazos y reglas verificables.
+El volumen de usuarios y expedientes se estima a partir de una municipalidad tipo, no de una cifra arbitraria.
+La arquitectura se dimensiona de forma proporcional: un primario y una réplica de PostgreSQL son suficientes; no se requiere fragmentación de datos.
+El alcance se entrega por fases, evitando comprometer en un solo proyecto la integración con cuatro entidades distintas (Gerencia de Licencias, Defensa Civil, Edificaciones y SAT
+3. Requerimientos del Sistema
+El sistema tiene como finalidad digitalizar y dar trazabilidad al expediente de licencia de funcionamiento desde su presentación hasta la resolución final, coordinando la derivación entre las tres áreas responsables.
+3.1 Requerimientos funcionales
+Proceso
+Requerimiento
+Mesa de Partes Virtual
+El solicitante deberá poder registrar digitalmente su solicitud de licencia de funcionamiento dirigida a la Gerencia de Licencias.
+Generación de formatos
+El sistema deberá generar la Declaración Jurada y el documento que el solicitante debe llevar a Defensa Civil, listos para imprimir.
+Firma digital de formatos
+La Declaración Jurada deberá poder firmarse digitalmente antes de su impresión o presentación.
+Registro de clasificación de riesgo
+El funcionario deberá poder registrar la clasificación de riesgo (Bajo, Medio, Alto o Muy Alto) recibida de Defensa Civil.
+Registro de certificación de zonificación
+El funcionario deberá poder registrar la certificación de compatibilidad de giro emitida por la Gerencia de Edificaciones.
+Cálculo de tasa
+El sistema deberá calcular automáticamente el costo de la tasa administrativa según el nivel de riesgo registrado.
+Generación de
+voucher
+El sistema deberá generar el
+voucher
+de pago que el solicitante presentará ante el SAT.
+Registro de pago
+El funcionario o el solicitante deberá poder registrar el
+voucher
+pagado para continuar el trámite.
+Evaluación final y resolución
+La Gerencia de Licencias deberá poder validar la Declaración Jurada, la certificación de Edificaciones y el pago, y resolver el expediente.
+Emisión de licencia digital
+El sistema deberá generar la licencia de funcionamiento en formato digital, firmada digitalmente, con un código QR único.
+Verificación pública de licencia
+Cualquier persona deberá poder escanear el QR de una licencia para validar su autenticidad e información básica.
+Seguimiento de expediente
+El solicitante deberá poder consultar el estado y el historial de su expediente en línea con su número de trámite.
+Notificaciones
+El sistema deberá notificar al solicitante ante cada cambio relevante de estado del expediente.
+Auditoría
+Toda transición de estado deberá quedar registrada con usuario, fecha, hora y motivo.
+Extensibilidad de integraciones
+El sistema deberá exponer puntos de integración (adaptador) para incorporar en el futuro al SAT, Defensa Civil, Edificaciones y Fiscalización.
+3.2 Requerimientos no funcionales
+Los requerimientos no funcionales se agrupan según las características de calidad del software definidas en la norma ISO/IEC 25010, dimensionadas de forma realista para una entidad municipal.
+3.2.1 Rendimiento
+Código
+Requerimiento
+RNF-01
+El sistema deberá soportar como mínimo 150 usuarios concurrentes entre solicitantes y funcionarios en horario de atención.
+RNF-02
+El 95% de las consultas de estado de expediente deberá responder en menos de 3 segundos.
+RNF-03
+La derivación automática de un expediente entre áreas deberá ejecutarse en menos de 5 minutos desde el registro del dictamen.
+3.2.2 Disponibilidad
+Código
+Requerimiento
+RNF-04
+La plataforma deberá garantizar una disponibilidad de 99.5% durante el horario de atención municipal (lunes a viernes, 8:00–18:00).
+RNF-05
+La caída de un nodo de aplicación no deberá interrumpir el servicio a los usuarios activos.
+RNF-06
+Ante la caída del nodo primario de base de datos, la réplica de lectura deberá poder promoverse en menos de 10 minutos.
+3.2.3 Escalabilidad
+Código
+Requerimiento
+RNF-07
+El sistema deberá poder incrementar el número de instancias de aplicación en periodos de alta demanda (p. ej., campañas de regularización) sin modificar el código.
+RNF-08
+El diseño deberá permitir agregar nuevos tipos de trámite o áreas evaluadoras sin rediseñar el motor de
+workflow
+.
+3.2.4 Seguridad
+Código
+Requerimiento
+RNF-09
+Todas las comunicaciones deberán cifrarse mediante TLS 1.2 o superior.
+RNF-10
+El acceso de los funcionarios deberá gestionarse mediante autenticación y control de acceso basado en roles (RBAC) por área.
+RNF-11
+La Declaración Jurada y la licencia emitida deberán contar con firma digital que garantice su integridad y no repudio.
+RNF-12
+La información sensible del expediente deberá cifrarse en reposo (AES-256).
+RNF-13
+El código QR de cada licencia deberá ser único e irrepetible, de modo que impida la falsificación o duplicación del documento.
+3.2.5 Usabilidad
+Código
+Requerimiento
+RNF-14
+El solicitante deberá poder conocer en todo momento el estado y la siguiente etapa de su expediente mediante su número de trámite.
+RNF-15
+La interfaz deberá ser comprensible para usuarios sin conocimientos técnicos (MYPES) y accesible desde dispositivos móviles.
+RNF-16
+El Portal Ciudadano y el Sistema Interno de la Gerencia de Licencias deberán ser dos aplicaciones independientes, cada una orientada a su tipo de usuario.
+3.2.6 Mantenibilidad
+Código
+Requerimiento
+RNF-17
+El cálculo de la tasa según nivel de riesgo deberá poder configurarse sin requerir despliegue de código nuevo.
+RNF-18
+El pipeline de integración continua deberá ejecutar pruebas automatizadas con una cobertura mínima del 75%.
+3.2.7 Interoperabilidad
+Código
+Requerimiento
+RNF-19
+El sistema deberá exponer un adaptador de integración capaz de incorporar, en una fase posterior, al SAT (pago), Defensa Civil (clasificación de riesgo), Edificaciones (zonificación) y Fiscalización, sin rediseñar los servicios existentes.
+RNF-20
+El servicio de verificación de licencias deberá exponer una API pública de solo lectura para validar la autenticidad de una licencia a partir de su código QR.
+3.2.8
+Observabilidad
+Código
+Requerimiento
+RNF-21
+El sistema deberá monitorear el tiempo promedio de atención por etapa del trámite.
+RNF-22
+Deberán configurarse alertas cuando un expediente esté próximo a exceder el plazo legal de 15 días hábiles establecido por la Ley
+N°
+28976.
+4. Visión y Alcance del Proyecto
+4.1 Visión
+Digitalizar, en su Fase 1, el trámite de licencia de funcionamiento a cargo de la Gerencia de Licencias desde la solicitud hasta la emisión de una licencia firmada digitalmente y verificable por código QR, con una arquitectura preparada para integrar en el futuro a Defensa Civil, la Gerencia de Edificaciones, el SAT y Fiscalización.
+4.2 Objetivo general
+Diseñar e implementar un sistema de gestión documentaria que digitalice el trámite de licencia de funcionamiento a cargo de la Gerencia de Licencias, garantizando trazabilidad, cumplimiento de plazos legales y una licencia final verificable, dejando prevista la integración futura con las demás entidades del proceso.
+4.3 Objetivos específicos
+Implementar un Portal Ciudadano para la presentación digital de la solicitud.
+Generar automáticamente los formatos de Declaración Jurada y el documento a presentar ante Defensa Civil.
+Incorporar firma digital en la Declaración Jurada y en la licencia emitida.
+Calcular la tasa administrativa según el nivel de riesgo y generar el
+voucher
+de pago para el SAT.
+Implementar un Sistema Interno para que la Gerencia de Licencias evalúe y apruebe el expediente.
+Emitir la licencia de funcionamiento en formato digital con código QR único, verificable públicamente.
+Permitir al solicitante el seguimiento en línea del estado de su expediente.
+Diseñar un adaptador de integración que permita incorporar a futuro al SAT, Defensa Civil, Edificaciones y Fiscalización sin rediseñar el sistema.
+Alertar sobre expedientes próximos a vencer el plazo legal de 15 días hábiles.
+Registrar auditoría completa de cada transición de estado.
+4.4 Fuera de alcance (Fase 1)
+La clasificación digital del riesgo por parte de Defensa Civil: en esta fase se realiza de forma física y solo se registra su resultado en el sistema.
+La certificación digital de zonificación por parte de la Gerencia de Edificaciones: en esta fase se realiza de forma física y solo se registra su resultado en el sistema.
+El cobro o validación en línea del pago con el SAT: en esta fase el pago se realiza físicamente y solo se registra el
+voucher
+pagado.
+La fiscalización posterior al otorgamiento de la licencia.
+5. Arquitectura de la Solución (Modelo C4)
+La arquitectura se documenta siguiendo el modelo C4, desarrollado hasta el segundo nivel Contexto y Contenedores, nivel adecuado para representar la solución completa sin descender al detalle interno de cada microservicio.
+5.1 Nivel 1
+:
+Diagrama de Contexto
+Muestra el sistema como una caja negra, los tres roles de usuario involucrados (solicitante, funcionario de la Gerencia de Licencias y tercero verificador) y los sistemas y procesos externos con los que se relaciona. Defensa Civil, Edificaciones y el SAT se marcan explícitamente como procesos externos de Fase 2, en tanto que la Plataforma de Firma Digital se integra desde la Fase 1.
+Figura 2
+-
+Diagrama de Contexto (C4
+-
+Nivel 1)
+5.2 Nivel 2
+:
+Diagrama de Contenedores
+Descompone el sistema en sus contenedores desplegables: tres aplicaciones web independientes (Portal Ciudadano, Sistema Interno de la Gerencia de Licencias y Portal Público de Verificación), el API Gateway, los microservicios Java, la base de datos PostgreSQL, el almacenamiento de documentos y el Adaptador de Integración que actúa como punto de extensión hacia la Fase 2.
+Figura 3
+-
+Diagrama de Contenedores (C4
+-
+Nivel 2)
+6. Modelo del Proceso de Trámite
+El siguiente diagrama es el núcleo funcional de la propuesta: representa el recorrido de la solicitud dentro del sistema (recuadros azules, Fase 1) y los puntos donde el proceso sale hacia una gestión física externa (recuadros grises, Fase 2
+-
+Defensa Civil, Edificaciones y SAT) antes de volver a la Gerencia de Licencias para su evaluación final.
+Figura 4 – Flujo del trámite de licencia de funcionamiento
+Este flujo se implementa mediante una máquina de estados en el Servicio de Expedientes, donde cada estado corresponde a una etapa del proceso: FORMATOS GENERADOS, DOCUMENTOS VALIDADOS, EN EVALUACIÓN FINAL, APROBADO y RECHAZADO. Modelar el proceso como una máquina de estados explícita —incluso cuando algunos pasos ocurren fuera del sistema— es lo que permite a la Gerencia de Licencias saber en qué etapa se encuentra cualquier expediente en todo momento.
+7. Módulos del Sistema
+La estructura modular se corresponde directamente con los contenedores de servicio del diagrama C4.
+Figura 5
+-
+Estructura modular del sistema
+Mesa de Partes Virtual
+Registro digital de la solicitud.
+Validación de requisitos mínimos antes del ingreso.
+Gestión de Expedientes
+Consulta de estado y seguimiento.
+Historial de transiciones.
+Formularios y Declaración Jurada
+Generación del formato de Declaración Jurada y del documento para Defensa Civil.
+Integración con firma digital antes de la impresión.
+Tasas y
+Vouchers
+Cálculo del costo según el nivel de riesgo registrado.
+Generación del
+voucher
+de pago para el SAT.
+Emisión y Verificación QR
+Generación de la licencia digital firmada, con código QR único.
+Servicio público de verificación de autenticidad.
+Adaptador de Integración (Fase 2)
+Punto de extensión para incorporar al SAT, Defensa Civil, Edificaciones y Fiscalización.
+En Fase 1 opera como un registro manual de resultados externos.
+8. Vista Física de Despliegue
+Esta arquitectura no requiere fragmentación de datos: el volumen esperado de expedientes de una municipalidad se atiende con un balanceador, dos nodos de aplicación y una base de datos PostgreSQL con una réplica de lectura. El Adaptador de Integración se despliega como un servicio independiente para aislar la futura conexión con sistemas externos.
+Figura 6
+-
+Vista física de despliegue
+9. Dimensionamiento
+El dimensionamiento se estima a partir del volumen de trámites de una municipalidad tipo, no de una cifra arbitraria:
+Componente
+Capacidad propuesta
+Load
+Balancer
+1–2 nodos
+API Gateway
+2 nodos
+Servidores de aplicación (Java)
+2 nodos (
+autoescalable
+hasta 4)
+Base de datos PostgreSQL
+1 primario + 1 réplica de lectura
+Servicio de emisión y verificación de licencias
+2 instancias (incluye
+endpoint
+público de verificación)
+Almacenamiento de objetos
+Gestionado por el proveedor
+cloud
+Usuarios concurrentes objetivo
+≥ 150 (funcionarios + ciudadanos + verificadores)
+Expedientes activos estimados
+500 – 1,000 mensuales (municipalidad tipo)
+10. Componentes de la Infraestructura en la Nube
+Cada contenedor del diagrama C4 se despliega sobre un componente de infraestructura administrada. Las tecnologías se listan a modo de referencia y pueden ejecutarse también
+on
+-premise, según la capacidad de la municipalidad.
+Componente
+Función
+Tecnología sugerida
+Dimensionamiento
+Balanceador de carga + WAF
+Enruta y protege el tráfico entrante
+NGINX / ALB + WAF
+1–2 nodos
+API Gateway
+Enrutamiento, autenticación y
+rate
+limiting
+Spring Cloud Gateway
+2 instancias
+Microservicios de aplicación
+Lógica de negocio (Expedientes, Formularios, Tasas/
+Vouchers
+)
+Java 17 + Spring Boot 3
+2+ réplicas por servicio
+Servicio de emisión y verificación
+Genera el QR único y expone la verificación pública de licencias
+Java 17 + Spring Boot 3 + librería de generación QR (
+ZXing
+)
+2 instancias,
+endpoint
+público de solo lectura
+Generación de documentos PDF
+Genera los formatos, el
+voucher
+y la licencia en PDF
+Apache
+PDFBox
+/
+iText
+Ejecutado dentro del servicio correspondiente
+Firma digital
+Firma la Declaración Jurada y la licencia emitida
+Integración con PKI / Plataforma Nacional de Firma Digital (RENIEC)
+Servicio externo, invocado vía REST
+Adaptador de integración
+Punto de extensión para incorporar SAT, Defensa Civil, Edificaciones y Fiscalización en Fase 2
+Java 17 + Spring Boot 3 (patrón
+adapter
+/
+stub
+)
+1–2 instancias
+Base de datos relacional
+Persistencia transaccional
+PostgreSQL 15 (RDS / Cloud SQL o instancia propia)
+1 primario + 1 réplica de lectura
+Almacenamiento de objetos
+Formatos,
+vouchers
+y licencias en PDF
+Amazon S3 /
+MinIO
+(
+on
+-premise)
+Versionado y cifrado habilitados
+Observabilidad
+Métricas, logs y trazabilidad
+Spring Boot
+Actuator
++ Prometheus +
+Grafana
+Retención mínima de 30 días
+Identidad y gestión de secretos
+Administra credenciales, roles y llaves
+Keycloak
+(OAuth2/OIDC) + Vault
+Rotación periódica de secretos
+CI/CD
+Automatiza
+build
+, pruebas y despliegue
+GitHub
+Actions
+/ Jenkins + Maven
+Pipeline con pruebas automatizadas
+11. Arquitectura Lógica por Capas
+La solución se organiza en seis capas lógicas, desde la presentación hasta la
+observabilidad
+:
+Figura 7
+-
+Capas de la arquitectura lógica
+Capa 1
+-
+Presentación:
+Portal Ciudadano y Portal de Gestión Interna.
+Capa 2
+-
+Seguridad:
+WAF, API Gateway, Autenticación (
+Keycloak
+), Autorización, Rate
+Limiting
+.
+Capa 3
+-
+Servicios:
+Expedientes,
+Workflow
+, Documentos, Pagos, Notificaciones.
+Capa 4
+-
+Proceso:
+Motor de
+workflow
+(BPM) y reglas de derivación entre áreas.
+Capa 5
+-
+Datos:
+PostgreSQL (primario + réplica) y almacenamiento de objetos.
+Capa 6
+-
+Observabilidad
+:
+Logs, métricas,
+tracing
+y alertas.
+12. Alta Disponibilidad
+Ante la caída de un nodo de aplicación, el balanceador redirige el tráfico a los nodos disponibles sin interrumpir el servicio; ante la caída del nodo primario de base de datos, la réplica de lectura puede promoverse a nuevo primario.
+Figura 8
+-
+Recuperación ante la falla de un nodo de aplicación
+13. Seguridad de la Solución
+Cifrado en tránsito mediante TLS 1.2+ en todas las comunicaciones.
+Autenticación centralizada con
+Keycloak
+(OAuth 2.0 /
+OpenID
+Connect
+) y control de acceso basado en roles (RBAC) por área.
+Firma digital de la Declaración Jurada y de la licencia emitida, integrada con una plataforma de firma digital externa.
+Código QR único e irrepetible por licencia, generado con una clave asociada al expediente, para impedir su falsificación o duplicación.
+El Portal Público de Verificación solo expone datos de solo lectura (vigencia, titular, giro), sin permitir modificar ni descargar el expediente completo.
+Cifrado en reposo (AES-256) de la información sensible del expediente.
+Registro de auditoría inmutable de toda transición de estado.
+14. Estrategia de Pruebas
+14.1 Pruebas funcionales
+Verifican cada regla de derivación del flujo del expediente, incluyendo los casos de observación documentaria, riesgo detectado por Defensa Civil y rechazo final.
+14.2 Pruebas de carga
+Validan los requerimientos de rendimiento (RNF-01 a RNF-03) simulando 150 usuarios concurrentes con Apache
+JMeter
+o k6.
+14.3 Pruebas de seguridad
+Incluyen análisis de vulnerabilidades (OWASP ZAP) y revisión de dependencias del proyecto Java (OWASP
+Dependency
+-Check).
+14.4 Pruebas de resiliencia
+Simulan la caída de un nodo de aplicación o de base de datos para verificar el cumplimiento de los requerimientos de disponibilidad.
+15. Arquitectura Tecnológica Sugerida
+El desarrollo se realizará íntegramente sobre el ecosistema Java, con PostgreSQL como motor de base de datos:
+Componente
+Tecnología
+Frontend
+(Portal Ciudadano / Interno / Verificación)
+React
+Backend
+Java 17 + Spring Boot 3 (Spring MVC)
+API
+REST (documentada con
+OpenAPI
+/Swagger)
+Generación de PDF
+Apache
+PDFBox
+/
+iText
+(formatos,
+voucher
+, licencia)
+Generación de código QR
+ZXing
+(Zebra Crossing)
+Firma digital
+Integración con PKI / Plataforma Nacional de Firma Digital
+API Gateway
+Spring Cloud Gateway
+Balanceador
+NGINX /
+HAProxy
+Base de datos
+PostgreSQL 15
+Acceso a datos
+Spring Data JPA +
+Hibernate
+Autenticación
+Keycloak
+(OAuth 2.0 /
+OpenID
+Connect
+)
+Contenedores
+Docker
+Orquestación (opcional)
+Kubernetes
+/ Docker
+Compose
+, según tamaño de la municipalidad
+Monitoreo
+Spring Boot
+Actuator
++ Prometheus +
+Grafana
+Logs
+Logback
++ ELK / Loki
+CI/CD
+Maven + GitHub
+Actions
+/ Jenkins
+16. Comparación con la Propuesta Anterior y Justificación de Viabilidad
+La siguiente tabla resume por qué esta propuesta corrige las observaciones de viabilidad de la propuesta previa (plataforma de trámites RENIEC):
+Aspecto
+Propuesta RENIEC (rechazada)
+Propuesta actual (Licencia de Funcionamiento)
+Escala de concurrencia
+≥ 1,000 usuarios simultáneos (nivel nacional)
+≥ 150 usuarios concurrentes (nivel municipal)
+Base de datos
+Sharding
+en 3+ nodos
+PostgreSQL: 1 primario + 1 réplica de lectura
+Orquestación
+Kubernetes
+multi-nodo
+obligatorio
+Despliegue simple;
+Kubernetes
+opcional
+Alcance institucional
+Entidad nacional (RENIEC) con sistemas legados críticos
+Una municipalidad; proceso acotado e interinstitucional
+Anclaje normativo
+Genérico, sin marco legal específico citado
+Ley
+N°
+28976 y TUO D.S.
+N°
+046-2017-PCM
+Integraciones externas
+Múltiples sistemas nacionales de identidad
+Pasarela de pagos municipal + PIDE (opcional)
+Justificación del rendimiento
+Cifra arbitraria (1,000 usuarios)
+Estimada según el volumen real de trámites de una municipalidad tipo
+Enfoque de implementación
+Todo el flujo automatizado desde el primer entregable
+Fase 1 acotada a la Gerencia de Licencias, con adaptador de integración para una Fase 2
+Viabilidad académica
+Baja (rechazada por sobredimensionamiento)
+Alta

@@ -76,6 +76,36 @@ class MesaPartesValidationTest {
         assertFalse(validator.validate(dtoAreaCero).isEmpty());
     }
 
+    @Test
+    @DisplayName("Debe validar solicitud de Persona Jurídica con RUC 20, SUNARP y Anexo 4")
+    void testPersonaJuridicaValida() {
+        CrearExpedienteDto dto = crearDtoBase();
+        dto.setTipoPersona(pe.gob.munihuamanga.licencias.common.enums.TipoPersona.JURIDICA);
+        dto.setTipoDocumento(pe.gob.munihuamanga.licencias.common.enums.TipoDocumento.RUC);
+        dto.setDocumentoIdentidad("20601234567");
+        dto.setRazonSocial("INVERSIONES LOS RETABLOS S.A.C.");
+        dto.setPartidaSunarp("11029384");
+        dto.setAsientoSunarp("A0001");
+        dto.setDniRepresentante("42567891");
+        dto.setNombreRepresentante("María Quispe Huamán");
+        dto.setModalidadTramite(pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite.LICENCIA_INDETERMINADA);
+        dto.setFuncionEdificacion(pe.gob.munihuamanga.licencias.common.enums.FuncionEdificacion.COMERCIO);
+        dto.setTipoVia("Jr.");
+        dto.setNombreVia("9 de Diciembre");
+        dto.setNumeroVivienda("142");
+        dto.setUrbanizacion("Centro Histórico");
+        dto.setAforoPersonas(20);
+        dto.setAnexo4Condiciones(pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto.builder()
+                .areaTerreno(new BigDecimal("50.00"))
+                .aforoPersonas(20)
+                .extintoresOperativos(true)
+                .pozoTierraVigente(true)
+                .build());
+
+        Set<ConstraintViolation<CrearExpedienteDto>> violations = validator.validate(dto);
+        assertTrue(violations.isEmpty(), "La solicitud de persona jurídica con Anexo 4 debe ser válida");
+    }
+
     private CrearExpedienteDto crearDtoBase() {
         return CrearExpedienteDto.builder()
                 .solicitanteId(UUID.randomUUID())

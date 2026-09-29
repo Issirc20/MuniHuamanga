@@ -3,8 +3,10 @@ package pe.gob.munihuamanga.licencias.expedientes.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
+import pe.gob.munihuamanga.licencias.expedientes.model.Anexo4Condiciones;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.model.HistorialEstado;
 
@@ -29,6 +31,10 @@ public interface ExpedienteMapper {
     HistorialEstadoDto toHistorialDto(HistorialEstado historial);
 
     List<HistorialEstadoDto> toHistorialDtoList(List<HistorialEstado> historiales);
+
+    Anexo4CondicionesDto toAnexo4Dto(Anexo4Condiciones entity);
+
+    Anexo4Condiciones toAnexo4Entity(Anexo4CondicionesDto dto);
 
     @Named("calcularDiasHabiles")
     default Long calcularDiasHabiles(LocalDateTime fechaLimite) {

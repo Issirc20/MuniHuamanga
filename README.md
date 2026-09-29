@@ -143,7 +143,32 @@ Cada microservicio expone su documentación Swagger UI para pruebas inmediatas:
 
 ---
 
-## 🔄 6. Máquina de Estados del Trámite
+## 🔄 6. Máquina de Estados, Anexos Normativos y Flujo de Derivación
+
+### A. Estructura de Anexos Digitalizados del Expediente
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 EXPEDIENTE DE LICENCIA                                 │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+         ┌──────────────────────────────────┴──────────────────────────────────┐
+         ▼                                                                     ▼
+┌──────────────────────────────────────┐             ┌───────────────────────────────────┐
+│     ANEXO N° 1 (Ley N° 28976)        │             │      ANEXO 4 (D.S. 002-2018)      │
+│ Declaración Jurada para Licencia     │             │ DJ de Condiciones de Seguridad    │
+│ de Funcionamiento (Versión 03)       │             │ (Exclusivo para Riesgo Bajo/Medio)│
+└──────────────────┬───────────────────┘             └─────────────────┬─────────────────┘
+                   │                                                   │
+                   ▼                                                   ▼
+┌──────────────────────────────────────┐             ┌───────────────────────────────────┐
+│       ANEXO 3 (Defensa Civil)        │             │     ANEXO 1 ITSE / ECSE (PCM)     │
+│ Reporte de Nivel de Riesgo del       │             │ Solicitud de Inspección Técnica   │
+│ Establecimiento (Matriz de Riesgos)  │             │ (ITSE Previa / Posterior / ECSE)  │
+└──────────────────────────────────────┘             └───────────────────────────────────┘
+```
+
+### B. Máquina de Estados Finitos C4
 
 ```text
 [ Ingreso de Solicitud ]
@@ -161,6 +186,47 @@ Cada microservicio expone su documentación Swagger UI para pruebas inmediatas:
                                                                      [ APROBADO ]   [ RECHAZADO ]
 ```
 
+### C. Diagrama de Secuencia de Derivación entre Instancias Municipales
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Adm as Administrado (Portal Ciudadano)
+    participant MP as Mesa de Partes Virtual
+    participant DC as Subgerencia de Defensa Civil
+    participant DU as Gerencia de Desarrollo Urbano
+    participant SAT as SAT Huamanga (Recaudación)
+    participant GL as Gerencia de Licencias
+
+    Adm->>MP: 1. Registra Anexo 1 (Licencia) + Anexo 4 (Condiciones de Seguridad)
+    MP->>MP: Genera Expediente EXP-2026-XXXXX y Notifica al Administrado
+    
+    par Derivación Técnica Simultánea
+        MP->>DC: Deriva Expediente para Calificación ITSE
+        DC->>DC: Evalúa Matriz de Riesgo (Anexo 3)
+        alt Riesgo BAJO o MEDIO
+            DC-->>GL: Dictamen Favorable Ex Post (Continúa a emisión)
+        else Riesgo ALTO o MUY ALTO
+            DC->>Adm: Exige Anexo 1 ITSE Previa e inspección en campo
+            DC-->>GL: Informe Técnico ITSE Favorable / Desfavorable
+        end
+    and Verificación Urbanística
+        MP->>DU: Consulta Compatibilidad de Uso y Zonificación PDU
+        DU-->>GL: Visto Bueno de Zonificación Conforme
+    end
+
+    GL->>SAT: Liquida Tasa según Nivel de Riesgo (TUPA)
+    SAT->>Adm: Emite Orden de Pago / Voucher SAT con Código de Barras
+    Adm->>SAT: Efectúa Pago (Ventanilla o Banca)
+    SAT-->>GL: Notifica Validación del Pago (Constancia OP-SAT)
+
+    alt Requisitos y Dictámenes Conformes
+        GL->>Adm: Emite Licencia Oficial Definitiva (con Firma Digital y QR)
+    else Observaciones o Zonificación No Conforme
+        GL->>Adm: Notifica Resolución de Observación / Denegatoria
+    end
+```
+
 ---
 
 ## 📦 7. Cómo Subir este Proyecto a tu Repositorio de GitHub
@@ -171,34 +237,31 @@ El repositorio Git ya se encuentra inicializado localmente. Para publicarlo en t
 2. En tu terminal dentro de la carpeta `d:\ArqSoftware\MuniHuamanga`, ejecuta:
 
 ```powershell
-# 1. Verificar estado local
+# 1. Verificar estado de archivos modificados e incorporados
 git status
 
-# 2. Agregar todos los archivos estructurados
+# 2. Agregar todos los cambios de Fase 01
 git add .
 
-# 3. Realizar el primer commit de Sprint 0
-git commit -m "feat(sprint-0): inicializar arquitectura base, modulos C4, docker y documentacion"
+# 3. Realizar el commit oficial de la Fase 01
+git commit -m "feat(fase-01): digitalizacion de modelos, anexos normativos 1-3-4 y esquema de base de datos"
 
-# 4. Asignar la rama principal
+# 4. Asignar la rama principal (si no está asignada)
 git branch -M main
 
-# 5. Vincular a tu repositorio remoto de GitHub:
-git remote add origin https://github.com/Issirc20/MuniHuamanga.git
-
-# 6. Subir los cambios a GitHub
+# 5. Subir los cambios a GitHub
 git push -u origin main
 ```
 
 ---
 
-## 👥 8. Hoja de Ruta de Sprints Ágiles (Scrum)
+## 👥 8. Hoja de Ruta de Sprints y Fases de Desarrollo
 
-- **✅ Sprint 0:** Setup, Arquitectura base, Multi-módulo, Docker, C4, Repositorios y Tests.
-- **🚀 Sprint 1:** Mesa de Partes Virtual, Flujo de Expedientes, Máquina de Estados y Auditoría Inmutable.
-- **⏳ Sprint 2:** Generación de Formatos PDF oficiales (Anexo 1), Cálculo TUPA y Vouchers SAT.
-- **⏳ Sprint 3:** Evaluación Técnica, Emisión de Licencia con QR Criptográfico y Portal Ciudadano de Verificación.
-- **⏳ Sprint 4:** Adaptador de Integración Fase 2 (SAT / Defensa Civil / Edificaciones), Métricas y Pruebas de Carga (150 usuarios concurrentes).
+- **✅ Fase 01 (Completada):** Digitalización de formularios normativos de Huamanga (Anexo 1 Declaración Jurada v03, Anexo 3 Matriz de Riesgo ITSE, Anexo 4 Condiciones de Seguridad en Edificación, Solicitud ITSE). Enums de identidad (`TipoPersona`, `TipoDocumento`), `ModalidadTramite`, `FuncionEdificacion`, DTOs completos, objeto embebible JPA `Anexo4Condiciones`, DDL/migraciones PostgreSQL y auditoría de derivaciones externas (SAT y Defensa Civil). Consulta el detalle en [docs/entrega-fase-01.md](file:///d:/ArqSoftware/MuniHuamanga/docs/entrega-fase-01.md).
+- **⏳ Fase 02 (En planificación):** Motor de renderizado PDF estándar de alta fidelidad para impresión física y digital de los Anexos 1, 3 y 4 conforme al formato estándar de la municipalidad.
+- **⏳ Fase 03:** Modernización del Frontend (Portal Ciudadano con Wizard Anexo 1 + Anexo 4 interactivo y Portal Interno con bandejas para Mesa de Partes, Defensa Civil y SAT).
+- **⏳ Fase 04:** Dictamen final, emisión de Licencia con QR Criptográfico y firma digital institucional.
+- **⏳ Fase 05:** Pruebas de integración, adaptadores y validación de carga ($\ge 150$ usuarios concurrentes).
 
 ---
 *Municipalidad Provincial de Huamanga — Gerencia de Licencias y Autorizaciones*

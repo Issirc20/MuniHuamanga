@@ -166,7 +166,7 @@ public class ExpedienteController {
             @PathVariable UUID id,
             @Valid @RequestBody ClasificacionRiesgoDto dto
     ) {
-        expedienteService.registrarClasificacionRiesgo(id, dto.getNivelRiesgo());
+        expedienteService.registrarClasificacionRiesgo(id, dto.getNivelRiesgo(), dto.getInformeItseNumero(), dto.getObservaciones());
         return ResponseEntity.noContent().build();
     }
 
@@ -183,7 +183,7 @@ public class ExpedienteController {
             @PathVariable UUID id,
             @Valid @RequestBody RegistroPagoDto dto
     ) {
-        expedienteService.registrarPago(id, dto.getVoucherId());
+        expedienteService.registrarPago(id, dto.getVoucherId(), dto.getNumeroOperacionSat());
         return ResponseEntity.noContent().build();
     }
 
