@@ -29,51 +29,83 @@ El proyecto está organizado como un repositorio multi-módulo Maven (`muni-lice
 
 ```text
 MuniHuamanga/
-├── pom.xml                                  # POM Padre Multi-Módulo
-├── docker-compose.yml                       # Orquestación de PostgreSQL 15 y pgAdmin
+├── pom.xml                                  # POM Padre Multi-Módulo Maven
+├── docker-compose.yml                       # Orquestación de PostgreSQL 15 y pgAdmin 4
 ├── .gitignore                               # Exclusiones optimizadas para Java, Maven e IDEs
 │
-├── common-domain/                           # Modelos, DTOs compartidos, Enums y Excepciones
-│   └── src/main/java/.../domain/
-│       ├── enums/EstadoExpediente.java       # FORMATOS_GENERADOS, DOCUMENTOS_VALIDADOS, etc.
-│       ├── enums/NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO
-│       └── exception/TransicionInvalidaException.java
+├── common-domain/                           # Contratos compartidos entre microservicios
+│   └── src/main/java/.../common/
+│       ├── enums/
+│       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS, DOCUMENTOS_VALIDADOS, etc.
+│       │   ├── NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO
+│       │   ├── TipoPersona.java           # NATURAL, JURIDICA
+│       │   ├── TipoDocumento.java         # DNI, RUC, CARNET_EXTRANJERIA
+│       │   ├── ModalidadTramite.java      # Secc. I Anexo 1 (Indeterminada, Temporal, Anuncio, etc.)
+│       │   └── FuncionEdificacion.java    # Anexos 3 y 4 ITSE (Salud, Encuentro, Comercio, etc.)
+│       ├── dto/
+│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (Anexo 1 + SUNARP + Dirección)
+│       │   ├── ExpedienteResponseDto.java # Payload integral con plazos, estados y evidencias
+│       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (Riesgo Bajo/Medio)
+│       │   ├── ClasificacionRiesgoDto.java# Calificación ITSE (Nivel + N° Informe Técnico)
+│       │   ├── RegistroPagoDto.java       # Validación SAT (Voucher + N° Operación Bancaria)
+│       │   ├── VoucherDto.java            # Datos de orden de pago SAT con código Code 128
+│       │   ├── VerificacionLicenciaDto.java# Consulta pública ciudadana vía QR
+│       │   ├── ResolucionExpedienteDto.java# Dictamen final o motivo de rechazo
+│       │   └── HistorialEstadoDto.java    # Línea de tiempo de auditoría inmutable
+│       └── exception/
+│           ├── TransicionInvalidaException.java
+│           └── RecursoNoEncontradoException.java
 │
-├── servicio-expedientes/                    # Microservicio Central (Puerto 8081)
-│   └── src/main/java/.../expedientes/
-│       ├── controller/ExpedienteController.java
-│       ├── service/ExpedienteService.java
-│       ├── service/CalculadoraDeTasa.java   # Configurable según TUPA municipal (RNF-17)
-│       ├── service/AuditoriaService.java    # Historial inmutable de estados
-│       ├── validator/EstadoExpedienteValidator.java
-│       ├── mapper/ExpedienteMapper.java     # MapStruct con cálculo de 15 días hábiles
-│       └── repository/ExpedienteRepository.java
+├── servicio-expedientes/                    # Microservicio Núcleo del Trámite (Puerto 8081)
+│   ├── src/main/java/.../expedientes/
+│   │   ├── controller/ExpedienteController.java   # Endpoints REST del trámite, ITSE, SAT y licencias
+│   │   ├── service/
+│   │   │   ├── ExpedienteService.java            # Máquina de estados, lógica de negocio y persistencia
+│   │   │   ├── CalculadoraDeTasa.java            # Tarifario TUPA según nivel de riesgo (RNF-17)
+│   │   │   ├── AuditoriaService.java             # Registro inmutable de transiciones y motivos
+│   │   │   └── DocumentoPdfService.java          # Renderizado de fallback para formatos oficiales
+│   │   ├── validator/EstadoExpedienteValidator.java # Validador de transiciones y precondiciones legales
+│   │   ├── mapper/ExpedienteMapper.java          # MapStruct con cálculo de 15 días hábiles y Anexo 4
+│   │   ├── model/
+│   │   │   ├── Expediente.java                   # Entidad JPA con 45 atributos normativos
+│   │   │   ├── Anexo4Condiciones.java            # Objeto embebido JPA (@Embeddable) de seguridad
+│   │   │   └── HistorialEstado.java              # Entidad JPA de auditoría inmutable
+│   │   └── repository/ExpedienteRepository.java
+│   └── src/main/resources/static/                # Interfaz Web y Portales del Sistema
+│       ├── portal-ciudadano.html                 # Mesa de Partes Virtual y Seguimiento de Trámite
+│       ├── portal-interno.html                   # Bandeja de Gestión (Mesa Partes, Defensa Civil, SAT)
+│       ├── verificar-licencia.html               # Portal Público de Verificación de Licencias QR
+│       ├── css/styles.css                        # Sistema de diseño institucional Huamanga
+│       ├── js/                                   # Lógica de cliente, AJAX y validaciones
+│       └── img/escudo-huamanga.png               # Escudo oficial de la Municipalidad de Huamanga
 │
-├── servicio-formularios/                    # Generación de Formatos PDF y Firma (Puerto 8082)
+├── servicio-formularios/                    # Microservicio Documental y Firma (Puerto 8082)
 │   └── src/main/java/.../formularios/
 │       ├── controller/FormulariosController.java
-│       └── service/GeneradorDocumentoService.java  # OpenPDF Anexo 1 Declaración Jurada
+│       └── service/GeneradorDocumentoService.java # OpenPDF: Anexo 1, Solicitud ITSE, Voucher y Licencia
 │
-├── servicio-verificacion-licencias/         # QR ZXing y API Pública (Puerto 8083)
+├── servicio-verificacion-licencias/         # Microservicio de Códigos QR y Consulta (Puerto 8083)
 │   └── src/main/java/.../verificacion/
-│       ├── controller/VerificacionController.java  # Endpoint público RNF-20
-│       └── service/QrGeneratorService.java         # Generador de QR PNG criptográfico (RNF-13)
+│       ├── controller/VerificacionController.java # API pública de fiscalización ciudadana
+│       └── service/QrGeneratorService.java        # Generador de QR PNG criptográfico con ZXing
 │
-├── adaptador-integracion/                   # Adaptador de Integración Fase 2 (Puerto 8084)
+├── adaptador-integracion/                   # Adaptador Hexagonal de Integración (Puerto 8084)
 │   └── src/main/java/.../adaptador/
-│       └── controller/AdaptadorController.java     # Stubs para SAT, Defensa Civil y Zonificación
+│       ├── controller/AdaptadorController.java    # Stubs para SAT, Defensa Civil y Zonificación
+│       └── port/                                 # Puertos de salida hacia entidades externas
 │
-├── api-gateway/                             # Spring Cloud Gateway (Puerto 8080)
-│   └── src/main/resources/application.yml   # Enrutamiento perimetral, CORS y Rate Limiting
+├── api-gateway/                             # Spring Cloud Gateway Perimetral (Puerto 8080)
+│   └── src/main/resources/application.yml        # Enrutamiento, CORS unificado y Rate Limiting
 │
 ├── docker/
-│   └── postgres/init/01-init-databases.sql  # Script DDL con tablas, índices y datos semilla
+│   └── postgres/init/01-init-databases.sql       # Script DDL (45 columnas, índices y migración en caliente)
 │
-└── docs/
-    ├── arquitectura/c4-model.md             # Diagramas C4 Contexto, Contenedores, Componentes
-    ├── scrum/product-backlog.md             # Product Backlog completo con Historias de Usuario
-    ├── scrum/sprint-0-backlog.md            # Entregables y definición de terminado de Sprint 0
-    └── normativa-legal.md                   # Análisis de la Ley N° 28976 y D.S. 046-2017-PCM
+└── docs/                                    # Documentación Técnica, Legal y Arquitectura
+    ├── entrega-fase-01.md                       # Documento Oficial de Entrega de la Fase 01
+    ├── normativa-legal.md                       # Marco Legal: Ley 28976, Anexos 1, 3 y 4 de ITSE
+    ├── v0.1-inventario-matriz-campos.md         # Matriz de trazabilidad campo por campo
+    ├── arquitectura/c4-model.md                 # Arquitectura C4 (Contexto, Contenedores, Componentes)
+    └── scrum/                                   # Product Backlogs e Historias de Usuario
 ```
 
 ---
