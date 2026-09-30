@@ -1,13 +1,14 @@
 # 🏛️ Sistema de Gestión Documentaria del Trámite de Licencia de Funcionamiento
 ### Municipalidad Provincial de Huamanga (MuniHuamanga)
-> **Propuesta de Arquitectura de Software para la Digitalización del Trámite de Licencia de Funcionamiento a cargo de la Gerencia de Licencias, con Firma Digital y Verificación de Licencias mediante Código QR, Desarrollada en Java y PostgreSQL, Modelada con C4 hasta el Nivel de Contenedores y Diseñada para su Integración Futura con Defensa Civil, Edificaciones y el SAT.**
+> **Propuesta de Arquitectura de Software para la Digitalización Integral del Trámite de Licencia de Funcionamiento, con Generación Automática de Formatos Oficiales en PDF (Anexos 1, 3 y 4), Wizard Ciudadano Multipaso, Firma Digital y Verificación de Licencias mediante Código QR, Desarrollada en Java 21 y PostgreSQL 15, Modelada con C4 hasta el Nivel de Componentes.**
 
 ![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot 3.3.4](https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen?logo=springboot)
 ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)
+![OpenPDF 2.0.3](https://img.shields.io/badge/OpenPDF-2.0.3-red)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 ![Architecture C4](https://img.shields.io/badge/Architecture-C4%20Model-indigo)
-![Metodología](https://img.shields.io/badge/Metodolog%C3%ADa-Scrum-yellow)
+![Tests](https://img.shields.io/badge/Tests-53%20passing-brightgreen)
 ![Normativa](https://img.shields.io/badge/Marco%20Legal-Ley%20N%C2%B0%2028976-red)
 
 ---
@@ -16,10 +17,15 @@
 
 El presente proyecto implementa la arquitectura de software empresarial para digitalizar y dar trazabilidad al trámite de **Licencia de Funcionamiento** en el ámbito municipal peruano, anclado al marco normativo de la **Ley N° 28976** y su **TUO aprobado por D.S. N° 046-2017-PCM**.
 
-### 🎯 Enfoque por Fases y Viabilidad Realista
-- **Fase 1 (Alcance actual):** Digitalización del flujo a cargo de la **Gerencia de Licencias**: recepción virtual, cálculo automático de tasas según riesgo ITSE, generación de órdenes de pago, validación y dictamen final, emisión de licencia firmada digitalmente y verificación ciudadana inmediata vía **código QR único**.
-- **Fase 2 (Prevista en el diseño):** Integración directa en línea con el **SAT Huamanga** (pasarela y conciliación bancaria), **Defensa Civil** (clasificación de riesgo ITSE automatizada), **Gerencia de Edificaciones** (zonificación digital) y **Fiscalización**. Mientras tanto, el sistema cuenta con un **Adaptador de Integración** desacoplado para registrar estos dictámenes sin alterar los microservicios centrales.
-- **Capacidad Objetivo:** $\ge 150$ usuarios concurrentes (dimensionamiento representativo de una municipalidad provincial).
+### 🎯 Estado de Fases de Desarrollo
+
+| Fase | Estado | Descripción |
+|------|--------|-------------|
+| **Fase 01** | ✅ Completada | Digitalización de la base de datos (45 atributos normativos), capa de dominio, máquina de estados, APIs REST y auditoría inmutable |
+| **Fase 02** | ✅ Completada | Motor de generación de formatos oficiales en PDF: Anexo 1 (2 pág.), Anexo 3 Matriz ITSE (2 pág.), Anexo 4 Condiciones de Seguridad (4 pág.) |
+| **Fase 03** | ✅ Completada | Frontend Wizard Multipaso (Portal Ciudadano 3 pasos), descarga inmediata de PDFs, Dashboard Interno con KPI cards y columna de Formatos PDF |
+| **Fase 04** | ⏳ Planificada | Notificaciones por correo electrónico (JavaMail/SMTP), autenticación JWT + Spring Security |
+| **Fase 05** | ⏳ Planificada | Pruebas de integración, adaptadores externos y validación de carga (≥150 usuarios concurrentes) |
 
 ---
 
@@ -29,27 +35,27 @@ El proyecto está organizado como un repositorio multi-módulo Maven (`muni-lice
 
 ```text
 MuniHuamanga/
-├── pom.xml                                  # POM Padre Multi-Módulo Maven
+├── pom.xml                                  # POM Padre Multi-Módulo Maven (Java 21 / SB 3.3.4)
 ├── docker-compose.yml                       # Orquestación de PostgreSQL 15 y pgAdmin 4
 ├── .gitignore                               # Exclusiones optimizadas para Java, Maven e IDEs
 │
 ├── common-domain/                           # Contratos compartidos entre microservicios
 │   └── src/main/java/.../common/
 │       ├── enums/
-│       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS, DOCUMENTOS_VALIDADOS, etc.
-│       │   ├── NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO
+│       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS → DOCUMENTOS_VALIDADOS → EN_EVALUACION_FINAL → APROBADO/RECHAZADO
+│       │   ├── NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO (Matriz CENEPRED)
 │       │   ├── TipoPersona.java           # NATURAL, JURIDICA
 │       │   ├── TipoDocumento.java         # DNI, RUC, CARNET_EXTRANJERIA
-│       │   ├── ModalidadTramite.java      # Secc. I Anexo 1 (Indeterminada, Temporal, Anuncio, etc.)
+│       │   ├── ModalidadTramite.java      # Sección I Anexo 1 (Indeterminada, Temporal, Anuncio, etc.)
 │       │   └── FuncionEdificacion.java    # Anexos 3 y 4 ITSE (Salud, Encuentro, Comercio, etc.)
-│       ├── dto/
-│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (Anexo 1 + SUNARP + Dirección)
-│       │   ├── ExpedienteResponseDto.java # Payload integral con plazos, estados y evidencias
-│       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (Riesgo Bajo/Medio)
-│       │   ├── ClasificacionRiesgoDto.java# Calificación ITSE (Nivel + N° Informe Técnico)
-│       │   ├── RegistroPagoDto.java       # Validación SAT (Voucher + N° Operación Bancaria)
-│       │   ├── VoucherDto.java            # Datos de orden de pago SAT con código Code 128
-│       │   ├── VerificacionLicenciaDto.java# Consulta pública ciudadana vía QR
+│       ├── dto/                            # 9 DTOs de contrato inter-servicio
+│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (45 campos, Anexo 1 + SUNARP + Dirección)
+│       │   ├── ExpedienteResponseDto.java # Payload integral (estado, plazos, tasas, licenciaQrCode)
+│       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (23 campos booleanos)
+│       │   ├── ClasificacionRiesgoDto.java# Calificación ITSE (Nivel + N° Informe Técnico + Observaciones)
+│       │   ├── RegistroPagoDto.java       # Validación SAT (Voucher + N° Operación Bancaria + Monto)
+│       │   ├── VoucherDto.java            # Orden de pago SAT con código Code 128
+│       │   ├── VerificacionLicenciaDto.java# Consulta pública ciudadana vía QR (RNF-20)
 │       │   ├── ResolucionExpedienteDto.java# Dictamen final o motivo de rechazo
 │       │   └── HistorialEstadoDto.java    # Línea de tiempo de auditoría inmutable
 │       └── exception/
@@ -58,131 +64,195 @@ MuniHuamanga/
 │
 ├── servicio-expedientes/                    # Microservicio Núcleo del Trámite (Puerto 8081)
 │   ├── src/main/java/.../expedientes/
-│   │   ├── controller/ExpedienteController.java   # Endpoints REST del trámite, ITSE, SAT y licencias
+│   │   ├── ExpedientesApplication.java
+│   │   ├── config/DataInitializer.java          # Datos semilla de prueba (expedientes demo)
+│   │   ├── controller/
+│   │   │   ├── ExpedienteController.java        # 18 endpoints REST del trámite
+│   │   │   ├── PublicLicenciasController.java   # Endpoint público de verificación QR (RNF-20)
+│   │   │   └── GlobalExceptionHandler.java      # Manejo global de errores HTTP
 │   │   ├── service/
-│   │   │   ├── ExpedienteService.java            # Máquina de estados, lógica de negocio y persistencia
-│   │   │   ├── CalculadoraDeTasa.java            # Tarifario TUPA según nivel de riesgo (RNF-17)
-│   │   │   ├── AuditoriaService.java             # Registro inmutable de transiciones y motivos
-│   │   │   └── DocumentoPdfService.java          # Renderizado de fallback para formatos oficiales
-│   │   ├── validator/EstadoExpedienteValidator.java # Validador de transiciones y precondiciones legales
-│   │   ├── mapper/ExpedienteMapper.java          # MapStruct con cálculo de 15 días hábiles y Anexo 4
+│   │   │   ├── ExpedienteService.java           # Máquina de estados (467 líneas), lógica y persistencia
+│   │   │   ├── CalculadoraDeTasa.java           # Tarifario TUPA por nivel de riesgo ITSE
+│   │   │   ├── AuditoriaService.java            # Log inmutable de transiciones con sellado de tiempo
+│   │   │   ├── MetricasExpedienteService.java   # Micrometer: SLAs, alertas de vencimiento
+│   │   │   ├── DocumentoPdfService.java         # Motor PDF local (Anexo 1, 3, 4, Voucher, Licencia)
+│   │   │   ├── Anexo1PdfGenerator.java          # Generador Anexo 1 (2 páginas, Ley 28976)
+│   │   │   ├── Anexo3PdfGenerator.java          # Generador Matriz ITSE (2 páginas, CENEPRED)
+│   │   │   └── Anexo4PdfGenerator.java          # Generador Condiciones de Seguridad (4 páginas)
+│   │   ├── validator/EstadoExpedienteValidator.java # Precondiciones legales de aprobación
+│   │   ├── mapper/ExpedienteMapper.java          # MapStruct: cómputo 15 días hábiles + Anexo 4
 │   │   ├── model/
 │   │   │   ├── Expediente.java                   # Entidad JPA con 45 atributos normativos
-│   │   │   ├── Anexo4Condiciones.java            # Objeto embebido JPA (@Embeddable) de seguridad
-│   │   │   └── HistorialEstado.java              # Entidad JPA de auditoría inmutable
-│   │   └── repository/ExpedienteRepository.java
-│   └── src/main/resources/static/                # Interfaz Web y Portales del Sistema
-│       ├── portal-ciudadano.html                 # Mesa de Partes Virtual y Seguimiento de Trámite
-│       ├── portal-interno.html                   # Bandeja de Gestión (Mesa Partes, Defensa Civil, SAT)
-│       ├── verificar-licencia.html               # Portal Público de Verificación de Licencias QR
-│       ├── css/styles.css                        # Sistema de diseño institucional Huamanga
-│       ├── js/                                   # Lógica de cliente, AJAX y validaciones
-│       └── img/escudo-huamanga.png               # Escudo oficial de la Municipalidad de Huamanga
+│   │   │   ├── Anexo4Condiciones.java            # Objeto embebido JPA (@Embeddable) 23 campos
+│   │   │   └── HistorialEstado.java              # Auditoría inmutable @Entity
+│   │   └── repository/
+│   │       ├── ExpedienteRepository.java
+│   │       └── HistorialRepository.java
+│   └── src/main/resources/
+│       ├── application.yml                       # Configuración Spring, JPA, Swagger
+│       ├── application-local.yml                 # Perfil local con PostgreSQL
+│       └── static/                              # Frontend Institucional (Fase 3)
+│           ├── index.html                        # Landing page con 4 tarjetas de acceso
+│           ├── portal-ciudadano.html             # 🆕 Wizard Multipaso: 3 pasos + Descarga PDFs
+│           ├── portal-interno.html               # 🆕 Dashboard KPI + Bandeja con Formatos PDF
+│           ├── verificar-licencia.html           # Portal Público de Verificación QR (RNF-20)
+│           ├── css/styles.css                    # 🆕 Sistema de diseño (820 líneas): wizard, doc-cards, kpi-v2
+│           ├── js/
+│           │   ├── portal-ciudadano.js           # 🆕 Wizard logic: navegación, validaciones, fetch+blob
+│           │   ├── portal-interno.js             # 🆕 renderFormatosPdf(), descargarFormatoInterno()
+│           │   └── verificar-licencia.js         # Consulta QR pública
+│           └── img/escudo-huamanga.png           # Escudo oficial de Huamanga
 │
-├── servicio-formularios/                    # Microservicio Documental y Firma (Puerto 8082)
+├── servicio-formularios/                    # Microservicio de Generación Documental PDF (Puerto 8082)
 │   └── src/main/java/.../formularios/
-│       ├── controller/FormulariosController.java
+│       ├── FormulariosApplication.java
+│       ├── controller/FormulariosController.java # 7 endpoints POST de generación PDF
 │       └── service/
-│           ├── GeneradorDocumentoService.java # Coordinador de generación documental
-│           ├── Anexo1PdfGenerator.java        # Formato oficial Ley 28976 (2 páginas)
-│           ├── Anexo3PdfGenerator.java        # Reporte Matriz de Riesgo ITSE (2 páginas)
-│           └── Anexo4PdfGenerator.java        # Declaración de Condiciones de Seguridad (4 páginas)
+│           ├── GeneradorDocumentoService.java    # Coordinador: delega a generadores especializados
+│           ├── Anexo1PdfGenerator.java           # Formato Ley 28976 con escudo (2 páginas)
+│           ├── Anexo3PdfGenerator.java           # Matriz ITSE CENEPRED, colores oficiales (2 páginas)
+│           └── Anexo4PdfGenerator.java           # Declaración Condiciones de Seguridad (4 páginas)
 │
-├── servicio-verificacion-licencias/         # Microservicio de Códigos QR y Consulta (Puerto 8083)
+├── servicio-verificacion-licencias/         # Microservicio de Verificación QR (Puerto 8083)
 │   └── src/main/java/.../verificacion/
-│       ├── controller/VerificacionController.java # API pública de fiscalización ciudadana
-│       └── service/QrGeneratorService.java        # Generador de QR PNG criptográfico con ZXing
+│       ├── controller/VerificacionController.java
+│       └── service/QrGeneratorService.java       # ZXing 3.5.3: QR PNG criptográfico
 │
-├── adaptador-integracion/                   # Adaptador Hexagonal de Integración (Puerto 8084)
+├── adaptador-integracion/                   # Adaptador Hexagonal SAT/DefensaCivil (Puerto 8084)
 │   └── src/main/java/.../adaptador/
-│       ├── controller/AdaptadorController.java    # Stubs para SAT, Defensa Civil y Zonificación
-│       └── port/                                 # Puertos de salida hacia entidades externas
+│       └── [Stubs y puertos de integración externa]
 │
 ├── api-gateway/                             # Spring Cloud Gateway Perimetral (Puerto 8080)
-│   └── src/main/resources/application.yml        # Enrutamiento, CORS unificado y Rate Limiting
+│   └── src/main/resources/application.yml  # Enrutamiento reactivo, CORS, Rate Limiting
 │
 ├── docker/
-│   └── postgres/init/01-init-databases.sql       # Script DDL (45 columnas, índices y migración en caliente)
+│   └── postgres/init/01-init-databases.sql # DDL: 45 columnas, índices, migración en caliente
 │
-└── docs/                                    # Documentación Técnica, Legal y Arquitectura
-    ├── entrega-fase-01.md                       # Documento Oficial de Entrega de la Fase 01
-    ├── entrega-fase-02.md                       # Documento Oficial de Entrega de la Fase 02 (Motor PDF)
-    ├── normativa-legal.md                       # Marco Legal: Ley 28976, Anexos 1, 3 y 4 de ITSE
-    ├── v0.1-inventario-matriz-campos.md         # Matriz de trazabilidad campo por campo
-    ├── arquitectura/c4-model.md                 # Arquitectura C4 (Contexto, Contenedores, Componentes)
-    └── scrum/                                   # Product Backlogs e Historias de Usuario
+└── docs/                                    # Documentación Técnica Oficial
+    ├── entrega-fase-01.md                   # Entrega Fase 01: Dominio, BD y APIs
+    ├── entrega-fase-02.md                   # Entrega Fase 02: Motor PDF (Anexos 1, 3, 4)
+    ├── entrega-fase-03.md                   # 🆕 Entrega Fase 03: Frontend Wizard + Descarga PDFs
+    ├── normativa-legal.md                   # Marco Legal: Ley 28976, Anexos 1, 3 y 4 ITSE
+    ├── v0.1-inventario-matriz-campos.md     # Matriz de trazabilidad campo por campo (45 atributos)
+    ├── arquitectura/c4-model.md             # Modelo C4 actualizado (Contexto, Contenedores, Componentes)
+    └── scrum/                               # Product Backlogs e Historias de Usuario
 ```
 
 ---
 
 ## ⚙️ 3. Requisitos del Entorno
 
-Para compilar y ejecutar este proyecto localmente, necesitas tener instalado:
-- **JDK 21** (Eclipse Adoptium Temurin o similar LTS).
-- **Apache Maven 3.9+**
-- **Docker Desktop** (con soporte Docker Compose).
-- **Git**
+| Herramienta | Versión | Notas |
+|-------------|---------|-------|
+| **JDK** | 21 LTS | Eclipse Adoptium Temurin recomendado |
+| **Apache Maven** | 3.9+ | Multi-módulo POM |
+| **Docker Desktop** | Cualquiera con Compose v2 | Para PostgreSQL 15 |
+| **Git** | 2.x+ | |
 
 ---
 
 ## 🚀 4. Guía Rápida de Inicio
 
 ### Paso 1: Iniciar la Base de Datos PostgreSQL
-En la raíz del proyecto, ejecuta Docker Compose para levantar PostgreSQL 15 con el esquema DDL y datos semilla:
 ```bash
 docker-compose up -d postgres
 ```
-> **Credenciales:**  
-> - Host: `localhost:5432`  
-> - Base de datos: `muni_licencias_db`  
-> - Usuario: `muni_user`  
-> - Contraseña: `muni_pass123`  
-> - (Opcional) Interfaz visual pgAdmin: http://localhost:5050 (`admin@munihuamanga.gob.pe` / `admin`)
+> **Credenciales:**
+> - Host: `localhost:5432` | BD: `muni_licencias_db` | User: `muni_user` | Pass: `muni_pass123`
+> - pgAdmin: http://localhost:5050 (`admin@munihuamanga.gob.pe` / `admin`)
 
-### Paso 2: Compilar y Ejecutar Pruebas Automatizadas
-Compila la suite multi-módulo completa y ejecuta los tests unitarios:
+### Paso 2: Compilar y Ejecutar Pruebas (53 tests)
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
 $env:PATH="$env:JAVA_HOME\bin;C:\tools\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin;$env:PATH"
 
 mvn clean test
+# Expected: BUILD SUCCESS — Tests run: 53, Failures: 0, Errors: 0
 ```
 
 ### Paso 3: Ejecutar los Microservicios
-Puedes iniciar los servicios individualmente o mediante el Gateway:
 ```powershell
-# En terminal 1 (Núcleo de Expedientes):
+# Terminal 1 — Expedientes + Frontend (Portal Ciudadano, Interno, Verificación)
 mvn spring-boot:run -pl servicio-expedientes
 
-# En terminal 2 (Formularios PDF):
+# Terminal 2 — Generación de PDF Oficiales (Anexos 1, 3, 4, Voucher, Licencia)
 mvn spring-boot:run -pl servicio-formularios
 
-# En terminal 3 (Verificación y QR):
+# Terminal 3 — Verificación QR Pública
 mvn spring-boot:run -pl servicio-verificacion-licencias
 
-# En terminal 4 (Adaptador Fase 2):
+# Terminal 4 — Adaptador SAT/Defensa Civil
 mvn spring-boot:run -pl adaptador-integracion
 
-# En terminal 5 (API Gateway principal):
+# Terminal 5 — API Gateway (punto único de entrada)
 mvn spring-boot:run -pl api-gateway
 ```
+
+### Paso 4: Acceso a los Portales
+| Portal | URL |
+|--------|-----|
+| **Landing Page** | http://localhost:8081/ |
+| **Portal Ciudadano (Wizard)** | http://localhost:8081/portal-ciudadano.html |
+| **Gestión Interna** | http://localhost:8081/portal-interno.html |
+| **Verificación QR Pública** | http://localhost:8081/verificar-licencia.html |
 
 ---
 
 ## 📖 5. Documentación Interactiva de APIs (Swagger / OpenAPI)
 
-Cada microservicio expone su documentación Swagger UI para pruebas inmediatas:
-- **Servicio de Expedientes:** http://localhost:8081/swagger-ui.html
-- **Servicio de Formularios:** http://localhost:8082/swagger-ui.html
-- **Servicio de Verificación y QR:** http://localhost:8083/swagger-ui.html
-- **Adaptador de Integración:** http://localhost:8084/swagger-ui.html
-- **Entrada Perimetral (Gateway):** http://localhost:8080
+| Servicio | URL Swagger |
+|----------|-------------|
+| Servicio de Expedientes | http://localhost:8081/swagger-ui.html |
+| Servicio de Formularios | http://localhost:8082/swagger-ui.html |
+| Servicio de Verificación | http://localhost:8083/swagger-ui.html |
+| Adaptador de Integración | http://localhost:8084/swagger-ui.html |
+| API Gateway (entrada) | http://localhost:8080 |
 
 ---
 
-## 🔄 6. Máquina de Estados, Anexos Normativos y Flujo de Derivación
+## 🔌 6. Catálogo Completo de Endpoints REST
 
-### A. Estructura de Anexos Digitalizados del Expediente
+### 6.1 Servicio de Expedientes (`servicio-expedientes` :8081)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/api/expedientes` | Mesa de Partes Virtual: Registrar nueva solicitud |
+| `GET` | `/api/expedientes` | Listar expedientes (filtros: `?estado=&conAlerta=true`) |
+| `GET` | `/api/expedientes/{id}` | Consultar expediente por UUID |
+| `GET` | `/api/expedientes/tramite/{numero}` | Seguimiento ciudadano por N° trámite (EXP-2026-XXXXX) |
+| `GET` | `/api/expedientes/{id}/historial` | Historial cronológico de estados (auditoría) |
+| `GET` | `/api/expedientes/{id}/desglose-tasa` | Desglose de conceptos tributarios TUPA |
+| `GET` | `/api/expedientes/{id}/documentos/declaracion-jurada` | 📄 PDF Anexo 1 — Declaración Jurada |
+| `GET` | `/api/expedientes/{id}/documentos/anexo1-declaracion-jurada` | 📄 PDF Anexo 1 (alternativo) |
+| `GET` | `/api/expedientes/{id}/documentos/anexo3-matriz-riesgo-itse` | 🛡️ PDF Anexo 3 — Matriz ITSE |
+| `GET` | `/api/expedientes/{id}/documentos/anexo4-condiciones-seguridad` | 🔒 PDF Anexo 4 — Condiciones Seguridad |
+| `GET` | `/api/expedientes/{id}/documentos/voucher-sat` | 🧾 PDF Voucher SAT con Code 128 |
+| `GET` | `/api/expedientes/{id}/documentos/licencia` | 📜 PDF Licencia Oficial con QR y Sello Digital |
+| `GET` | `/api/expedientes/{id}/qr` | 🔲 Imagen PNG del código QR de la licencia |
+| `POST` | `/api/expedientes/{id}/clasificacion-riesgo` | Defensa Civil: Registrar dictamen ITSE |
+| `POST` | `/api/expedientes/{id}/voucher` | SAT: Generar orden de pago |
+| `POST` | `/api/expedientes/{id}/pago` | SAT: Registrar constancia de pago |
+| `POST` | `/api/expedientes/{id}/aprobar` | Gerencia Licencias: Dictamen favorable + emisión QR |
+| `POST` | `/api/expedientes/{id}/rechazar` | Gerencia Licencias: Dictamen de rechazo |
+| `GET` | `/api/licencias/verificar/{codigo}` | Portal público de verificación de autenticidad |
+
+### 6.2 Servicio de Formularios (`servicio-formularios` :8082)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `POST` | `/api/formularios/declaracion-jurada` | PDF Anexo 1 desde payload ExpedienteResponseDto |
+| `POST` | `/api/formularios/anexo1-declaracion-jurada` | PDF Anexo 1 (2 páginas, Ley 28976) |
+| `POST` | `/api/formularios/anexo3-matriz-riesgo-itse` | PDF Anexo 3 (2 páginas, Matriz ITSE CENEPRED) |
+| `POST` | `/api/formularios/anexo4-condiciones-seguridad` | PDF Anexo 4 (4 páginas, Condiciones Seguridad) |
+| `POST` | `/api/formularios/defensa-civil` | PDF Solicitud ITSE (D.S. N° 002-2018-PCM) |
+| `POST` | `/api/formularios/voucher-sat` | PDF Voucher SAT con código de barras Code 128 |
+| `POST` | `/api/formularios/licencia` | PDF Licencia Oficial con QR y Sello Digital |
+
+---
+
+## 🔄 7. Flujo del Sistema y Máquina de Estados
+
+### A. Estructura de Anexos Digitalizados
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -208,22 +278,38 @@ Cada microservicio expone su documentación Swagger UI para pruebas inmediatas:
 ### B. Máquina de Estados Finitos C4
 
 ```text
-[ Ingreso de Solicitud ]
-           │
-           ▼
- [ FORMATOS_GENERADOS ]  ──(Defensa Civil registra clasificación ITSE)──► [ DOCUMENTOS_VALIDADOS ]
-                                                                                   │
-                                                                       (Pago validado en SAT)
-                                                                                   │
-                                                                                   ▼
-                                                                        [ EN_EVALUACION_FINAL ]
-                                                                          │               │
-                                              (Favorable: Emisión con QR) │               │ (Desfavorable)
-                                                                          ▼               ▼
-                                                                     [ APROBADO ]   [ RECHAZADO ]
+   [Portal Ciudadano: Wizard 3 pasos → POST /api/expedientes]
+                          │
+                          ▼
+             [ FORMATOS_GENERADOS ]
+               ↓ Defensa Civil registra ITSE
+             [ DOCUMENTOS_VALIDADOS ]
+               ↓ Pago validado en SAT
+             [ EN_EVALUACION_FINAL ]
+               ↓                  ↓
+          [ APROBADO ]       [ RECHAZADO ]
+    (Licencia PDF + QR)   (Resolución de Denegatoria)
 ```
 
-### C. Diagrama de Secuencia de Derivación entre Instancias Municipales
+### C. Flujo del Wizard Ciudadano (Fase 3)
+
+```text
+PASO 1: Datos del Solicitante  →  PASO 2: Datos del Establecimiento  →  PASO 3: Confirmación
+     (Validación en JS)              (Área m² → Riesgo ITSE)           (Resumen + DDJJ)
+                                                                               │
+                                                                     POST /api/expedientes
+                                                                               │
+                                                                    ┌──────────▼──────────┐
+                                                                    │   BANNER DE ÉXITO   │
+                                                                    │   EXP-2026-XXXXX    │
+                                                                    │                     │
+                                                                    │ 📋 Anexo 1 (GET)    │
+                                                                    │ 🛡️ Anexo 3 (POST)   │
+                                                                    │ 🔒 Anexo 4 (POST)   │
+                                                                    └─────────────────────┘
+```
+
+### D. Diagrama de Secuencia de Derivación entre Instancias Municipales
 
 ```mermaid
 sequenceDiagram
@@ -266,39 +352,48 @@ sequenceDiagram
 
 ---
 
-## 📦 7. Cómo Subir este Proyecto a tu Repositorio de GitHub
-
-El repositorio Git ya se encuentra inicializado localmente. Para publicarlo en tu cuenta de GitHub, sigue estos pasos:
-
-1. Crea un repositorio vacío en tu cuenta de GitHub (ejemplo: `muni-huamanga-licencias`).
-2. En tu terminal dentro de la carpeta `d:\ArqSoftware\MuniHuamanga`, ejecuta:
+## 📦 8. Comandos Git — Flujo de Trabajo del Proyecto
 
 ```powershell
-# 1. Verificar estado de archivos modificados e incorporados
+# Ver estado del árbol de trabajo
 git status
 
-# 2. Agregar todos los cambios de Fase 01
+# Ver historial de commits (regla de oro: commit por cada cambio)
+git log --oneline
+
+# Agregar y publicar cambios
 git add .
+git commit -m "tipo(alcance): descripcion breve"
+git push origin main
+```
 
-# 3. Realizar el commit oficial de la Fase 01
-git commit -m "feat(fase-01): digitalizacion de modelos, anexos normativos 1-3-4 y esquema de base de datos"
+### Historial de Commits Principales
 
-# 4. Asignar la rama principal (si no está asignada)
-git branch -M main
-
-# 5. Subir los cambios a GitHub
-git push -u origin main
+```
+5330790  feat(fase-03/frontend): wizard multipaso ciudadano + descarga de anexos PDF
+9cabbcb  docs(fase-02): documentar motor de generacion de formatos estandar y endpoints pdf
+6d906d7  feat(fase-02): digitalizar formato oficial de anexo 4 declaracion jurada
+bbb242c  feat(fase-02): digitalizar formato oficial de anexo 3 matriz de riesgo itse
+d2295ca  feat(fase-02): digitalizar formato oficial de anexo 1 declaracion jurada
 ```
 
 ---
 
-## 👥 8. Hoja de Ruta de Sprints y Fases de Desarrollo
+## 👥 9. Hoja de Ruta de Sprints y Fases de Desarrollo
 
-- **✅ Fase 01 (Completada):** Digitalización de formularios normativos de Huamanga (Anexo 1 Declaración Jurada v03, Anexo 3 Matriz de Riesgo ITSE, Anexo 4 Condiciones de Seguridad en Edificación, Solicitud ITSE). Enums de identidad (`TipoPersona`, `TipoDocumento`), `ModalidadTramite`, `FuncionEdificacion`, DTOs completos, objeto embebible JPA `Anexo4Condiciones`, DDL/migraciones PostgreSQL y auditoría de derivaciones externas (SAT y Defensa Civil). Consulta el detalle en [docs/entrega-fase-01.md](file:///d:/ArqSoftware/MuniHuamanga/docs/entrega-fase-01.md).
-- **⏳ Fase 02 (En planificación):** Motor de renderizado PDF estándar de alta fidelidad para impresión física y digital de los Anexos 1, 3 y 4 conforme al formato estándar de la municipalidad.
-- **⏳ Fase 03:** Modernización del Frontend (Portal Ciudadano con Wizard Anexo 1 + Anexo 4 interactivo y Portal Interno con bandejas para Mesa de Partes, Defensa Civil y SAT).
-- **⏳ Fase 04:** Dictamen final, emisión de Licencia con QR Criptográfico y firma digital institucional.
-- **⏳ Fase 05:** Pruebas de integración, adaptadores y validación de carga ($\ge 150$ usuarios concurrentes).
+| Sprint | Fase | Estado | Entregables |
+|--------|------|--------|-------------|
+| Sprint 1 | **Fase 01** | ✅ | BD 45 atributos, dominio JPA, APIs REST, auditoría |
+| Sprint 2 | **Fase 02** | ✅ | PDFs Anexo 1 (2p), Anexo 3 (2p), Anexo 4 (4p), Voucher SAT, Licencia QR |
+| Sprint 3 | **Fase 03** | ✅ | Wizard ciudadano 3 pasos, Dashboard KPI, Descarga inmediata PDF |
+| Sprint 4 | **Fase 04** | ⏳ | Notificaciones email, JWT + Spring Security, CRUD TUPA |
+| Sprint 5 | **Fase 05** | ⏳ | Tests integración, adaptadores externos, pruebas de carga |
+
+- **✅ Fase 01 (Completada):** [docs/entrega-fase-01.md](docs/entrega-fase-01.md)
+- **✅ Fase 02 (Completada):** [docs/entrega-fase-02.md](docs/entrega-fase-02.md)
+- **✅ Fase 03 (Completada):** [docs/entrega-fase-03.md](docs/entrega-fase-03.md)
 
 ---
+
 *Municipalidad Provincial de Huamanga — Gerencia de Licencias y Autorizaciones*
+*Marco Legal: Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM*
