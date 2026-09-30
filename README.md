@@ -82,7 +82,11 @@ MuniHuamanga/
 ├── servicio-formularios/                    # Microservicio Documental y Firma (Puerto 8082)
 │   └── src/main/java/.../formularios/
 │       ├── controller/FormulariosController.java
-│       └── service/GeneradorDocumentoService.java # OpenPDF: Anexo 1, Solicitud ITSE, Voucher y Licencia
+│       └── service/
+│           ├── GeneradorDocumentoService.java # Coordinador de generación documental
+│           ├── Anexo1PdfGenerator.java        # Formato oficial Ley 28976 (2 páginas)
+│           ├── Anexo3PdfGenerator.java        # Reporte Matriz de Riesgo ITSE (2 páginas)
+│           └── Anexo4PdfGenerator.java        # Declaración de Condiciones de Seguridad (4 páginas)
 │
 ├── servicio-verificacion-licencias/         # Microservicio de Códigos QR y Consulta (Puerto 8083)
 │   └── src/main/java/.../verificacion/
@@ -102,6 +106,7 @@ MuniHuamanga/
 │
 └── docs/                                    # Documentación Técnica, Legal y Arquitectura
     ├── entrega-fase-01.md                       # Documento Oficial de Entrega de la Fase 01
+    ├── entrega-fase-02.md                       # Documento Oficial de Entrega de la Fase 02 (Motor PDF)
     ├── normativa-legal.md                       # Marco Legal: Ley 28976, Anexos 1, 3 y 4 de ITSE
     ├── v0.1-inventario-matriz-campos.md         # Matriz de trazabilidad campo por campo
     ├── arquitectura/c4-model.md                 # Arquitectura C4 (Contexto, Contenedores, Componentes)
