@@ -20,7 +20,34 @@ class LicenciaPdfServiceTest {
 
     @BeforeEach
     void setUp() {
-        documentoPdfService = new DocumentoPdfService();
+        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator());
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar el Anexo 1 oficial en PDF de 2 páginas con tablas y croquis")
+    void testGenerarAnexo1DeclaracionJuradaValido() {
+        ExpedienteResponseDto dto = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00001")
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("45879632")
+                .razonSocial("INVERSIONES AYACUCHO S.A.C.")
+                .nombreComercial("Restaurante El Rincón Huamanguino")
+                .giroNegocio("Restaurante")
+                .direccionEstablecimiento("Jr. 28 de Julio N° 120, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("120.50"))
+                .nivelRiesgo(NivelRiesgo.MEDIO)
+                .tipoItse("ITSE POSTERIOR")
+                .montoTasa(new BigDecimal("218.00"))
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = documentoPdfService.generarAnexo1DeclaracionJurada(dto);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 5000, "El PDF oficial del Anexo 1 debe superar 5KB");
+        String header = new String(pdfBytes, 0, 5);
+        assertEquals("%PDF-", header);
     }
 
     @Test

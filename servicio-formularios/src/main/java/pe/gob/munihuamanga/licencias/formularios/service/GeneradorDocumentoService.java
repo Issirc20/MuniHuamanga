@@ -18,6 +18,7 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,10 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GeneradorDocumentoService {
+
+    private final Anexo1PdfGenerator anexo1PdfGenerator;
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")
     private String portalVerificacionUrl;
@@ -47,88 +51,17 @@ public class GeneradorDocumentoService {
     private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     /**
+     * Fase 2 / US-05: Genera el Anexo 1 oficial en PDF: Declaración Jurada para Licencia de Funcionamiento (2 páginas).
+     */
+    public byte[] generarAnexo1DeclaracionJurada(ExpedienteResponseDto expediente) {
+        return anexo1PdfGenerator.generarPdf(expediente);
+    }
+
+    /**
      * US-05: Genera en PDF el Anexo 1 oficial: Declaración Jurada para Licencia de Funcionamiento.
      */
     public byte[] generarDeclaracionJurada(ExpedienteResponseDto expediente) {
-        Document document = new Document(PageSize.A4, 36, 36, 40, 36);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        try {
-            PdfWriter.getInstance(document, baos);
-            document.open();
-
-            // Encabezado institucional
-            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, new Color(0, 51, 102));
-            Paragraph header = new Paragraph("MUNICIPALIDAD PROVINCIAL DE HUAMANGA\nGERENCIA DE LICENCIAS Y AUTORIZACIONES", fontHeader);
-            header.setAlignment(Element.ALIGN_CENTER);
-            document.add(header);
-
-            Font fontSub = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, new Color(180, 83, 9));
-            Paragraph sub = new Paragraph("ANEXO 1 — DECLARACIÓN JURADA PARA LICENCIA DE FUNCIONAMIENTO\n(Ley N° 28976 — TUO aprobado por Decreto Supremo N° 046-2017-PCM)", fontSub);
-            sub.setAlignment(Element.ALIGN_CENTER);
-            document.add(sub);
-
-            document.add(new Paragraph("\n"));
-
-            // Sección 1: Datos del Solicitante
-            document.add(crearTituloSeccion("I. DATOS DEL SOLICITANTE O TITULAR"));
-            PdfPTable t1 = new PdfPTable(2);
-            t1.setWidthPercentage(100);
-            t1.setSpacingBefore(5f);
-            t1.setSpacingAfter(10f);
-
-            agregarFila(t1, "Número de Trámite:", expediente.getNumeroTramite() != null ? expediente.getNumeroTramite() : "-");
-            agregarFila(t1, "Titular / Solicitante:", expediente.getNombreTitular() != null ? expediente.getNombreTitular() : "-");
-            agregarFila(t1, "Documento de Identidad:", expediente.getDocumentoIdentidad() != null ? expediente.getDocumentoIdentidad() : "-");
-            agregarFila(t1, "Razón Social:", expediente.getRazonSocial() != null ? expediente.getRazonSocial() : "(Persona Natural)");
-            agregarFila(t1, "Teléfono Celular:", expediente.getTelefono() != null ? expediente.getTelefono() : "-");
-            agregarFila(t1, "Correo Electrónico:", expediente.getCorreoElectronico() != null ? expediente.getCorreoElectronico() : "-");
-            document.add(t1);
-
-            // Sección 2: Datos del Establecimiento
-            document.add(crearTituloSeccion("II. DATOS DEL ESTABLECIMIENTO OBJETO DE LA SOLICITUD"));
-            PdfPTable t2 = new PdfPTable(2);
-            t2.setWidthPercentage(100);
-            t2.setSpacingBefore(5f);
-            t2.setSpacingAfter(10f);
-
-            agregarFila(t2, "Nombre Comercial:", expediente.getNombreComercial() != null ? expediente.getNombreComercial() : "-");
-            agregarFila(t2, "Giro o Actividad Comercial:", expediente.getGiroNegocio() != null ? expediente.getGiroNegocio() : "-");
-            agregarFila(t2, "Dirección en Huamanga:", expediente.getDireccionEstablecimiento() != null ? expediente.getDireccionEstablecimiento() : "-");
-            agregarFila(t2, "Área Total del Local:", expediente.getAreaMetrosCuadrados() != null ? expediente.getAreaMetrosCuadrados() + " m²" : "-");
-            agregarFila(t2, "Riesgo ITSE Determinado:", expediente.getNivelRiesgo() != null ? expediente.getNivelRiesgo() + " (" + expediente.getTipoItse() + ")" : "Por Determinar");
-            agregarFila(t2, "Fecha de Presentación:", expediente.getFechaCreacion() != null ? expediente.getFechaCreacion().format(FORMATTER) : "-");
-            document.add(t2);
-
-            // Sección 3: Declaración Jurada de Condiciones
-            document.add(crearTituloSeccion("III. DECLARACIÓN JURADA DE CUMPLIMIENTO DE CONDICIONES"));
-            Font fontText = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
-            Paragraph pCondiciones = new Paragraph(
-                    "1. Declaro que el establecimiento cumple con la zonificación y compatibilidad de uso vigente según el Plan de Desarrollo Urbano de la Municipalidad Provincial de Huamanga.\n" +
-                    "2. Declaro que el local cuenta con las condiciones de seguridad en edificaciones (extintores, señalética, sistema eléctrico conforme) exigidas por el Reglamento de Inspecciones Técnicas de Seguridad en Edificaciones (D.S. N° 002-2018-PCM).\n" +
-                    "3. Me sujeto al principio de presunción de veracidad y a la fiscalización posterior regulada por el TUO de la Ley N° 27444.",
-                    fontText
-            );
-            pCondiciones.setAlignment(Element.ALIGN_JUSTIFIED);
-            document.add(pCondiciones);
-
-            // Espacio de Firmas y Sello de Integridad
-            Paragraph firma = new Paragraph(
-                    "\n\n\n___________________________________________\n" +
-                    "Firma del Administrado o Representante Legal\n" +
-                    "DNI / RUC: " + (expediente.getDocumentoIdentidad() != null ? expediente.getDocumentoIdentidad() : "") + "\n\n" +
-                    "--- DOCUMENTO GENERADO ELECTRÓNICAMENTE CON VALIDEZ OFICIAL ---",
-                    FontFactory.getFont(FontFactory.HELVETICA, 9, Color.GRAY)
-            );
-            firma.setAlignment(Element.ALIGN_CENTER);
-            document.add(firma);
-
-            document.close();
-            return baos.toByteArray();
-        } catch (Exception e) {
-            log.error("Error al generar PDF de Declaración Jurada", e);
-            throw new RuntimeException("Error al generar PDF de Declaración Jurada", e);
-        }
+        return anexo1PdfGenerator.generarPdf(expediente);
     }
 
     /**

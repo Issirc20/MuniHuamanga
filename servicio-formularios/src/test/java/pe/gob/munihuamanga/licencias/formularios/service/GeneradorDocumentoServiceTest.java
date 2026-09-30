@@ -23,7 +23,34 @@ class GeneradorDocumentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        generador = new GeneradorDocumentoService();
+        generador = new GeneradorDocumentoService(new Anexo1PdfGenerator());
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar PDF oficial del Anexo 1 de 2 páginas con estructura reglamentaria")
+    void testGenerarAnexo1DeclaracionJuradaOficial() {
+        ExpedienteResponseDto exp = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00001")
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("42567891")
+                .nombreComercial("Boutique Huamanga")
+                .giroNegocio("Venta de artesanías y textiles ayacuchanos")
+                .direccionEstablecimiento("Jr. 9 de Diciembre 142, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("45.50"))
+                .estado(EstadoExpediente.FORMATOS_GENERADOS)
+                .nivelRiesgo(NivelRiesgo.BAJO)
+                .tipoItse("ITSE_POSTERIOR")
+                .fechaCreacion(LocalDateTime.now())
+                .fechaLimite(LocalDateTime.now().plusDays(21))
+                .build();
+
+        byte[] pdfBytes = generador.generarAnexo1DeclaracionJurada(exp);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 5000, "El PDF oficial de 2 páginas debe contener tablas completas y superar 5KB");
+        String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
+        assertTrue(pdfHeader.startsWith("%PDF-"), "El archivo debe iniciar con %PDF-");
     }
 
     @Test

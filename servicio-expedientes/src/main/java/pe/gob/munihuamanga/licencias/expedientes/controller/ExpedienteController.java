@@ -105,6 +105,19 @@ public class ExpedienteController {
         return ResponseEntity.ok(calculadoraDeTasa.calcularDesglose(riesgo));
     }
 
+    @GetMapping("/{id}/documentos/anexo1-declaracion-jurada")
+    @Operation(summary = "Fase 2: Descargar en PDF el Anexo 1 oficial de 2 páginas (Ley N° 28976 / D.S. N° 046-2017-PCM)")
+    public ResponseEntity<byte[]> descargarAnexo1DeclaracionJurada(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(dto);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @GetMapping("/{id}/documentos/declaracion-jurada")
     @Operation(summary = "US-05: Descargar en PDF el Anexo 1 oficial: Declaración Jurada para Licencia")
     public ResponseEntity<byte[]> descargarDeclaracionJurada(@PathVariable UUID id) {

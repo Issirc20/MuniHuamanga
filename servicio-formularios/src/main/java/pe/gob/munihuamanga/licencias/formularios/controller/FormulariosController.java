@@ -22,6 +22,16 @@ public class FormulariosController {
 
     private final GeneradorDocumentoService generadorDocumentoService;
 
+    @PostMapping("/anexo1-declaracion-jurada")
+    @Operation(summary = "Fase 2: Generar PDF oficial del Anexo 1 de 2 páginas (Ley N° 28976 / D.S. N° 046-2017-PCM)")
+    public ResponseEntity<byte[]> generarAnexo1DeclaracionJurada(@RequestBody ExpedienteResponseDto expediente) {
+        byte[] pdf = generadorDocumentoService.generarAnexo1DeclaracionJurada(expediente);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + expediente.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @PostMapping("/declaracion-jurada")
     @Operation(summary = "US-05: Generar PDF oficial de Declaración Jurada (Anexo 1 del D.S. N° 046-2017-PCM)")
     public ResponseEntity<byte[]> generarDeclaracionJurada(@RequestBody ExpedienteResponseDto expediente) {
