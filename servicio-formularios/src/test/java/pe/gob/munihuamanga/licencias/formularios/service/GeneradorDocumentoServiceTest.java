@@ -3,6 +3,7 @@ package pe.gob.munihuamanga.licencias.formularios.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
@@ -23,7 +24,49 @@ class GeneradorDocumentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        generador = new GeneradorDocumentoService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator());
+        generador = new GeneradorDocumentoService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator(), new Anexo4PdfGenerator());
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar PDF oficial del Anexo 4 (Condiciones de Seguridad - 4 páginas) con desglose por pisos y checklist")
+    void testGenerarAnexo4CondicionesSeguridadOficial() {
+        Anexo4CondicionesDto condiciones = Anexo4CondicionesDto.builder()
+                .areaPiso1(new BigDecimal("80.00"))
+                .areaPiso2(new BigDecimal("40.00"))
+                .areaTechadaTotal(new BigDecimal("120.00"))
+                .areaOcupadaTotal(new BigDecimal("120.00"))
+                .aforoPersonas(45)
+                .antiguedadEdificacionAnios(8)
+                .antiguedadGiroAnios(3)
+                .extintoresOperativos(true)
+                .lucesEmergenciaOperativas(true)
+                .pozoTierraVigente(true)
+                .tableroElectricoProtegido(true)
+                .build();
+
+        ExpedienteResponseDto exp = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00003")
+                .nombreTitular("Rosa Benítez Torres")
+                .documentoIdentidad("41258963")
+                .nombreComercial("Farmacia y Bazar Ayacucho")
+                .giroNegocio("Botica y bazar")
+                .direccionEstablecimiento("Jr. Callao N° 215, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("120.00"))
+                .aforoPersonas(45)
+                .estado(EstadoExpediente.FORMATOS_GENERADOS)
+                .nivelRiesgo(NivelRiesgo.MEDIO)
+                .tipoItse("ITSE_POSTERIOR")
+                .anexo4Condiciones(condiciones)
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = generador.generarAnexo4CondicionesSeguridad(exp);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 8000, "El PDF oficial del Anexo 4 de 4 páginas debe superar 8KB");
+        String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
+        assertTrue(pdfHeader.startsWith("%PDF-"));
     }
 
     @Test

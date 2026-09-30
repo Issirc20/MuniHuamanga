@@ -44,6 +44,7 @@ public class GeneradorDocumentoService {
 
     private final Anexo1PdfGenerator anexo1PdfGenerator;
     private final Anexo3PdfGenerator anexo3PdfGenerator;
+    private final Anexo4PdfGenerator anexo4PdfGenerator;
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")
     private String portalVerificacionUrl;
@@ -77,6 +78,13 @@ public class GeneradorDocumentoService {
      */
     public byte[] generarSolicitudItsePdf(ExpedienteResponseDto expediente) {
         return anexo3PdfGenerator.generarPdf(expediente);
+    }
+
+    /**
+     * Fase 2: Genera el Anexo 4 oficial en PDF: Declaración Jurada de Cumplimiento de Condiciones de Seguridad (4 páginas).
+     */
+    public byte[] generarAnexo4CondicionesSeguridad(ExpedienteResponseDto expediente) {
+        return anexo4PdfGenerator.generarPdf(expediente);
     }
 
     /**

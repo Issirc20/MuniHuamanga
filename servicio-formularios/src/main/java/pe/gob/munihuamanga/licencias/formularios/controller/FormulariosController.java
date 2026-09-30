@@ -52,6 +52,16 @@ public class FormulariosController {
                 .body(pdf);
     }
 
+    @PostMapping("/anexo4-condiciones-seguridad")
+    @Operation(summary = "Fase 2: Generar PDF oficial del Anexo 4 de 4 páginas (Declaración Jurada de Cumplimiento de Condiciones de Seguridad)")
+    public ResponseEntity<byte[]> generarAnexo4CondicionesSeguridad(@RequestBody ExpedienteResponseDto expediente) {
+        byte[] pdf = generadorDocumentoService.generarAnexo4CondicionesSeguridad(expediente);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo4-CondicionesSeguridad-" + expediente.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @PostMapping("/defensa-civil")
     @Operation(summary = "US-05: Generar PDF oficial de Solicitud de Inspección Técnica ITSE (D.S. N° 002-2018-PCM)")
     public ResponseEntity<byte[]> generarSolicitudItse(@RequestBody ExpedienteResponseDto expediente) {

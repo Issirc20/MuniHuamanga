@@ -131,6 +131,19 @@ public class ExpedienteController {
                 .body(pdf);
     }
 
+    @GetMapping("/{id}/documentos/anexo4-condiciones-seguridad")
+    @Operation(summary = "Fase 2: Descargar en PDF el Anexo 4 oficial (Declaración Jurada de Condiciones de Seguridad de 4 páginas)")
+    public ResponseEntity<byte[]> descargarAnexo4CondicionesSeguridad(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarAnexo4CondicionesSeguridad(dto);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo4-CondicionesSeguridad-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @GetMapping("/{id}/documentos/declaracion-jurada")
     @Operation(summary = "US-05: Descargar en PDF el Anexo 1 oficial: Declaración Jurada para Licencia")
     public ResponseEntity<byte[]> descargarDeclaracionJurada(@PathVariable UUID id) {

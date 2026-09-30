@@ -20,7 +20,33 @@ class LicenciaPdfServiceTest {
 
     @BeforeEach
     void setUp() {
-        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator());
+        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator(), new Anexo4PdfGenerator());
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar el Anexo 4 oficial (Condiciones de Seguridad) en PDF de 4 páginas")
+    void testGenerarAnexo4CondicionesSeguridadValido() {
+        ExpedienteResponseDto dto = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00003")
+                .nombreTitular("Rosa Benítez Torres")
+                .documentoIdentidad("41258963")
+                .nombreComercial("Farmacia y Bazar Ayacucho")
+                .giroNegocio("Botica y bazar")
+                .direccionEstablecimiento("Jr. Callao N° 215, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("120.00"))
+                .aforoPersonas(45)
+                .nivelRiesgo(NivelRiesgo.MEDIO)
+                .tipoItse("ITSE POSTERIOR")
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = documentoPdfService.generarAnexo4CondicionesSeguridad(dto);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 8000, "El PDF del Anexo 4 de 4 páginas debe superar 8KB");
+        String header = new String(pdfBytes, 0, 5);
+        assertEquals("%PDF-", header);
     }
 
     @Test
