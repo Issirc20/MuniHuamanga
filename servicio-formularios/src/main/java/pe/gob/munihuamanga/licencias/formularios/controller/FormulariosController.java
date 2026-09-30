@@ -42,6 +42,16 @@ public class FormulariosController {
                 .body(pdf);
     }
 
+    @PostMapping("/anexo3-matriz-riesgo-itse")
+    @Operation(summary = "Fase 2: Generar PDF oficial del Anexo 3 de 2 páginas (Matriz de Riesgo ITSE según D.S. N° 002-2018-PCM / CENEPRED)")
+    public ResponseEntity<byte[]> generarAnexo3MatrizRiesgoItse(@RequestBody ExpedienteResponseDto expediente) {
+        byte[] pdf = generadorDocumentoService.generarAnexo3MatrizRiesgoItse(expediente);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo3-MatrizRiesgoITSE-" + expediente.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @PostMapping("/defensa-civil")
     @Operation(summary = "US-05: Generar PDF oficial de Solicitud de Inspección Técnica ITSE (D.S. N° 002-2018-PCM)")
     public ResponseEntity<byte[]> generarSolicitudItse(@RequestBody ExpedienteResponseDto expediente) {

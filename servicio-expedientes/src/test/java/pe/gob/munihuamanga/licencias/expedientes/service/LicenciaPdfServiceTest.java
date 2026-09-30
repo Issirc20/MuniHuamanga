@@ -20,7 +20,34 @@ class LicenciaPdfServiceTest {
 
     @BeforeEach
     void setUp() {
-        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator());
+        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator());
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar el Anexo 3 oficial (Matriz ITSE) en PDF de 2 páginas con tablas CENEPRED")
+    void testGenerarAnexo3MatrizRiesgoItseValido() {
+        ExpedienteResponseDto dto = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00002")
+                .nombreTitular("Carlos Huamán Mendoza")
+                .documentoIdentidad("28549632")
+                .nombreComercial("Pollería El Portal")
+                .giroNegocio("Restaurante")
+                .direccionEstablecimiento("Portal Constitución 45, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("180.00"))
+                .aforoPersonas(70)
+                .nivelRiesgo(NivelRiesgo.ALTO)
+                .tipoItse("ITSE PREVIA")
+                .numeroInformeItse("ITSE-2026-DC-00221")
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = documentoPdfService.generarAnexo3MatrizRiesgoItse(dto);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 5000, "El PDF del Anexo 3 debe superar 5KB");
+        String header = new String(pdfBytes, 0, 5);
+        assertEquals("%PDF-", header);
     }
 
     @Test

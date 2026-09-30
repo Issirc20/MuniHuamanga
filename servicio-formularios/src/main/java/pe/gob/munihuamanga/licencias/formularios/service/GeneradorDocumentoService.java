@@ -43,6 +43,7 @@ import java.util.Map;
 public class GeneradorDocumentoService {
 
     private final Anexo1PdfGenerator anexo1PdfGenerator;
+    private final Anexo3PdfGenerator anexo3PdfGenerator;
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")
     private String portalVerificacionUrl;
@@ -65,62 +66,17 @@ public class GeneradorDocumentoService {
     }
 
     /**
+     * Fase 2: Genera el Anexo 3 oficial en PDF: Reporte de Nivel de Riesgo del Establecimiento (Matriz ITSE - 2 páginas).
+     */
+    public byte[] generarAnexo3MatrizRiesgoItse(ExpedienteResponseDto expediente) {
+        return anexo3PdfGenerator.generarPdf(expediente);
+    }
+
+    /**
      * US-05: Genera en PDF la Solicitud de Inspección Técnica de Seguridad en Edificaciones (ITSE).
      */
     public byte[] generarSolicitudItsePdf(ExpedienteResponseDto expediente) {
-        Document document = new Document(PageSize.A4, 36, 36, 40, 36);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        try {
-            PdfWriter.getInstance(document, baos);
-            document.open();
-
-            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, new Color(0, 51, 102));
-            Paragraph header = new Paragraph("MUNICIPALIDAD PROVINCIAL DE HUAMANGA\nSUBGERENCIA DE DEFENSA CIVIL Y GESTIÓN DEL RIESGO", fontHeader);
-            header.setAlignment(Element.ALIGN_CENTER);
-            document.add(header);
-
-            Font fontSub = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.DARK_GRAY);
-            Paragraph sub = new Paragraph("SOLICITUD DE INSPECCIÓN TÉCNICA DE SEGURIDAD EN EDIFICACIONES (ITSE)\n(Decreto Supremo N° 002-2018-PCM)", fontSub);
-            sub.setAlignment(Element.ALIGN_CENTER);
-            document.add(sub);
-
-            document.add(new Paragraph("\n"));
-
-            PdfPTable t = new PdfPTable(2);
-            t.setWidthPercentage(100);
-            agregarFila(t, "Expediente Asociado:", expediente.getNumeroTramite() != null ? expediente.getNumeroTramite() : "-");
-            agregarFila(t, "Administrado:", expediente.getNombreTitular() != null ? expediente.getNombreTitular() : "-");
-            agregarFila(t, "Nombre Comercial:", expediente.getNombreComercial() != null ? expediente.getNombreComercial() : "-");
-            agregarFila(t, "Giro del Local:", expediente.getGiroNegocio() != null ? expediente.getGiroNegocio() : "-");
-            agregarFila(t, "Dirección:", expediente.getDireccionEstablecimiento() != null ? expediente.getDireccionEstablecimiento() : "-");
-            agregarFila(t, "Área Declarada:", expediente.getAreaMetrosCuadrados() != null ? expediente.getAreaMetrosCuadrados() + " m²" : "-");
-            agregarFila(t, "Nivel de Riesgo Solicitado:", expediente.getNivelRiesgo() != null ? expediente.getNivelRiesgo().name() : "A DETERMINAR EN INSPECCIÓN");
-            agregarFila(t, "Modalidad:", expediente.getTipoItse() != null ? expediente.getTipoItse() : "ITSE POSTERIOR / PREVIA");
-
-            document.add(t);
-
-            Paragraph pNota = new Paragraph(
-                    "\nNota: Para establecimientos de Riesgo Bajo o Medio, la inspección es posterior al otorgamiento de la licencia. Para establecimientos de Riesgo Alto o Muy Alto, se requiere inspección previa favorable.",
-                    FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, Color.GRAY)
-            );
-            document.add(pNota);
-
-            Paragraph firmaInspector = new Paragraph(
-                    "\n\n\n\n___________________________________________\n" +
-                    "Subgerencia de Defensa Civil — Inspector Técnico ITSE\n" +
-                    "Municipalidad Provincial de Huamanga",
-                    FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK)
-            );
-            firmaInspector.setAlignment(Element.ALIGN_CENTER);
-            document.add(firmaInspector);
-
-            document.close();
-            return baos.toByteArray();
-        } catch (Exception e) {
-            log.error("Error al generar PDF de ITSE", e);
-            throw new RuntimeException("Error al generar PDF de solicitud ITSE", e);
-        }
+        return anexo3PdfGenerator.generarPdf(expediente);
     }
 
     /**

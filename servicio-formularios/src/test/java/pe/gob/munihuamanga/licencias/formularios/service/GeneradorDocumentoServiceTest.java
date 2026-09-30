@@ -23,7 +23,7 @@ class GeneradorDocumentoServiceTest {
 
     @BeforeEach
     void setUp() {
-        generador = new GeneradorDocumentoService(new Anexo1PdfGenerator());
+        generador = new GeneradorDocumentoService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator());
     }
 
     @Test
@@ -51,6 +51,34 @@ class GeneradorDocumentoServiceTest {
         assertTrue(pdfBytes.length > 5000, "El PDF oficial de 2 páginas debe contener tablas completas y superar 5KB");
         String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
         assertTrue(pdfHeader.startsWith("%PDF-"), "El archivo debe iniciar con %PDF-");
+    }
+
+    @Test
+    @DisplayName("Fase 2: Debe generar PDF oficial del Anexo 3 (Matriz ITSE - 2 páginas) con funciones y factores agravantes")
+    void testGenerarAnexo3MatrizRiesgoItseOficial() {
+        ExpedienteResponseDto exp = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00002")
+                .nombreTitular("Carlos Huamán Mendoza")
+                .documentoIdentidad("28549632")
+                .nombreComercial("Pollería y Parrillas El Portal")
+                .giroNegocio("Restaurante / Expendio de comidas")
+                .direccionEstablecimiento("Portal Constitución 45, Huamanga")
+                .areaMetrosCuadrados(new BigDecimal("180.00"))
+                .aforoPersonas(65)
+                .estado(EstadoExpediente.FORMATOS_GENERADOS)
+                .nivelRiesgo(NivelRiesgo.ALTO)
+                .tipoItse("ITSE_PREVIA")
+                .numeroInformeItse("ITSE-2026-DC-00124")
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = generador.generarAnexo3MatrizRiesgoItse(exp);
+
+        assertNotNull(pdfBytes);
+        assertTrue(pdfBytes.length > 5000, "El PDF del Anexo 3 de 2 páginas debe superar 5KB");
+        String pdfHeader = new String(pdfBytes, 0, 5, StandardCharsets.US_ASCII);
+        assertTrue(pdfHeader.startsWith("%PDF-"));
     }
 
     @Test

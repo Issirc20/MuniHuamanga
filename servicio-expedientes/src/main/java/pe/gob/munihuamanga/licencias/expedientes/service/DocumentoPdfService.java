@@ -46,6 +46,7 @@ import java.util.Map;
 public class DocumentoPdfService {
 
     private final Anexo1PdfGenerator anexo1PdfGenerator;
+    private final Anexo3PdfGenerator anexo3PdfGenerator;
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")
     private String portalVerificacionUrl;
@@ -59,6 +60,10 @@ public class DocumentoPdfService {
 
     public byte[] generarDeclaracionJurada(ExpedienteResponseDto expediente) {
         return anexo1PdfGenerator.generarPdf(expediente);
+    }
+
+    public byte[] generarAnexo3MatrizRiesgoItse(ExpedienteResponseDto expediente) {
+        return anexo3PdfGenerator.generarPdf(expediente);
     }
 
     public byte[] generarVoucherSatPdf(VoucherDto voucher) {
