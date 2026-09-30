@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portal Ciudadano para el trámite digital de Licencia de Funcionamiento — Municipalidad Provincial de Huamanga. Ley N° 28976.">
   <title>Portal Ciudadano — Licencia de Funcionamiento | MuniHuamanga</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -26,7 +27,7 @@
 
   <main class="container">
 
-    <!-- Navegación por pestañas -->
+    <!-- Navegación por pestañas principales -->
     <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
       <button id="tabBtnRegistro" class="btn btn-primary" onclick="mostrarPestana('registro')">
         📝 Mesa de Partes Virtual (Nueva Solicitud)
@@ -36,87 +37,240 @@
       </button>
     </div>
 
-    <!-- Sección 1: Formulario de Mesa de Partes Virtual -->
+    <!-- ======================================================
+         SECCIÓN 1: FORMULARIO WIZARD MULTIPASO
+         ====================================================== -->
     <section id="secRegistro" class="card">
       <div class="card-header">
         <div>
           <h2 class="card-title">Mesa de Partes Virtual: Registro de Solicitud</h2>
-          <p class="hint">Complete los datos de su establecimiento conforme a la Ley Marco de Licencia de Funcionamiento (TUO D.S. N° 046-2017-PCM).</p>
+          <p class="hint">Complete los 3 pasos del formulario conforme a la Ley Marco de Licencia de Funcionamiento (TUO D.S. N° 046-2017-PCM).</p>
         </div>
         <span class="badge badge-formatos">Procedimiento Digital</span>
       </div>
 
-      <form id="formRegistro" onsubmit="registrarSolicitud(event)">
-        <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 1rem;">1. Datos del Solicitante o Representante Legal</h3>
+      <!-- Stepper de pasos -->
+      <div class="wizard-stepper" id="wizardStepper">
+        <div class="wizard-step active" id="wizStep1">
+          <div class="wizard-step-node">1</div>
+          <div class="wizard-step-label">Datos del Solicitante</div>
+        </div>
+        <div class="wizard-step" id="wizStep2">
+          <div class="wizard-step-node">2</div>
+          <div class="wizard-step-label">Datos del Establecimiento</div>
+        </div>
+        <div class="wizard-step" id="wizStep3">
+          <div class="wizard-step-node">3</div>
+          <div class="wizard-step-label">Confirmación y Formatos</div>
+        </div>
+      </div>
+
+      <!-- Barra de progreso -->
+      <div class="wizard-progress-bar">
+        <div class="wizard-progress-fill" id="wizProgressFill" style="width: 16.67%;"></div>
+      </div>
+
+      <!-- ── PANEL 1: Datos del Solicitante ── -->
+      <div class="wizard-panel active" id="wizPanel1">
+        <p class="section-title">👤 Paso 1 de 3 — Datos del Solicitante o Representante Legal</p>
         <div class="form-grid">
           <div class="form-group">
             <label for="nombreTitular">Nombres y Apellidos del Titular *</label>
-            <input type="text" id="nombreTitular" required placeholder="Ej: Juan Carlos Perez Quispe">
+            <input type="text" id="nombreTitular" placeholder="Ej: Juan Carlos Perez Quispe">
           </div>
 
           <div class="form-group">
             <label for="documentoIdentidad">Documento de Identidad (DNI o RUC) *</label>
-            <input type="text" id="documentoIdentidad" required maxlength="11" placeholder="DNI (8 dígitos) o RUC (11 dígitos)">
+            <input type="text" id="documentoIdentidad" maxlength="11" placeholder="DNI (8 dígitos) o RUC (11 dígitos)">
             <span class="hint">Ej: 45879632 (DNI) o 20601234567 (RUC)</span>
           </div>
 
           <div class="form-group">
-            <label for="razonSocial">Razón Social (Solo personas jurídicas)</label>
+            <label for="razonSocial">Razón Social (solo personas jurídicas)</label>
             <input type="text" id="razonSocial" placeholder="Ej: INVERSIONES HUAMANGA S.A.C.">
           </div>
 
           <div class="form-group">
             <label for="telefono">Teléfono Celular *</label>
-            <input type="tel" id="telefono" required maxlength="9" placeholder="9XXXXXXXX">
+            <input type="tel" id="telefono" maxlength="9" placeholder="9XXXXXXXX">
           </div>
 
           <div class="form-group full-width">
             <label for="correoElectronico">Correo Electrónico para Notificaciones *</label>
-            <input type="email" id="correoElectronico" required placeholder="correo@ejemplo.com">
+            <input type="email" id="correoElectronico" placeholder="correo@ejemplo.com">
             <span class="hint">Se le notificará cada avance y resolución de su trámite.</span>
           </div>
         </div>
 
-        <h3 style="font-size: 1rem; color: var(--primary); margin: 2rem 0 1rem;">2. Datos del Establecimiento Comercial</h3>
+        <div class="alerta-legal">
+          ⚖️ <span>Conforme al <strong>Art. 42° de la Ley N° 27444</strong>, los datos ingresados están sujetos al principio de presunción de veracidad. La falsedad declarada conlleva responsabilidad penal y administrativa.</span>
+        </div>
+
+        <div class="wizard-nav">
+          <span class="wizard-nav-indicator">Paso 1 de 3</span>
+          <button class="btn btn-primary" onclick="irPaso(2)" id="btnSiguiente1">
+            Siguiente: Datos del Establecimiento →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PANEL 2: Datos del Establecimiento ── -->
+      <div class="wizard-panel" id="wizPanel2">
+        <p class="section-title">🏪 Paso 2 de 3 — Datos del Establecimiento Comercial</p>
         <div class="form-grid">
           <div class="form-group">
             <label for="nombreComercial">Nombre Comercial del Negocio *</label>
-            <input type="text" id="nombreComercial" required placeholder="Ej: Cafetería y Panadería El Huamanguino">
+            <input type="text" id="nombreComercial" placeholder="Ej: Cafetería y Panadería El Huamanguino">
           </div>
 
           <div class="form-group">
-            <label for="giroNegocio">Giro o Actividad Económica *</label>
-            <input type="text" id="giroNegocio" required placeholder="Ej: Venta de abarrotes, bazar o artesanía">
+            <label for="giroNegocio">Giro o Actividad Económica (CIIU) *</label>
+            <input type="text" id="giroNegocio" placeholder="Ej: Venta de abarrotes, bazar o artesanía">
           </div>
 
-          <div class="form-group">
+          <div class="form-group full-width">
             <label for="direccionEstablecimiento">Dirección del Establecimiento en Huamanga *</label>
-            <input type="text" id="direccionEstablecimiento" required placeholder="Ej: Jr. 28 de Julio N° 340, Ayacucho">
+            <input type="text" id="direccionEstablecimiento" placeholder="Ej: Jr. 28 de Julio N° 340, Ayacucho">
           </div>
 
           <div class="form-group">
             <label for="areaMetrosCuadrados">Área Total en Metros Cuadrados (m²) *</label>
-            <input type="number" id="areaMetrosCuadrados" required min="1" step="0.01" placeholder="Ej: 45.00">
-            <span class="hint">Determina la inspección ITSE de Defensa Civil</span>
+            <input type="number" id="areaMetrosCuadrados" min="1" step="0.01" placeholder="Ej: 45.00">
+            <span class="hint">⚠️ El área determina el nivel de riesgo ITSE según CENEPRED</span>
+          </div>
+
+          <div class="form-group">
+            <label for="selNumPisos">N° de Pisos del Local</label>
+            <select id="selNumPisos">
+              <option value="1">1 piso</option>
+              <option value="2">2 pisos</option>
+              <option value="3">3 pisos</option>
+              <option value="4+">4 o más pisos</option>
+            </select>
           </div>
         </div>
 
-        <div style="margin-top: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
-          <label style="display: flex; gap: 0.5rem; align-items: center; cursor: pointer;">
-            <input type="checkbox" id="chkVeracidad" required style="width: auto;">
-            <span>Declaro bajo juramento que los datos ingresados son auténticos y se sujetan al principio de presunción de veracidad (Ley N° 27444).</span>
+        <div class="alerta-legal" style="margin-top: 1rem;">
+          🛡️ <span>El área declarada determina el tipo de <strong>Inspección Técnica de Seguridad en Edificaciones (ITSE)</strong>: &lt;500 m² = Riesgo Bajo/Medio (Ex Post); ≥500 m² = Riesgo Alto/Muy Alto (Previa). <em>D.S. N° 002-2018-PCM / CENEPRED.</em></span>
+        </div>
+
+        <div class="wizard-nav">
+          <button class="btn btn-secondary" onclick="irPaso(1)">← Anterior</button>
+          <span class="wizard-nav-indicator">Paso 2 de 3</span>
+          <button class="btn btn-primary" onclick="irPaso(3)" id="btnSiguiente2">
+            Siguiente: Revisión y Formatos →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PANEL 3: Confirmación, Registro y Descarga de Formatos ── -->
+      <div class="wizard-panel" id="wizPanel3">
+        <p class="section-title">✅ Paso 3 de 3 — Confirmación, Declaración Jurada y Formatos Oficiales</p>
+
+        <!-- Resumen de datos ingresados -->
+        <div id="resumenDatos" class="resumen-grid">
+          <!-- Llenado dinámicamente por JS -->
+        </div>
+
+        <!-- Checkbox declaración jurada -->
+        <div style="background: #f0f4ff; border: 1px solid #c7d7ff; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <label style="display: flex; gap: 0.75rem; align-items: flex-start; cursor: pointer;">
+            <input type="checkbox" id="chkVeracidad" style="width: auto; margin-top: 3px; flex-shrink: 0;">
+            <span style="font-size: 0.875rem; color: #1e3a8a; line-height: 1.5;">
+              <strong>Declaración Jurada de Veracidad:</strong> Declaro bajo juramento que todos los datos ingresados son auténticos, verídicos y exactos, sujetándome al principio de presunción de veracidad establecido en el Art. 42° de la Ley N° 27444 — Ley del Procedimiento Administrativo General.
+            </span>
           </label>
         </div>
 
-        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-          <button type="submit" class="btn btn-primary" id="btnEnviar">
-            🚀 Enviar Solicitud a Mesa de Partes
+        <!-- Botón de envío -->
+        <div id="zonaBtnEnviar" style="text-align: right; margin-bottom: 2rem;">
+          <button type="button" class="btn btn-primary" id="btnEnviar" onclick="registrarSolicitud()" style="font-size: 1rem; padding: 0.9rem 2rem;">
+            🚀 Enviar Solicitud a Mesa de Partes Digitales
           </button>
         </div>
-      </form>
+
+        <!-- ══ Banner de Éxito + Descarga de Formatos (se muestra tras registro) ══ -->
+        <div id="bannerExito" style="display: none;">
+          <div class="success-banner">
+            <span class="success-icon">🎉</span>
+            <h3>¡Solicitud Registrada Exitosamente!</h3>
+            <p style="color: #047857; font-size: 0.9rem;">Su expediente ha sido ingresado a la Mesa de Partes Virtual.</p>
+            <div class="numero-tramite" id="txtNumeroTramiteGenerado">EXP-2026-XXXXX</div>
+            <p style="color: #065f46; font-size: 0.8rem;">Plazo máximo de resolución: <strong>15 días hábiles</strong> (Art. 7° Ley N° 28976)</p>
+          </div>
+
+          <!-- Formatos Oficiales Generados -->
+          <p class="section-title">📑 Formatos Oficiales Generados — Descargue sus documentos</p>
+          <div class="doc-cards-grid">
+
+            <!-- Anexo 1 -->
+            <div class="doc-card anexo1">
+              <div class="doc-card-icon">📋</div>
+              <span class="doc-card-badge obligatorio">Obligatorio</span>
+              <div class="doc-card-title">Anexo 1 — Declaración Jurada de Licencia</div>
+              <div class="doc-card-desc">
+                Formulario de 2 páginas. Declaración jurada del solicitante conforme al D.S. N° 046-2017-PCM para el trámite de licencia de funcionamiento.
+              </div>
+              <button class="btn btn-primary" id="btnAnexo1" onclick="descargarAnexo('declaracion-jurada')">
+                ⬇ Descargar Anexo 1 (PDF)
+              </button>
+            </div>
+
+            <!-- Anexo 3 -->
+            <div class="doc-card anexo3">
+              <div class="doc-card-icon">🛡️</div>
+              <span class="doc-card-badge automatico">Auto-generado</span>
+              <div class="doc-card-title">Anexo 3 — Matriz de Riesgo ITSE</div>
+              <div class="doc-card-desc">
+                Formulario de 2 páginas. Clasificación de nivel de riesgo ITSE (Bajo / Medio / Alto / Muy Alto) conforme al D.S. N° 002-2018-PCM y lineamientos CENEPRED.
+              </div>
+              <button class="btn btn-secondary" id="btnAnexo3" onclick="descargarAnexo('anexo3-matriz-riesgo-itse')" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                ⬇ Descargar Anexo 3 (PDF)
+              </button>
+            </div>
+
+            <!-- Anexo 4 -->
+            <div class="doc-card anexo4">
+              <div class="doc-card-icon">🔒</div>
+              <span class="doc-card-badge obligatorio">Obligatorio</span>
+              <div class="doc-card-title">Anexo 4 — Condiciones de Seguridad</div>
+              <div class="doc-card-desc">
+                Formulario de 4 páginas. Declaración Jurada de Cumplimiento de Condiciones de Seguridad (infraestructura, equipos, evacuación). D.S. N° 002-2018-PCM.
+              </div>
+              <button class="btn btn-success" id="btnAnexo4" onclick="descargarAnexo('anexo4-condiciones-seguridad')">
+                ⬇ Descargar Anexo 4 (PDF)
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Alerta de plazos -->
+          <div class="alerta-legal" style="margin-top: 0.5rem;">
+            📅 <span>Conserve todos los formatos descargados. Si su establecimiento requiere <strong>ITSE Previa</strong> (área ≥ 500 m²), presente el Informe Técnico Favorable de Defensa Civil antes de la inspección municipal. <em>Art. 5° D.S. N° 002-2018-PCM.</em></span>
+          </div>
+
+          <!-- Botón para ir a seguimiento -->
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="irASeguimiento()">
+              🔍 Consultar Estado de mi Trámite →
+            </button>
+            <button class="btn btn-secondary" onclick="nuevaSolicitud()">
+              ➕ Registrar Otra Solicitud
+            </button>
+          </div>
+        </div>
+
+        <div class="wizard-nav" id="wizNavPaso3">
+          <button class="btn btn-secondary" onclick="irPaso(2)">← Anterior</button>
+          <span class="wizard-nav-indicator">Paso 3 de 3 — Envío final</span>
+          <span></span>
+        </div>
+      </div>
     </section>
 
-    <!-- Sección 2: Seguimiento Ciudadano en Línea -->
+    <!-- ======================================================
+         SECCIÓN 2: SEGUIMIENTO CIUDADANO EN LÍNEA
+         ====================================================== -->
     <section id="secSeguimiento" class="card" style="display: none;">
       <div class="card-header">
         <div>
@@ -139,11 +293,11 @@
           </div>
           <div class="timeline-step" id="step-DOCUMENTOS_VALIDADOS">
             <div class="timeline-node">2</div>
-            <div class="timeline-label">ITSE & Tasa Validada</div>
+            <div class="timeline-label">ITSE &amp; Tasa Validada</div>
           </div>
           <div class="timeline-step" id="step-EN_EVALUACION_FINAL">
             <div class="timeline-node">3</div>
-            <div class="timeline-label">Pago SAT & Evaluación</div>
+            <div class="timeline-label">Pago SAT &amp; Evaluación</div>
           </div>
           <div class="timeline-step" id="step-APROBADO">
             <div class="timeline-node">4</div>
@@ -187,7 +341,7 @@
           </div>
         </div>
 
-        <!-- Ficha Especial de Licencia Aprobada (US-09, US-10, US-12) -->
+        <!-- Ficha Especial de Licencia Aprobada -->
         <div id="boxLicenciaAprobada" style="display: none; background: #ecfdf5; border: 2px solid #059669; border-radius: var(--radius); padding: 1.5rem; margin-top: 1.5rem; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
           <img id="imgQrLicencia" src="" alt="QR Licencia" width="130" height="130" style="background: white; padding: 6px; border-radius: 8px; border: 1px solid var(--border);" />
           <div style="flex: 1;">
@@ -200,7 +354,7 @@
           </div>
         </div>
 
-        <!-- Documentos Oficiales Generados -->
+        <!-- Documentos Oficiales disponibles -->
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
           <a id="btnDescargarDj" class="btn btn-secondary" target="_blank">
             📄 Descargar Declaración Jurada (PDF Anexo 1)

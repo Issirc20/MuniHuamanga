@@ -1,4 +1,5 @@
-const API_BASE = '/api/expedientes';
+const API_BASE        = '/api/expedientes';
+const API_FORMULARIOS = '/api/formularios';
 
 document.addEventListener('DOMContentLoaded', () => {
   cargarExpedientes();
@@ -6,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function cargarExpedientes(soloAlerta = false) {
   const tbody = document.getElementById('tablaExpedientesBody');
-  tbody.innerHTML = '<tr><td colspan="8">Cargando trámites...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Cargando trámites...</td></tr>';
 
   const estadoFiltro = document.getElementById('filtroEstado').value;
   let url = API_BASE;
@@ -22,7 +23,7 @@ async function cargarExpedientes(soloAlerta = false) {
     actualizarKpis(expedientes);
 
     if (!expedientes || expedientes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No se encontraron expedientes.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No se encontraron expedientes.</td></tr>';
       return;
     }
 
@@ -48,18 +49,60 @@ async function cargarExpedientes(soloAlerta = false) {
           <td>${alertaBadge}</td>
           <td>
             <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+              ${renderFormatosPdf(exp)}
+            </div>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
               ${renderAcciones(exp)}
-              <a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/declaracion-jurada" target="_blank" title="Descargar Declaración Jurada">📄 DJ</a>
-              ${exp.montoTasa ? `<a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/voucher-sat" target="_blank" title="Descargar Voucher SAT">🧾 Voucher</a>` : ''}
               <button class="btn btn-secondary btn-sm" onclick="verHistorial('${exp.id}')">📜 Trazabilidad</button>
             </div>
           </td>
+
         </tr>
       `;
     }).join('');
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger);">Error al cargar expedientes: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="color: var(--danger);">Error al cargar expedientes: ${err.message}</td></tr>`;
+  }
+}
+
+function renderFormatosPdf(exp) {
+  const expJson = encodeURIComponent(JSON.stringify(exp));
+  return `
+    <a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/declaracion-jurada" target="_blank" title="Anexo 1 — Declaración Jurada">&#128196; Anexo 1</a>
+    <button class="btn btn-secondary btn-sm" onclick="descargarFormatoInterno('${exp.id}', 'anexo3-matriz-riesgo-itse', 'Anexo3-ITSE-${exp.numeroTramite}.pdf')" title="Anexo 3 — Matriz Riesgo ITSE" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">&#128737;&#65039; Anexo 3</button>
+    <button class="btn btn-secondary btn-sm" onclick="descargarFormatoInterno('${exp.id}', 'anexo4-condiciones-seguridad', 'Anexo4-CondSeg-${exp.numeroTramite}.pdf')" title="Anexo 4 — Condiciones de Seguridad" style="background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;">&#128274; Anexo 4</button>
+    ${exp.montoTasa ? `<a class="btn btn-secondary btn-sm" href="${API_BASE}/${exp.id}/documentos/voucher-sat" target="_blank" title="Voucher SAT">&#129534; Voucher</a>` : ''}
+  `;
+}
+
+async function descargarFormatoInterno(expedienteId, tipoFormato, nombreArchivo) {
+  try {
+    // Obtener el DTO completo del expediente
+    const resExp = await fetch(`${API_BASE}/${expedienteId}`);
+    if (!resExp.ok) throw new Error('No se pudo obtener el expediente');
+    const exp = await resExp.json();
+
+    // Llamar al servicio-formularios por POST
+    const res = await fetch(`${API_FORMULARIOS}/${tipoFormato}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exp),
+    });
+    if (!res.ok) throw new Error(`Error al generar PDF: HTTP ${res.status}`);
+
+    const blob   = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const link   = document.createElement('a');
+    link.href     = objUrl;
+    link.download = nombreArchivo;
+    link.click();
+    URL.revokeObjectURL(objUrl);
+  } catch (err) {
+    alert('❌ Error al descargar el formato: ' + err.message +
+          '\n\nVerifique que el servicio-formularios esté activo (puerto 8082).');
   }
 }
 

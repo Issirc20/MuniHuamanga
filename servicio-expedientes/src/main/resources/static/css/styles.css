@@ -428,3 +428,387 @@ footer.app-footer {
   font-size: 0.85rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* ===================================================
+   FASE 3: FORMULARIO WIZARD MULTIPASO (STEPPER)
+   =================================================== */
+
+/* Stepper Header */
+.wizard-stepper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  cursor: default;
+}
+
+.wizard-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--border);
+  z-index: 1;
+  transition: background 0.4s;
+}
+
+.wizard-step.completed:not(:last-child)::after {
+  background: var(--success);
+}
+
+.wizard-step-node {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  z-index: 2;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wizard-step.active .wizard-step-node {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 0 0 5px rgba(0, 51, 102, 0.15);
+  transform: scale(1.15);
+}
+
+.wizard-step.completed .wizard-step-node {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.wizard-step-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.5rem;
+  max-width: 90px;
+  line-height: 1.3;
+}
+
+.wizard-step.active .wizard-step-label {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.wizard-step.completed .wizard-step-label {
+  color: var(--success);
+}
+
+/* Progress bar */
+.wizard-progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 9999px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--success) 100%);
+  border-radius: 9999px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Step Panels */
+.wizard-panel {
+  display: none;
+  animation: slideInRight 0.35s ease-out;
+}
+
+.wizard-panel.active {
+  display: block;
+}
+
+.wizard-panel.slide-out {
+  animation: slideOutLeft 0.25s ease-in forwards;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(-30px); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Wizard Navigation */
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.wizard-nav-indicator {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Section title en wizard */
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 1.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Step 3: Tarjetas de Documentos Oficiales */
+.doc-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.doc-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.doc-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+
+.doc-card.anexo1::before { background: linear-gradient(90deg, var(--primary), #3b82f6); }
+.doc-card.anexo3::before { background: linear-gradient(90deg, #d97706, #ef4444); }
+.doc-card.anexo4::before { background: linear-gradient(90deg, var(--success), #10b981); }
+
+.doc-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 51, 102, 0.12);
+  transform: translateY(-2px);
+}
+
+.doc-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.doc-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.doc-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.doc-card-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  align-self: flex-start;
+}
+
+.doc-card-badge.obligatorio { background: #fee2e2; color: #991b1b; }
+.doc-card-badge.automatico { background: #d1fae5; color: #065f46; }
+.doc-card-badge.generado   { background: #dbeafe; color: #1e40af; }
+
+.doc-card .btn {
+  width: 100%;
+}
+
+/* Confirmación de registro exitoso */
+.success-banner {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 2px solid var(--success);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.success-banner .success-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bounceIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.success-banner h3 {
+  font-size: 1.3rem;
+  color: #065f46;
+  margin-bottom: 0.35rem;
+}
+
+.success-banner .numero-tramite {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  margin: 0.75rem 0;
+  border: 1px solid var(--success);
+  letter-spacing: 0.05em;
+}
+
+/* Resumen de datos en Step 3 */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.resumen-item strong {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.resumen-item span {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+/* Alerta legal */
+.alerta-legal {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  color: #92400e;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+/* Loader spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* KPI Cards dashboard mejorado (Fase 3) */
+.kpi-card-v2 {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+}
+
+.kpi-card-v2:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.kpi-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.kpi-icon-circle.blue   { background: #dbeafe; }
+.kpi-icon-circle.amber  { background: #fef3c7; }
+.kpi-icon-circle.green  { background: #d1fae5; }
+.kpi-icon-circle.red    { background: #fee2e2; }
+
+.kpi-card-v2 .kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin: 0;
+}
+
+.kpi-card-v2 .kpi-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
