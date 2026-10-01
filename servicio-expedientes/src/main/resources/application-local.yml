@@ -8,7 +8,7 @@ spring:
     url: jdbc:h2:mem:muni_licencias_db;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
-    password: ""
+    password: "123456"
   jpa:
     hibernate:
       ddl-auto: update

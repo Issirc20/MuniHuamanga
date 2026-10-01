@@ -4,6 +4,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -110,8 +111,21 @@ public class Anexo1PdfGenerator {
         cLogo.setBorderColor(BORDER_COLOR);
         cLogo.setHorizontalAlignment(Element.ALIGN_CENTER);
         cLogo.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cLogo.setPadding(4f);
-        Paragraph pLogo = new Paragraph("MUNICIPALIDAD PROVINCIAL\nDE HUAMANGA\n[ESCUDO OFICIAL]", F_TITLE_TAG);
+        cLogo.setPadding(3f);
+
+        try {
+            java.net.URL logoUrl = getClass().getResource("/static/img/escudo-huamanga.png");
+            if (logoUrl != null) {
+                Image imgLogo = Image.getInstance(logoUrl);
+                imgLogo.scaleToFit(38f, 38f);
+                imgLogo.setAlignment(Element.ALIGN_CENTER);
+                cLogo.addElement(imgLogo);
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el escudo institucional: {}", e.getMessage());
+        }
+
+        Paragraph pLogo = new Paragraph("MUNICIPALIDAD PROVINCIAL\nDE HUAMANGA", F_TITLE_TAG);
         pLogo.setAlignment(Element.ALIGN_CENTER);
         cLogo.addElement(pLogo);
         t.addCell(cLogo);
