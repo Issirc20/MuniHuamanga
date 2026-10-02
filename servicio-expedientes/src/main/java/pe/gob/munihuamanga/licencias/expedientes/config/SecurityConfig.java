@@ -84,6 +84,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/aprobar").hasAnyRole("EVALUADOR", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/rechazar").hasAnyRole("EVALUADOR", "ADMIN")
 
+                        // Tarifario TUPA: Consulta pública / funcionarios, Mantenimiento exclusivo ADMIN (Sprint 4-D)
+                        .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
+                        .requestMatchers("/api/tupa/**").hasRole("ADMIN")
+
                         // Gestión interna protegida (Bandeja, métricas, detalle, historial)
                         .requestMatchers("/api/expedientes/**").authenticated()
 

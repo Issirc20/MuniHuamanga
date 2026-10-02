@@ -1,6 +1,7 @@
 const API_BASE        = '/api/expedientes';
 const API_FORMULARIOS = '/api/formularios';
 const API_AUTH        = '/api/auth';
+const API_TUPA        = '/api/tupa/tarifas';
 
 document.addEventListener('DOMContentLoaded', () => {
   verificarSesion();
@@ -434,4 +435,125 @@ async function verHistorial(id) {
 
 function cerrarModal(modalId) {
   document.getElementById(modalId).style.display = 'none';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GESTIÓN DEL TARIFARIO TUPA MUNICIPAL (Fase 04 Sprint 4-D)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let tarifasTupaCargadas = [];
+
+async function abrirModalTupa() {
+  document.getElementById('modalTupa').style.display = 'flex';
+  const tbody = document.getElementById('tablaTupaBody');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Cargando tarifario oficial...</td></tr>';
+
+  const rol = localStorage.getItem('jwt_rol');
+  const esAdmin = rol === 'ROLE_ADMIN';
+  const hint = document.getElementById('hintRolTupa');
+  if (hint) {
+    hint.innerHTML = esAdmin
+      ? '🟢 Modo <strong>ADMINISTRADOR</strong>: Puede modificar los montos y desgloses de las tasas.'
+      : 'ℹ️ Modo <strong>CONSULTA</strong>: La edición de tasas está reservada para el rol ADMINISTRADOR.';
+  }
+
+  try {
+    const res = await fetchConAuth(API_TUPA);
+    tarifasTupaCargadas = await res.json();
+
+    if (!tarifasTupaCargadas || tarifasTupaCargadas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay tarifas registradas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = tarifasTupaCargadas.map(t => {
+      const botonEditar = esAdmin
+        ? `<button class="btn btn-secondary btn-sm" onclick="abrirModalEditarTarifa('${t.id}')">✏️ Editar</button>`
+        : `<span class="badge" style="background: #e2e8f0; color: #64748b;">🔒 Lectura</span>`;
+
+      return `
+        <tr>
+          <td><strong style="color: var(--primary);">${t.codigoTupa}</strong></td>
+          <td><strong>${t.nivelRiesgo}</strong></td>
+          <td><strong style="color: var(--success); font-size: 1.05rem;">S/. ${t.montoTotal.toFixed(2)}</strong></td>
+          <td>S/. ${t.derechoTramite.toFixed(2)}</td>
+          <td>S/. ${t.costoItse.toFixed(2)}</td>
+          <td><span style="font-size: 0.8rem; color: var(--text-muted);">${t.baseLegal || '—'}</span></td>
+          <td>
+            <span class="badge ${t.activo ? 'badge-aprobado' : 'badge-rechazado'}">
+              ${t.activo ? 'Vigente' : 'Inactivo'}
+            </span>
+          </td>
+          <td>${botonEditar}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color: var(--danger); text-align: center;">${err.message}</td></tr>`;
+  }
+}
+
+function abrirModalEditarTarifa(tarifaId) {
+  const tarifa = tarifasTupaCargadas.find(t => t.id === tarifaId);
+  if (!tarifa) return;
+
+  document.getElementById('editTarifaId').value = tarifa.id;
+  document.getElementById('editTarifaRiesgo').value = `${tarifa.codigoTupa} — RIESGO ${tarifa.nivelRiesgo}`;
+  document.getElementById('editTarifaMonto').value = tarifa.montoTotal;
+  document.getElementById('editTarifaTramite').value = tarifa.derechoTramite;
+  document.getElementById('editTarifaItse').value = tarifa.costoItse;
+  document.getElementById('editTarifaBaseLegal').value = tarifa.baseLegal || '';
+  document.getElementById('editTarifaConcepto').value = tarifa.concepto || '';
+
+  document.getElementById('modalEditarTarifa').style.display = 'flex';
+}
+
+function recalcularDesgloseEdit() {
+  const total = parseFloat(document.getElementById('editTarifaMonto').value) || 0;
+  const tramite = parseFloat(document.getElementById('editTarifaTramite').value) || 0;
+  const itse = Math.max(0, total - tramite);
+  document.getElementById('editTarifaItse').value = itse.toFixed(2);
+}
+
+async function guardarEdicionTarifa() {
+  const id = document.getElementById('editTarifaId').value;
+  const total = parseFloat(document.getElementById('editTarifaMonto').value);
+  const tramite = parseFloat(document.getElementById('editTarifaTramite').value) || 0;
+  const itse = parseFloat(document.getElementById('editTarifaItse').value) || 0;
+  const baseLegal = document.getElementById('editTarifaBaseLegal').value.trim();
+  const concepto = document.getElementById('editTarifaConcepto').value.trim();
+
+  if (isNaN(total) || total <= 0) {
+    alert('Ingrese un monto total válido mayor a 0');
+    return;
+  }
+
+  const payload = {
+    montoTotal: total,
+    derechoTramite: tramite,
+    costoItse: itse,
+    baseLegal: baseLegal,
+    concepto: concepto,
+    activo: true
+  };
+
+  try {
+    const res = await fetchConAuth(`${API_TUPA}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al actualizar tarifa TUPA');
+    }
+
+    alert('✅ Tarifa TUPA actualizada exitosamente.');
+    cerrarModal('modalEditarTarifa');
+    abrirModalTupa();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
 }

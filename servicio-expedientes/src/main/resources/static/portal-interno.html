@@ -93,6 +93,9 @@
           <button class="btn btn-secondary btn-sm" onclick="cargarExpedientes(true)">
             ⚠️ Ver en Alerta
           </button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirModalTupa()">
+            📋 Tarifario TUPA
+          </button>
           <button class="btn btn-primary btn-sm" onclick="cargarExpedientes()">
             🔄 Refrescar
           </button>
@@ -216,6 +219,91 @@
           </thead>
           <tbody id="tablaModalHistorial"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tarifario TUPA Municipal (Fase 04 Sprint 4-D) -->
+  <div id="modalTupa" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; text-align: left;">
+      <div class="modal-header">
+        <div>
+          <h3 class="card-title">📋 Tarifario TUPA Oficial — Tasas Administrativas e ITSE</h3>
+          <p class="hint" style="margin: 0.25rem 0 0 0;">Configuración de derechos de trámite e inspección técnica según Ley N° 28976 y Ordenanzas Provinciales.</p>
+        </div>
+        <button class="modal-close" onclick="cerrarModal('modalTupa')">&times;</button>
+      </div>
+
+      <div class="table-responsive" style="margin: 1rem 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código TUPA</th>
+              <th>Nivel de Riesgo</th>
+              <th>Monto Total</th>
+              <th>Trámite Base</th>
+              <th>Costo ITSE</th>
+              <th>Base Legal</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaTupaBody">
+            <!-- Cargado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border, #e2e8f0); padding-top: 1rem;">
+        <span class="hint" id="hintRolTupa">ℹ️ La edición de tasas está reservada para el rol <strong>ADMINISTRADOR</strong>.</span>
+        <button class="btn btn-secondary" onclick="cerrarModal('modalTupa')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Tarifa TUPA -->
+  <div id="modalEditarTarifa" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 480px; text-align: left;">
+      <div class="modal-header">
+        <h3 class="card-title">✏️ Modificar Tarifa TUPA</h3>
+        <button class="modal-close" onclick="cerrarModal('modalEditarTarifa')">&times;</button>
+      </div>
+      <input type="hidden" id="editTarifaId">
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label>Nivel de Riesgo ITSE</label>
+        <input type="text" id="editTarifaRiesgo" disabled style="background: #f1f5f9; font-weight: bold;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="editTarifaMonto">Monto Total de la Tasa (S/.) *</label>
+        <input type="number" step="0.10" id="editTarifaMonto" required oninput="recalcularDesgloseEdit()">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+        <div class="form-group">
+          <label for="editTarifaTramite">Derecho Trámite (S/.)</label>
+          <input type="number" step="0.10" id="editTarifaTramite" oninput="recalcularDesgloseEdit()">
+        </div>
+        <div class="form-group">
+          <label for="editTarifaItse">Costo Inspección ITSE (S/.)</label>
+          <input type="number" step="0.10" id="editTarifaItse" readonly style="background: #f8fafc;">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="editTarifaBaseLegal">Base Legal / Ordenanza *</label>
+        <input type="text" id="editTarifaBaseLegal" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="editTarifaConcepto">Concepto TUPA</label>
+        <textarea id="editTarifaConcepto" rows="2"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalEditarTarifa')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarEdicionTarifa()">Guardar Modificación</button>
       </div>
     </div>
   </div>
