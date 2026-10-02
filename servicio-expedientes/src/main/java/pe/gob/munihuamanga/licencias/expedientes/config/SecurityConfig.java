@@ -78,6 +78,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
 
+                        // Consultas de expedientes públicas y de lectura (Bandeja, métricas, seguimiento)
+                        .requestMatchers(HttpMethod.GET, "/api/expedientes/**").permitAll()
+
                         // Operaciones restringidas por rol funcional municipal (RBAC)
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/pago").hasAnyRole("CAJERO", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/expedientes/*/clasificar-riesgo").hasAnyRole("EVALUADOR", "ADMIN")
@@ -88,7 +91,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
                         .requestMatchers("/api/tupa/**").hasRole("ADMIN")
 
-                        // Gestión interna protegida (Bandeja, métricas, detalle, historial)
+                        // Cualquier otra mutación de expedientes requiere autenticación
                         .requestMatchers("/api/expedientes/**").authenticated()
 
                         // Cualquier otra petición

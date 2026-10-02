@@ -19,19 +19,28 @@ function verificarSesion() {
 
   const label = document.getElementById('labelUsuario');
   const btnCerrar = document.getElementById('btnCerrarSesion');
+  const btnIniciar = document.getElementById('btnIniciarSesion');
   const modalLogin = document.getElementById('modalLogin');
 
   if (token && usuario) {
     const rolCorto = rol ? rol.replace('ROLE_', '') : 'USUARIO';
-    label.innerHTML = `👤 <strong>${usuario}</strong> <span style="font-size: 0.75rem; background: rgba(255,255,255,0.25); padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.25rem;">${rolCorto}</span>`;
-    label.style.display = 'inline-block';
-    btnCerrar.style.display = 'inline-block';
+    if (label) {
+      label.innerHTML = `👤 <strong>${usuario}</strong> <span style="font-size: 0.75rem; background: rgba(255,255,255,0.25); padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.25rem;">${rolCorto}</span>`;
+      label.style.display = 'inline-block';
+    }
+    if (btnCerrar) btnCerrar.style.display = 'inline-block';
+    if (btnIniciar) btnIniciar.style.display = 'none';
     if (modalLogin) modalLogin.style.display = 'none';
   } else {
-    label.style.display = 'none';
-    btnCerrar.style.display = 'none';
-    if (modalLogin) modalLogin.style.display = 'flex';
+    if (label) label.style.display = 'none';
+    if (btnCerrar) btnCerrar.style.display = 'none';
+    if (btnIniciar) btnIniciar.style.display = 'inline-block';
   }
+}
+
+function abrirModalLogin() {
+  const modal = document.getElementById('modalLogin');
+  if (modal) modal.style.display = 'flex';
 }
 
 function setCredencialesRapidas(usuario, password) {
@@ -86,10 +95,7 @@ function cerrarSesion() {
   localStorage.removeItem('jwt_usuario');
   localStorage.removeItem('jwt_rol');
   verificarSesion();
-  const tbody = document.getElementById('tablaExpedientesBody');
-  if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">Inicie sesión para acceder a la bandeja de trámites.</td></tr>';
-  }
+  cargarExpedientes();
 }
 
 /**
@@ -111,8 +117,8 @@ async function fetchConAuth(url, options = {}) {
   const res = await fetch(url, options);
 
   if (res.status === 401) {
-    cerrarSesion();
-    throw new Error('Su sesión ha expirado o no está autorizado. Inicie sesión nuevamente.');
+    abrirModalLogin();
+    throw new Error('Debe iniciar sesión para realizar esta operación administrativa.');
   }
 
   if (res.status === 403) {

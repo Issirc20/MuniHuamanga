@@ -31,6 +31,7 @@
       <a href="/swagger-ui.html" target="_blank">Swagger API</a>
     </nav>
     <div id="usuarioHeader" style="display: flex; align-items: center; gap: 0.75rem;">
+      <button class="btn btn-primary btn-sm" id="btnIniciarSesion" onclick="abrirModalLogin()" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; font-weight: 600;">🔐 Iniciar Sesión</button>
       <span id="labelUsuario" style="font-size: 0.85rem; color: #fff; background: rgba(255,255,255,0.15); padding: 0.35rem 0.75rem; border-radius: 20px; display: none;"></span>
       <button class="btn btn-secondary btn-sm" id="btnCerrarSesion" onclick="cerrarSesion()" style="display: none; padding: 0.3rem 0.6rem; font-size: 0.8rem;">Cerrar Sesión</button>
     </div>
@@ -310,17 +311,18 @@
 
   <!-- Modal de Inicio de Sesión (JWT / Spring Security 6) -->
   <div id="modalLogin" class="modal-backdrop" style="display: none;">
-    <div class="modal-content" style="max-width: 420px; text-align: left;">
+    <div class="modal-content" style="max-width: 440px; text-align: left;">
       <div class="modal-header">
         <h3 class="card-title">🔐 Acceso al Sistema Interno</h3>
+        <button class="modal-close" onclick="cerrarModal('modalLogin')">&times;</button>
       </div>
-      <p class="hint" style="margin-bottom: 1rem;">Ingrese sus credenciales de funcionario municipal autorizadas.</p>
+      <p class="hint" style="margin-bottom: 1rem;">Ingrese sus credenciales de funcionario municipal autorizadas o seleccione un perfil de prueba.</p>
       
       <div id="loginError" style="display: none; padding: 0.6rem; margin-bottom: 1rem; background-color: #fee2e2; color: #991b1b; border-radius: 6px; font-size: 0.85rem;"></div>
 
       <div class="form-group" style="margin-bottom: 1rem;">
         <label for="txtUsuario">Usuario *</label>
-        <input type="text" id="txtUsuario" placeholder="Ej: evaluador, cajero, admin" required>
+        <input type="text" id="txtUsuario" placeholder="Ej: admin, evaluador, cajero" required>
       </div>
 
       <div class="form-group" style="margin-bottom: 1.25rem;">
@@ -329,16 +331,17 @@
       </div>
 
       <div style="margin-bottom: 1.25rem; background: var(--surface-alt, #f8fafc); padding: 0.75rem; border-radius: 8px; border: 1px dashed var(--border, #cbd5e1);">
-        <span class="hint" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Acceso rápido de prueba:</span>
+        <span class="hint" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Acceso rápido de prueba (1 clic):</span>
         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'admin123')">🔑 Admin</button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('evaluador', 'eval123')">👷 Evaluador</button>
           <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('cajero', 'caja123')">💳 Cajero SAT</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'admin123')">🔑 Admin</button>
         </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end;">
-        <button class="btn btn-primary" style="width: 100%;" onclick="iniciarSesion()">Ingresar al Sistema</button>
+      <div style="display: flex; justify-content: space-between; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalLogin')">Modo Lectura</button>
+        <button type="button" class="btn btn-primary" style="flex: 1;" onclick="iniciarSesion()">Ingresar al Sistema</button>
       </div>
     </div>
   </div>
@@ -347,6 +350,6 @@
     <p>Municipalidad Provincial de Huamanga — Sistema de Gestión Documentaria de Licencias</p>
   </footer>
 
-  <script src="js/portal-interno.js"></script>
+  <script src="js/portal-interno.js?v=4.1.0"></script>
 </body>
 </html>

@@ -484,3 +484,24 @@ async function cargarHistorial(expedienteId) {
     tbody.innerHTML = '<tr><td colspan="5">Error al cargar historial.</td></tr>';
   }
 }
+
+// =============================================================================
+// CARGA RÁPIDA DE DATOS DEMO (FACILITADOR DE PRUEBAS)
+// =============================================================================
+function llenarDatosDemo() {
+  // Paso 1
+  document.getElementById('nombreTitular').value = 'Ing. Wilder Palomino Gómez';
+  document.getElementById('documentoIdentidad').value = '47829103';
+  document.getElementById('razonSocial').value = 'INVERSIONES SAN CRISTÓBAL S.A.C.';
+  document.getElementById('telefono').value = '966123456';
+  document.getElementById('correoElectronico').value = 'admin@sancristobalayacucho.com';
+
+  // Paso 2
+  document.getElementById('nombreComercial').value = 'Café Cultural Wari Ayacucho';
+  document.getElementById('giroNegocio').value = 'Venta de café y productos típicos artesanales';
+  document.getElementById('direccionEstablecimiento').value = 'Jr. 28 de Julio N° 245 - Centro Histórico, Huamanga';
+  document.getElementById('areaMetrosCuadrados').value = '95.5';
+
+  alert('✅ Datos de prueba cargados con éxito en los Pasos 1 y 2. Ahora puede hacer clic en "Siguiente" para probar la interacción.');
+}
+
