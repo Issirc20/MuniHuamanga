@@ -30,6 +30,10 @@
       <a href="portal-interno.html" class="active">Gestión Interna</a>
       <a href="/swagger-ui.html" target="_blank">Swagger API</a>
     </nav>
+    <div id="usuarioHeader" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span id="labelUsuario" style="font-size: 0.85rem; color: #fff; background: rgba(255,255,255,0.15); padding: 0.35rem 0.75rem; border-radius: 20px; display: none;"></span>
+      <button class="btn btn-secondary btn-sm" id="btnCerrarSesion" onclick="cerrarSesion()" style="display: none; padding: 0.3rem 0.6rem; font-size: 0.8rem;">Cerrar Sesión</button>
+    </div>
   </header>
 
   <main class="container">
@@ -212,6 +216,41 @@
           </thead>
           <tbody id="tablaModalHistorial"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Inicio de Sesión (JWT / Spring Security 6) -->
+  <div id="modalLogin" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 420px; text-align: left;">
+      <div class="modal-header">
+        <h3 class="card-title">🔐 Acceso al Sistema Interno</h3>
+      </div>
+      <p class="hint" style="margin-bottom: 1rem;">Ingrese sus credenciales de funcionario municipal autorizadas.</p>
+      
+      <div id="loginError" style="display: none; padding: 0.6rem; margin-bottom: 1rem; background-color: #fee2e2; color: #991b1b; border-radius: 6px; font-size: 0.85rem;"></div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtUsuario">Usuario *</label>
+        <input type="text" id="txtUsuario" placeholder="Ej: evaluador, cajero, admin" required>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="txtPassword">Contraseña *</label>
+        <input type="password" id="txtPassword" placeholder="••••••••" required>
+      </div>
+
+      <div style="margin-bottom: 1.25rem; background: var(--surface-alt, #f8fafc); padding: 0.75rem; border-radius: 8px; border: 1px dashed var(--border, #cbd5e1);">
+        <span class="hint" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Acceso rápido de prueba:</span>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('evaluador', 'eval123')">👷 Evaluador</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('cajero', 'caja123')">💳 Cajero SAT</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'admin123')">🔑 Admin</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary" style="width: 100%;" onclick="iniciarSesion()">Ingresar al Sistema</button>
       </div>
     </div>
   </div>

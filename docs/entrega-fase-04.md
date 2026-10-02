@@ -182,7 +182,7 @@ curl -X GET http://localhost:8081/api/expedientes/{id}/documentos/licencia \
 |--------|------------|--------|
 | Sprint 4-A | PDF Licencia formato oficial municipal | ✅ Completado |
 | Sprint 4-B | Notificaciones email (JavaMail/SMTP) al ciudadano | ✅ Completado |
-| Sprint 4-C | Autenticación JWT + Spring Security | ⏳ Pendiente |
+| Sprint 4-C | Autenticación JWT + Spring Security 6 (RBAC) | ✅ Completado |
 | Sprint 4-D | CRUD Tarifario TUPA (gestión de tasas desde portal interno) | ⏳ Pendiente |
 
 ---

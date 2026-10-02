@@ -17,6 +17,24 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:notificaciones@munihuamanga.gob.pe}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    test-connection: false   # No falla el arranque si SMTP no está configurado
 
 # Configuración de Tasas TUPA según Ley N° 28976 (RNF-17: configurable sin redeploy)
 tupa:
@@ -52,29 +70,6 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Fase 04 Sprint 4-B — Notificaciones Email (JavaMail / SMTP)
-# ──────────────────────────────────────────────────────────────────────────────
-spring:
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:notificaciones@munihuamanga.gob.pe}
-    password: ${MAIL_PASSWORD:}
-    protocol: smtp
-    default-encoding: UTF-8
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
-    test-connection: false   # No falla el arranque si SMTP no está configurado
-
 # Configuración del Remitente Institucional
 notificacion:
   email:
@@ -88,3 +83,10 @@ notificacion:
 portal:
   verificacion:
     url: ${PORTAL_VERIFICACION_URL:http://localhost:8081/verificar-licencia.html?codigo=}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Fase 04 Sprint 4-C — Autenticación JWT y Spring Security 6
+# ──────────────────────────────────────────────────────────────────────────────
+jwt:
+  secret: ${JWT_SECRET:MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 horas (en milisegundos)
