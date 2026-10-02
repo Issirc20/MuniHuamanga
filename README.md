@@ -8,7 +8,7 @@
 ![OpenPDF 2.0.3](https://img.shields.io/badge/OpenPDF-2.0.3-red)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 ![Architecture C4](https://img.shields.io/badge/Architecture-C4%20Model-indigo)
-![Tests](https://img.shields.io/badge/Tests-53%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-40%20passing-brightgreen)
 ![Normativa](https://img.shields.io/badge/Marco%20Legal-Ley%20N%C2%B0%2028976-red)
 
 ---
@@ -24,7 +24,7 @@ El presente proyecto implementa la arquitectura de software empresarial para dig
 | **Fase 01** | ✅ Completada | Digitalización de la base de datos (45 atributos normativos), capa de dominio, máquina de estados, APIs REST y auditoría inmutable |
 | **Fase 02** | ✅ Completada | Motor de generación de formatos oficiales en PDF: Anexo 1 (2 pág.), Anexo 3 Matriz ITSE (2 pág.), Anexo 4 Condiciones de Seguridad (4 pág.) |
 | **Fase 03** | ✅ Completada | Frontend Wizard Multipaso (Portal Ciudadano 3 pasos), descarga inmediata de PDFs, Dashboard Interno con KPI cards y columna de Formatos PDF |
-| **Fase 04** | ⏳ Planificada | Notificaciones por correo electrónico (JavaMail/SMTP), autenticación JWT + Spring Security |
+| **Fase 04** | 🔄 En progreso | PDF Licencia formato oficial municipal (Sprint 4-A), Notificaciones email (SMTP), JWT + Spring Security |
 | **Fase 05** | ⏳ Planificada | Pruebas de integración, adaptadores externos y validación de carga (≥150 usuarios concurrentes) |
 
 ---
@@ -386,12 +386,13 @@ d2295ca  feat(fase-02): digitalizar formato oficial de anexo 1 declaracion jurad
 | Sprint 1 | **Fase 01** | ✅ | BD 45 atributos, dominio JPA, APIs REST, auditoría |
 | Sprint 2 | **Fase 02** | ✅ | PDFs Anexo 1 (2p), Anexo 3 (2p), Anexo 4 (4p), Voucher SAT, Licencia QR |
 | Sprint 3 | **Fase 03** | ✅ | Wizard ciudadano 3 pasos, Dashboard KPI, Descarga inmediata PDF |
-| Sprint 4 | **Fase 04** | ⏳ | Notificaciones email, JWT + Spring Security, CRUD TUPA |
+| Sprint 4 | **Fase 04** | 🔄 En progreso | **Sprint 4-A**: PDF Licencia formato oficial municipal ✅ \| Notificaciones email (SMTP) \| JWT + Spring Security \| CRUD TUPA |
 | Sprint 5 | **Fase 05** | ⏳ | Tests integración, adaptadores externos, pruebas de carga |
 
 - **✅ Fase 01 (Completada):** [docs/entrega-fase-01.md](docs/entrega-fase-01.md)
 - **✅ Fase 02 (Completada):** [docs/entrega-fase-02.md](docs/entrega-fase-02.md)
 - **✅ Fase 03 (Completada):** [docs/entrega-fase-03.md](docs/entrega-fase-03.md)
+- **🔄 Fase 04 (En progreso):** Sprint 4-A — PDF Licencia formato oficial ✅ (40 tests passing)
 
 ---
 

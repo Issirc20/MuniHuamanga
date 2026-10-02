@@ -219,6 +219,22 @@ public class Expediente {
     @Column(name = "licencia_qr_code", length = 255)
     private String licenciaQrCode;
 
+    // Datos para el Certificado Oficial de Licencia de Funcionamiento (Formato físico)
+    @Column(name = "numero_licencia", length = 30)
+    private String numeroLicencia;  // Número correlativo de licencia (Ej: 202613788)
+
+    @Column(name = "categoria_establecimiento", length = 30)
+    private String categoriaEstablecimiento;  // Ej: 1-A (INTERMEDIO), 1-B (BAJO), 2-A (ALTO)
+
+    @Column(name = "hora_inicio", length = 10)
+    private String horaInicio;  // Hora inicio autorización operar (Ej: 06:00)
+
+    @Column(name = "hora_fin", length = 10)
+    private String horaFin;     // Hora fin autorización operar (Ej: 23:00)
+
+    @Column(name = "fecha_aprobacion")
+    private LocalDateTime fechaAprobacion;  // Fecha de emisión de la Licencia
+
     // Evidencias Externas / Fase 1
     @Column(name = "numero_informe_itse", length = 50)
     private String numeroInformeItse;

@@ -20,8 +20,14 @@ class LicenciaPdfServiceTest {
 
     @BeforeEach
     void setUp() {
-        documentoPdfService = new DocumentoPdfService(new Anexo1PdfGenerator(), new Anexo3PdfGenerator(), new Anexo4PdfGenerator());
+        documentoPdfService = new DocumentoPdfService(
+                new Anexo1PdfGenerator(),
+                new Anexo3PdfGenerator(),
+                new Anexo4PdfGenerator(),
+                new LicenciaPdfGenerator()   // Fase 04: Generador del formato oficial de Licencia
+        );
     }
+
 
     @Test
     @DisplayName("Fase 2: Debe generar el Anexo 4 oficial (Condiciones de Seguridad) en PDF de 4 páginas")
@@ -135,7 +141,45 @@ class LicenciaPdfServiceTest {
     }
 
     @Test
+    @DisplayName("Fase 04: Debe generar el PDF con formato oficial municipal (campos: horario, categoría, zonificación)")
+    void testGenerarLicenciaFormatoOficialCompletoFase04() {
+        ExpedienteResponseDto dto = ExpedienteResponseDto.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-12345")
+                .numeroLicencia("202613788")
+                .licenciaQrCode("LIC-2026-202613788")
+                .estado(EstadoExpediente.APROBADO)
+                .nombreTitular("DONDE LOPEZ EIRL")
+                .documentoIdentidad("20610371974")
+                .razonSocial("DONDE LOPEZ EIRL")
+                .nombreComercial("DONDE LOPEZ EIRL")
+                .giroNegocio("FERRETERIA (NO ALMACEN)")
+                .ciiuCodigo("30.27")
+                .direccionEstablecimiento("CENTRO POBLADO BARRIO DE LA MAGDALENA")
+                .manzana("E")
+                .lote("09")
+                .urbanizacion("UNIDAD VECINAL")
+                .areaMetrosCuadrados(new BigDecimal("102.00"))
+                .nivelRiesgo(NivelRiesgo.MEDIO)
+                .categoriaEstablecimiento("1-A (INTERMEDIO)")
+                .zonificacion("CENTRO HISTORICO: SECTOR 04")
+                .horaInicio("06:00")
+                .horaFin("23:00")
+                .fechaAprobacion(LocalDateTime.of(2026, 9, 30, 10, 0))
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        byte[] pdfBytes = documentoPdfService.generarLicenciaPdf(dto);
+
+        assertNotNull(pdfBytes, "El PDF de la licencia oficial no debe ser nulo");
+        assertTrue(pdfBytes.length > 5000, "El PDF del formato oficial debe superar 5KB");
+        String header = new String(pdfBytes, 0, 5);
+        assertEquals("%PDF-", header, "El documento debe tener firma de archivo PDF válida");
+    }
+
+    @Test
     @DisplayName("US-10: Debe generar una imagen PNG del código QR con formato válido y dimensiones correctas")
+
     void testGenerarImagenQrValido() {
         String codigoLicencia = "LIC-2026-A1B2C3D4";
         byte[] qrBytes = documentoPdfService.generarImagenQr(codigoLicencia, 200, 200);

@@ -98,6 +98,13 @@ public class ExpedienteResponseDto {
     private String voucherId;
     private String licenciaQrCode;
 
+    // Datos del Certificado Oficial de Licencia (Formato físico)
+    private String numeroLicencia;          // Número correlativo de licencia (Ej: 202613788)
+    private String categoriaEstablecimiento;// Ej: 1-A (INTERMEDIO)
+    private String horaInicio;              // Hora inicio para operar (Ej: 06:00)
+    private String horaFin;                 // Hora fin para operar (Ej: 23:00)
+    private LocalDateTime fechaAprobacion;  // Fecha de emisión de la Licencia
+
     // Evidencias Externas / Fase 1
     private String numeroInformeItse;
     private LocalDateTime fechaInformeItse;
