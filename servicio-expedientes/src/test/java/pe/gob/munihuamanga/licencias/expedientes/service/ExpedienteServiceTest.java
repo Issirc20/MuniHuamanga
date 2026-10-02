@@ -53,8 +53,12 @@ class ExpedienteServiceTest {
     @Mock
     private MetricasExpedienteService metricasExpedienteService;
 
+    @Mock
+    private NotificacionEmailService notificacionEmailService;  // Fase 04 Sprint 4-B
+
     @InjectMocks
     private ExpedienteService expedienteService;
+
 
     private UUID expedienteId;
     private Expediente expedienteBase;

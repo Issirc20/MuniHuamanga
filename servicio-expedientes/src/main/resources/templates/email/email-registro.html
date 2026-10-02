@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Licencia Registrada</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; color: #333; }
+        .wrapper { max-width: 620px; margin: 30px auto; }
+        /* Encabezado institucional */
+        .header { background: linear-gradient(135deg, #003380 0%, #0055cc 100%); padding: 28px 32px; border-radius: 8px 8px 0 0; text-align: center; }
+        .header img { width: 60px; margin-bottom: 12px; }
+        .header h1 { color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .header p  { color: #a8c4ff; font-size: 12px; }
+        /* Franja naranja */
+        .franja { background: #d2500f; padding: 8px 32px; text-align: center; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 1px; }
+        /* Cuerpo */
+        .body { background: #fff; padding: 36px 36px 28px; }
+        .body h2 { color: #003380; font-size: 20px; margin-bottom: 10px; }
+        .body p  { font-size: 14px; line-height: 1.7; color: #444; margin-bottom: 14px; }
+        /* Tarjeta de datos */
+        .card { background: #f0f4ff; border-left: 4px solid #003380; border-radius: 6px; padding: 18px 22px; margin: 20px 0; }
+        .card .row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #dde5f5; font-size: 13px; }
+        .card .row:last-child { border-bottom: none; }
+        .card .label { color: #666; font-weight: 600; min-width: 180px; }
+        .card .val   { color: #003380; font-weight: 700; text-align: right; }
+        /* Alerta de plazos */
+        .alert { background: #fff8e1; border: 1px solid #f9c800; border-radius: 6px; padding: 14px 18px; font-size: 13px; color: #7a5800; margin-bottom: 20px; }
+        .alert strong { color: #5c4000; }
+        /* Botón CTA */
+        .btn-wrap { text-align: center; margin: 24px 0; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #d2500f, #e07020); color: #fff; text-decoration: none; padding: 13px 34px; border-radius: 6px; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+        /* Pasos del proceso */
+        .pasos { margin: 20px 0; }
+        .paso  { display: flex; align-items: flex-start; margin-bottom: 14px; }
+        .paso .num { background: #003380; color: #fff; border-radius: 50%; width: 28px; height: 28px; min-width: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-right: 12px; margin-top: 2px; }
+        .paso .txt { font-size: 13px; color: #444; line-height: 1.6; }
+        .paso .txt strong { color: #003380; }
+        /* Pie */
+        .footer { background: #f0f0f0; padding: 18px 32px; border-radius: 0 0 8px 8px; text-align: center; font-size: 11px; color: #888; }
+        .footer a { color: #003380; text-decoration: none; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 16px 0; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- ENCABEZADO -->
+    <div class="header">
+        <h1>🏛 MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Gerencia de Desarrollo Económico — Subgerencia de Comercio, Licencias y Control Sanitario</p>
+    </div>
+    <div class="franja">SISTEMA DIGITAL DE LICENCIAS DE FUNCIONAMIENTO — LEY N° 28976</div>
+
+    <!-- CUERPO -->
+    <div class="body">
+        <h2>✅ Su solicitud fue recibida exitosamente</h2>
+
+        <p>Estimado(a) <strong th:text="${titular}">Titular</strong>,</p>
+        <p>
+            Nos complace confirmar que su solicitud de <strong>Licencia de Funcionamiento</strong>
+            ha sido registrada en el Sistema Digital de la Municipalidad Provincial de Huamanga.
+            A continuación encontrará los datos de su expediente:
+        </p>
+
+        <!-- TARJETA DE DATOS DEL EXPEDIENTE -->
+        <div class="card">
+            <div class="row">
+                <span class="label">N° de Expediente / Trámite:</span>
+                <span class="val" th:text="${numeroTramite}">EXP-2026-XXXXX</span>
+            </div>
+            <div class="row">
+                <span class="label">Nombre Comercial:</span>
+                <span class="val" th:text="${nombreComercial}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Giro de Negocio:</span>
+                <span class="val" th:text="${giroNegocio}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Dirección del Establecimiento:</span>
+                <span class="val" th:text="${direccion}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Fecha de Ingreso:</span>
+                <span class="val" th:text="${fechaCreacion}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Fecha Límite Legal de Resolución:</span>
+                <span class="val" th:text="${fechaLimite}">—</span>
+            </div>
+        </div>
+
+        <!-- ALERTA DE PLAZOS -->
+        <div class="alert">
+            ⏱ <strong>Plazo legal:</strong> Conforme al Art. 7° de la Ley N° 28976, la Municipalidad dispone de
+            <strong>15 días hábiles</strong> para resolver su solicitud. Si no recibe respuesta en ese plazo,
+            se aplicará el <strong>silencio administrativo positivo</strong>.
+        </div>
+
+        <!-- PASOS DEL PROCESO -->
+        <p><strong>¿Qué sigue ahora?</strong></p>
+        <div class="pasos">
+            <div class="paso">
+                <div class="num">1</div>
+                <div class="txt"><strong>Clasificación de Riesgo (ITSE):</strong> Defensa Civil evaluará las condiciones de seguridad de su establecimiento según el D.S. N° 002-2018-PCM.</div>
+            </div>
+            <div class="paso">
+                <div class="num">2</div>
+                <div class="txt"><strong>Pago de Tasa TUPA:</strong> Recibirá su voucher de pago (SAT) calculado según el nivel de riesgo asignado.</div>
+            </div>
+            <div class="paso">
+                <div class="num">3</div>
+                <div class="txt"><strong>Evaluación Final y Aprobación:</strong> La Subgerencia emitirá la Licencia definitiva con código QR de verificación.</div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="btn-wrap">
+            <a th:href="${portalCiudadano}" class="btn">🔍 Ver mi expediente en línea</a>
+        </div>
+
+        <hr class="divider">
+        <p style="font-size:12px; color:#777;">
+            Si tiene consultas, comuníquese con la Subgerencia de Comercio, Licencias y Control Sanitario
+            de la Municipalidad Provincial de Huamanga (Jr. 28 de Julio s/n, Plaza Mayor de Huamanga).
+            Tel.: (066) 312-xxx — Horario: Lunes a Viernes 8:00 – 16:00 h.
+        </p>
+    </div>
+
+    <!-- PIE -->
+    <div class="footer">
+        Este correo fue generado automáticamente por el Sistema Digital de Licencias de Funcionamiento.<br>
+        <a th:href="${portalCiudadano}">Portal Ciudadano</a> |
+        <strong>Municipalidad Provincial de Huamanga</strong> — Provincia de Huamanga, Ayacucho, Perú.<br>
+        © 2026 — Ley N° 28976 / TUO D.S. N° 046-2017-PCM
+    </div>
+</div>
+</body>
+</html>

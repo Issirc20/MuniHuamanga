@@ -43,6 +43,7 @@ public class ExpedienteService {
     private final CalculadoraDeTasa calculadoraDeTasa;
     private final AuditoriaService auditoriaService;
     private final MetricasExpedienteService metricasExpedienteService;
+    private final NotificacionEmailService notificacionEmailService;
 
     /**
      * Registra un nuevo expediente en el sistema e inicia en estado FORMATOS_GENERADOS.
@@ -164,6 +165,10 @@ public class ExpedienteService {
 
         log.info("Expediente creado exitosamente: ID={}, Número={}", guardado.getId(), guardado.getNumeroTramite());
         metricasExpedienteService.registrarCreacion();
+
+        // Fase 04 Sprint 4-B: Notificación asíncrona de registro al ciudadano
+        notificacionEmailService.notificarRegistro(guardado);
+
         return guardado;
     }
 
@@ -320,6 +325,9 @@ public class ExpedienteService {
 
         log.info("Expediente {} APROBADO exitosamente con código QR: {}", id, qrCodeUnico);
         metricasExpedienteService.registrarAprobacion();
+
+        // Fase 04 Sprint 4-B: Notificación asíncrona de aprobación al ciudadano
+        notificacionEmailService.notificarAprobacion(expediente);
     }
 
     /**
@@ -347,7 +355,11 @@ public class ExpedienteService {
 
         log.warn("Expediente {} RECHAZADO. Motivo: {}", id, motivo);
         metricasExpedienteService.registrarRechazo();
+
+        // Fase 04 Sprint 4-B: Notificación asíncrona de rechazo al ciudadano
+        notificacionEmailService.notificarRechazo(expediente, motivo);
     }
+
 
     @Transactional(readOnly = true)
     public Expediente obtenerPorId(UUID id) {

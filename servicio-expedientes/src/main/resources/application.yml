@@ -51,3 +51,40 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Fase 04 Sprint 4-B — Notificaciones Email (JavaMail / SMTP)
+# ──────────────────────────────────────────────────────────────────────────────
+spring:
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:notificaciones@munihuamanga.gob.pe}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    test-connection: false   # No falla el arranque si SMTP no está configurado
+
+# Configuración del Remitente Institucional
+notificacion:
+  email:
+    enabled: ${MAIL_ENABLED:false}         # Deshabilitado por defecto; activar en producción
+    remitente: ${MAIL_USERNAME:notificaciones@munihuamanga.gob.pe}
+    nombre-remitente: "Municipalidad Provincial de Huamanga"
+    portal-ciudadano: ${PORTAL_URL:http://localhost:8081}
+    portal-verificacion: ${PORTAL_VERIFICACION_URL:http://localhost:8081/verificar-licencia.html?codigo=}
+
+# URL pública de verificación (compatible con DocumentoPdfService)
+portal:
+  verificacion:
+    url: ${PORTAL_VERIFICACION_URL:http://localhost:8081/verificar-licencia.html?codigo=}

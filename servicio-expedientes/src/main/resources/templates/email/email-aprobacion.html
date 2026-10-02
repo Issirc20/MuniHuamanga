@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Licencia de Funcionamiento Aprobada</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; color: #333; }
+        .wrapper { max-width: 620px; margin: 30px auto; }
+        /* Encabezado */
+        .header { background: linear-gradient(135deg, #003380 0%, #0055cc 100%); padding: 28px 32px; border-radius: 8px 8px 0 0; text-align: center; }
+        .header h1 { color: #fff; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+        .header p  { color: #a8c4ff; font-size: 12px; }
+        /* Franja verde éxito */
+        .franja-exito { background: linear-gradient(135deg, #15803d, #16a34a); padding: 16px 32px; text-align: center; color: #fff; }
+        .franja-exito .icono { font-size: 40px; display: block; margin-bottom: 8px; }
+        .franja-exito h2   { font-size: 20px; font-weight: 800; letter-spacing: 0.5px; }
+        .franja-exito small { font-size: 12px; opacity: 0.85; }
+        /* Cuerpo */
+        .body { background: #fff; padding: 32px 36px 24px; }
+        .body p { font-size: 14px; line-height: 1.7; color: #444; margin-bottom: 14px; }
+        /* Código de Licencia destacado */
+        .licencia-box { background: #eff8ff; border: 2px solid #003380; border-radius: 10px; padding: 22px; text-align: center; margin: 20px 0; }
+        .licencia-box .lbl  { font-size: 11px; font-weight: 700; color: #666; letter-spacing: 1.5px; text-transform: uppercase; }
+        .licencia-box .code { font-size: 26px; font-weight: 900; color: #003380; letter-spacing: 3px; margin: 6px 0; font-family: monospace; }
+        .licencia-box .sub  { font-size: 11px; color: #888; }
+        /* Tarjeta de datos */
+        .card { background: #f0f4ff; border-left: 4px solid #003380; border-radius: 6px; padding: 18px 22px; margin: 20px 0; }
+        .card .row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #dde5f5; font-size: 13px; }
+        .card .row:last-child { border-bottom: none; }
+        .card .label { color: #666; font-weight: 600; min-width: 170px; }
+        .card .val   { color: #003380; font-weight: 700; text-align: right; }
+        /* Alerta informativa */
+        .alert-green { background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 14px 18px; font-size: 13px; color: #166534; margin-bottom: 20px; }
+        /* Botones */
+        .btn-group { text-align: center; margin: 24px 0; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn       { display: inline-block; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 13px; font-weight: 700; }
+        .btn-primary { background: linear-gradient(135deg, #003380, #0055cc); color: #fff; }
+        .btn-orange  { background: linear-gradient(135deg, #d2500f, #e07020); color: #fff; }
+        /* Indicaciones */
+        .indicaciones { background: #fffbf0; border: 1px solid #f9c800; border-radius: 6px; padding: 16px 20px; font-size: 12px; color: #5c4000; }
+        .indicaciones ul { padding-left: 18px; }
+        .indicaciones li { margin-bottom: 6px; line-height: 1.5; }
+        /* Pie */
+        .footer { background: #f0f0f0; padding: 18px 32px; border-radius: 0 0 8px 8px; text-align: center; font-size: 11px; color: #888; }
+        .footer a { color: #003380; text-decoration: none; }
+        .divider { border: none; border-top: 1px solid #e0e0e0; margin: 16px 0; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- ENCABEZADO -->
+    <div class="header">
+        <h1>🏛 MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Gerencia de Desarrollo Económico — Subgerencia de Comercio, Licencias y Control Sanitario</p>
+    </div>
+
+    <!-- FRANJA DE ÉXITO -->
+    <div class="franja-exito">
+        <span class="icono">🎉</span>
+        <h2>¡LICENCIA DE FUNCIONAMIENTO APROBADA!</h2>
+        <small>DEFINITIVA — Vigencia Indeterminada (Art. 11°, Ley N° 28976)</small>
+    </div>
+
+    <!-- CUERPO -->
+    <div class="body">
+        <p>Estimado(a) <strong th:text="${titular}">Titular</strong>,</p>
+        <p>
+            Nos complace informarle que su <strong>Licencia de Funcionamiento Definitiva</strong>
+            ha sido <strong style="color:#15803d;">APROBADA</strong> por la Subgerencia de Comercio,
+            Licencias y Control Sanitario de la Municipalidad Provincial de Huamanga.
+            Su establecimiento queda <strong>legalmente habilitado</strong> para operar.
+        </p>
+
+        <!-- CÓDIGO DE LICENCIA DESTACADO -->
+        <div class="licencia-box">
+            <div class="lbl">Código de Licencia Oficial</div>
+            <div class="code" th:text="${codigoLicencia}">LIC-2026-XXXXXXXX</div>
+            <div class="sub">Escanee el código QR del certificado para verificar autenticidad</div>
+        </div>
+
+        <!-- DATOS DEL ESTABLECIMIENTO -->
+        <div class="card">
+            <div class="row">
+                <span class="label">N° Expediente:</span>
+                <span class="val" th:text="${numeroTramite}">—</span>
+            </div>
+            <div class="row" th:if="${razonSocial}">
+                <span class="label">Razón Social:</span>
+                <span class="val" th:text="${razonSocial}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Nombre Comercial:</span>
+                <span class="val" th:text="${nombreComercial}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Giro de Negocio:</span>
+                <span class="val" th:text="${giroNegocio}">—</span>
+            </div>
+            <div class="row">
+                <span class="label">Dirección del Establecimiento:</span>
+                <span class="val" th:text="${direccion}">—</span>
+            </div>
+            <div class="row" th:if="${nivelRiesgo}">
+                <span class="label">Clasificación de Riesgo ITSE:</span>
+                <span class="val" th:text="${nivelRiesgo}">—</span>
+            </div>
+        </div>
+
+        <!-- ALERTA VIGENCIA -->
+        <div class="alert-green">
+            ✅ <strong>Vigencia Indeterminada:</strong> Según el Art. 11° de la Ley N° 28976,
+            la Licencia de Funcionamiento Definitiva tiene <strong>vigencia indefinida</strong>, siempre que
+            no cambie de giro, dirección, área o razón social sin notificar a la Municipalidad.
+        </div>
+
+        <!-- BOTONES -->
+        <div class="btn-group">
+            <a th:href="${urlDescargaPdf}" class="btn btn-orange">📄 Descargar Certificado PDF</a>
+            <a th:href="${urlVerificacion}" class="btn btn-primary">🔍 Verificar Licencia en Línea</a>
+        </div>
+
+        <!-- INDICACIONES OBLIGATORIAS -->
+        <div class="indicaciones">
+            <strong>📋 INDICACIONES IMPORTANTES (Ley N° 28976):</strong>
+            <ul>
+                <li>La licencia debe exhibirse en un lugar <strong>visible del establecimiento</strong> comercial.</li>
+                <li>No puede ser transferida ni utilizada por persona distinta al titular.</li>
+                <li>Debe cumplir con el pago de <strong>arbitrios municipales</strong> correspondientes.</li>
+                <li>Cualquier modificación de giro, área o dirección debe ser notificada a esta Subgerencia.</li>
+                <li>El cese de actividades debe comunicarse formalmente para la suspensión de la licencia.</li>
+            </ul>
+        </div>
+
+        <hr class="divider">
+        <p style="font-size:12px; color:#777;">
+            Para consultas o trámites adicionales, acérquese a la Subgerencia de Comercio,
+            Licencias y Control Sanitario (Jr. 28 de Julio s/n, Plaza Mayor de Huamanga).
+            Tel.: (066) 312-xxx — Horario: Lunes a Viernes 8:00 – 16:00 h.
+        </p>
+    </div>
+
+    <!-- PIE -->
+    <div class="footer">
+        Este correo fue generado automáticamente por el Sistema Digital de Licencias de Funcionamiento.<br>
+        <a th:href="${portalCiudadano}">Portal Ciudadano</a> — <a th:href="${urlVerificacion}">Verificar Licencia</a><br>
+        <strong>Municipalidad Provincial de Huamanga</strong> — Ayacucho, Perú. © 2026<br>
+        Ley N° 28976 / D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM
+    </div>
+</div>
+</body>
+</html>
