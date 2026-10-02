@@ -8,7 +8,7 @@
 ![OpenPDF 2.0.3](https://img.shields.io/badge/OpenPDF-2.0.3-red)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
 ![Architecture C4](https://img.shields.io/badge/Architecture-C4%20Model-indigo)
-![Tests](https://img.shields.io/badge/Tests-40%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/Tests-80%20passing-brightgreen)
 ![Normativa](https://img.shields.io/badge/Marco%20Legal-Ley%20N%C2%B0%2028976-red)
 
 ---
@@ -24,7 +24,7 @@ El presente proyecto implementa la arquitectura de software empresarial para dig
 | **Fase 01** | ✅ Completada | Digitalización de la base de datos (45 atributos normativos), capa de dominio, máquina de estados, APIs REST y auditoría inmutable |
 | **Fase 02** | ✅ Completada | Motor de generación de formatos oficiales en PDF: Anexo 1 (2 pág.), Anexo 3 Matriz ITSE (2 pág.), Anexo 4 Condiciones de Seguridad (4 pág.) |
 | **Fase 03** | ✅ Completada | Frontend Wizard Multipaso (Portal Ciudadano 3 pasos), descarga inmediata de PDFs, Dashboard Interno con KPI cards y columna de Formatos PDF |
-| **Fase 04** | 🔄 En progreso | PDF Licencia formato oficial municipal (Sprint 4-A), Notificaciones email (SMTP), JWT + Spring Security |
+| **Fase 04** | ✅ Completada | PDF Licencia Oficial (Sprint 4-A), Notificaciones Electrónicas Email Async (Sprint 4-B), Autenticación JWT + Spring Security 6 RBAC (Sprint 4-C) y Tarifario TUPA Dinámico (Sprint 4-D) |
 | **Fase 05** | ⏳ Planificada | Pruebas de integración, adaptadores externos y validación de carga (≥150 usuarios concurrentes) |
 
 ---
@@ -161,13 +161,13 @@ docker-compose up -d postgres
 > - Host: `localhost:5432` | BD: `muni_licencias_db` | User: `muni_user` | Pass: `muni_pass123`
 > - pgAdmin: http://localhost:5050 (`admin@munihuamanga.gob.pe` / `admin`)
 
-### Paso 2: Compilar y Ejecutar Pruebas (53 tests)
+### Paso 2: Compilar y Ejecutar Pruebas (80 tests)
 ```powershell
 $env:JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
 $env:PATH="$env:JAVA_HOME\bin;C:\tools\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin;$env:PATH"
 
 mvn clean test
-# Expected: BUILD SUCCESS — Tests run: 53, Failures: 0, Errors: 0
+# Expected: BUILD SUCCESS — Tests run: 80, Failures: 0, Errors: 0
 ```
 
 ### Paso 3: Ejecutar los Microservicios
@@ -193,7 +193,7 @@ mvn spring-boot:run -pl api-gateway
 |--------|-----|
 | **Landing Page** | http://localhost:8081/ |
 | **Portal Ciudadano (Wizard)** | http://localhost:8081/portal-ciudadano.html |
-| **Gestión Interna** | http://localhost:8081/portal-interno.html |
+| **Gestión Interna (Dashboard + RBAC)** | http://localhost:8081/portal-interno.html |
 | **Verificación QR Pública** | http://localhost:8081/verificar-licencia.html |
 
 ---
@@ -214,27 +214,30 @@ mvn spring-boot:run -pl api-gateway
 
 ### 6.1 Servicio de Expedientes (`servicio-expedientes` :8081)
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/expedientes` | Mesa de Partes Virtual: Registrar nueva solicitud |
-| `GET` | `/api/expedientes` | Listar expedientes (filtros: `?estado=&conAlerta=true`) |
-| `GET` | `/api/expedientes/{id}` | Consultar expediente por UUID |
-| `GET` | `/api/expedientes/tramite/{numero}` | Seguimiento ciudadano por N° trámite (EXP-2026-XXXXX) |
-| `GET` | `/api/expedientes/{id}/historial` | Historial cronológico de estados (auditoría) |
-| `GET` | `/api/expedientes/{id}/desglose-tasa` | Desglose de conceptos tributarios TUPA |
-| `GET` | `/api/expedientes/{id}/documentos/declaracion-jurada` | 📄 PDF Anexo 1 — Declaración Jurada |
-| `GET` | `/api/expedientes/{id}/documentos/anexo1-declaracion-jurada` | 📄 PDF Anexo 1 (alternativo) |
-| `GET` | `/api/expedientes/{id}/documentos/anexo3-matriz-riesgo-itse` | 🛡️ PDF Anexo 3 — Matriz ITSE |
-| `GET` | `/api/expedientes/{id}/documentos/anexo4-condiciones-seguridad` | 🔒 PDF Anexo 4 — Condiciones Seguridad |
-| `GET` | `/api/expedientes/{id}/documentos/voucher-sat` | 🧾 PDF Voucher SAT con Code 128 |
-| `GET` | `/api/expedientes/{id}/documentos/licencia` | 📜 PDF Licencia Oficial con QR y Sello Digital |
-| `GET` | `/api/expedientes/{id}/qr` | 🔲 Imagen PNG del código QR de la licencia |
-| `POST` | `/api/expedientes/{id}/clasificacion-riesgo` | Defensa Civil: Registrar dictamen ITSE |
-| `POST` | `/api/expedientes/{id}/voucher` | SAT: Generar orden de pago |
-| `POST` | `/api/expedientes/{id}/pago` | SAT: Registrar constancia de pago |
-| `POST` | `/api/expedientes/{id}/aprobar` | Gerencia Licencias: Dictamen favorable + emisión QR |
-| `POST` | `/api/expedientes/{id}/rechazar` | Gerencia Licencias: Dictamen de rechazo |
-| `GET` | `/api/licencias/verificar/{codigo}` | Portal público de verificación de autenticidad |
+| Método | Endpoint | Descripción | Acceso / Rol |
+|--------|----------|-------------|--------------|
+| `POST` | `/api/auth/login` | Autenticación de personal municipal y emisión JWT | Público |
+| `POST` | `/api/expedientes` | Mesa de Partes Virtual: Registrar nueva solicitud | Público |
+| `GET` | `/api/expedientes` | Listar expedientes (filtros: `?estado=&conAlerta=true`) | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
+| `GET` | `/api/expedientes/{id}` | Consultar expediente por UUID | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
+| `GET` | `/api/expedientes/tramite/{numero}` | Seguimiento ciudadano por N° trámite (EXP-2026-XXXXX) | Público |
+| `GET` | `/api/expedientes/{id}/historial` | Historial cronológico de estados (auditoría) | Autenticado |
+| `GET` | `/api/expedientes/{id}/desglose-tasa` | Desglose de conceptos tributarios TUPA | Público |
+| `GET` | `/api/tupa/tarifas` | Listar tarifario TUPA oficial con tasas vigentes | Público / Autenticado |
+| `PUT` | `/api/tupa/tarifas/{id}` | Actualización en caliente de tasa municipal TUPA | `ROLE_ADMIN` |
+| `GET` | `/api/expedientes/{id}/documentos/declaracion-jurada` | 📄 PDF Anexo 1 — Declaración Jurada | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/documentos/anexo1-declaracion-jurada` | 📄 PDF Anexo 1 (alternativo) | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/documentos/anexo3-matriz-riesgo-itse` | 🛡️ PDF Anexo 3 — Matriz ITSE | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/documentos/anexo4-condiciones-seguridad` | 🔒 PDF Anexo 4 — Condiciones Seguridad | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/documentos/voucher-sat` | 🧾 PDF Voucher SAT con Code 128 | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/documentos/licencia` | 📜 PDF Licencia Oficial con QR y Sello Digital | Público / Autenticado |
+| `GET` | `/api/expedientes/{id}/qr` | 🔲 Imagen PNG del código QR de la licencia | Público |
+| `POST` | `/api/expedientes/{id}/clasificacion-riesgo` | Defensa Civil: Registrar dictamen ITSE | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
+| `POST` | `/api/expedientes/{id}/voucher` | SAT: Generar orden de pago | `ROLE_CAJERO`, `ROLE_ADMIN` |
+| `POST` | `/api/expedientes/{id}/pago` | SAT: Registrar constancia de pago | `ROLE_CAJERO`, `ROLE_ADMIN` |
+| `POST` | `/api/expedientes/{id}/aprobar` | Gerencia Licencias: Dictamen favorable + emisión QR | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
+| `POST` | `/api/expedientes/{id}/rechazar` | Gerencia Licencias: Dictamen de rechazo | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
+| `GET` | `/api/licencias/verificar/{codigo}` | Portal público de verificación de autenticidad | Público |
 
 ### 6.2 Servicio de Formularios (`servicio-formularios` :8082)
 
