@@ -35,29 +35,35 @@ El proyecto está organizado como un repositorio multi-módulo Maven (`muni-lice
 
 ```text
 MuniHuamanga/
-├── pom.xml                                  # POM Padre Multi-Módulo Maven (Java 21 / SB 3.3.4)
+├── pom.xml                                  # POM Padre Multi-Módulo Maven (Java 21 / SB 3.3.4, OpenPDF, JJWT, ZXing)
 ├── docker-compose.yml                       # Orquestación de PostgreSQL 15 y pgAdmin 4
 ├── .gitignore                               # Exclusiones optimizadas para Java, Maven e IDEs
 │
-├── common-domain/                           # Contratos compartidos entre microservicios
+├── common-domain/                           # Contratos compartidos y DTOs inter-servicio
 │   └── src/main/java/.../common/
 │       ├── enums/
 │       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS → DOCUMENTOS_VALIDADOS → EN_EVALUACION_FINAL → APROBADO/RECHAZADO
 │       │   ├── NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO (Matriz CENEPRED)
+│       │   ├── RolUsuario.java            # ROLE_ADMIN, ROLE_EVALUADOR, ROLE_CAJERO (RBAC institucional)
 │       │   ├── TipoPersona.java           # NATURAL, JURIDICA
 │       │   ├── TipoDocumento.java         # DNI, RUC, CARNET_EXTRANJERIA
 │       │   ├── ModalidadTramite.java      # Sección I Anexo 1 (Indeterminada, Temporal, Anuncio, etc.)
 │       │   └── FuncionEdificacion.java    # Anexos 3 y 4 ITSE (Salud, Encuentro, Comercio, etc.)
-│       ├── dto/                            # 9 DTOs de contrato inter-servicio
-│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (45 campos, Anexo 1 + SUNARP + Dirección)
-│       │   ├── ExpedienteResponseDto.java # Payload integral (estado, plazos, tasas, licenciaQrCode)
+│       ├── dto/                            # 14 DTOs de contrato inter-servicio
+│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (45 campos normativos, Anexo 1 + SUNARP + Dirección)
+│       │   ├── ExpedienteResponseDto.java # Payload integral (estado, plazos, tasas, desglose, licenciaQrCode)
 │       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (23 campos booleanos)
 │       │   ├── ClasificacionRiesgoDto.java# Calificación ITSE (Nivel + N° Informe Técnico + Observaciones)
 │       │   ├── RegistroPagoDto.java       # Validación SAT (Voucher + N° Operación Bancaria + Monto)
 │       │   ├── VoucherDto.java            # Orden de pago SAT con código Code 128
 │       │   ├── VerificacionLicenciaDto.java# Consulta pública ciudadana vía QR (RNF-20)
 │       │   ├── ResolucionExpedienteDto.java# Dictamen final o motivo de rechazo
-│       │   └── HistorialEstadoDto.java    # Línea de tiempo de auditoría inmutable
+│       │   ├── HistorialEstadoDto.java    # Línea de tiempo de auditoría inmutable
+│       │   ├── LoginRequestDto.java       # Credenciales para autenticación JWT de funcionarios
+│       │   ├── LoginResponseDto.java      # Token Bearer JWT, roles, usuario y tiempo de expiración
+│       │   ├── UsuarioDto.java            # Perfil público y rol del funcionario autenticado
+│       │   ├── TarifaTupaDto.java         # Catálogo oficial de tasas municipales vigentes
+│       │   └── ActualizarTarifaDto.java   # DTO validado para actualización en caliente de montos TUPA
 │       └── exception/
 │           ├── TransicionInvalidaException.java
 │           └── RecursoNoEncontradoException.java
@@ -65,77 +71,128 @@ MuniHuamanga/
 ├── servicio-expedientes/                    # Microservicio Núcleo del Trámite (Puerto 8081)
 │   ├── src/main/java/.../expedientes/
 │   │   ├── ExpedientesApplication.java
-│   │   ├── config/DataInitializer.java          # Datos semilla de prueba (expedientes demo)
+│   │   ├── config/
+│   │   │   ├── AsyncConfig.java             # Pool de hilos @Async para notificaciones email
+│   │   │   ├── SecurityConfig.java          # Spring Security 6: filtros JWT y reglas RBAC
+│   │   │   ├── DataInitializer.java          # Datos semilla de prueba (expedientes con 45 atributos)
+│   │   │   └── UsuarioDataInitializer.java   # Usuarios semilla institucionales (BCrypt: admin, evaluador, cajero)
 │   │   ├── controller/
-│   │   │   ├── ExpedienteController.java        # 18 endpoints REST del trámite
-│   │   │   ├── PublicLicenciasController.java   # Endpoint público de verificación QR (RNF-20)
-│   │   │   └── GlobalExceptionHandler.java      # Manejo global de errores HTTP
+│   │   │   ├── AuthController.java          # Autenticación JWT (/api/auth/login, /api/auth/me)
+│   │   │   ├── ExpedienteController.java    # 18 endpoints REST del trámite y workflow
+│   │   │   ├── PublicLicenciasController.java # Endpoint público de verificación QR (RNF-20)
+│   │   │   ├── TarifaTupaController.java    # CRUD y actualización en caliente del tarifario TUPA
+│   │   │   └── GlobalExceptionHandler.java  # Manejo global de errores HTTP (RFC-7807)
+│   │   ├── security/                        # Capa de seguridad JWT sin estado (Stateless)
+│   │   │   ├── JwtTokenProvider.java        # Firma HMAC-SHA256, generación y validación de tokens JJWT
+│   │   │   ├── JwtAuthenticationFilter.java # Filtro OncePerRequest para interceptar Bearer token
+│   │   │   ├── JwtAuthenticationEntryPoint.java # Manejo de error 401 Unauthorized en JSON
+│   │   │   ├── JwtAccessDeniedHandler.java  # Manejo de error 403 Forbidden en JSON
+│   │   │   ├── CustomUserDetails.java       # Wrapper UserDetails de Spring Security
+│   │   │   └── CustomUserDetailsService.java # Carga de usuario desde base de datos
 │   │   ├── service/
-│   │   │   ├── ExpedienteService.java           # Máquina de estados (467 líneas), lógica y persistencia
-│   │   │   ├── CalculadoraDeTasa.java           # Tarifario TUPA por nivel de riesgo ITSE
-│   │   │   ├── AuditoriaService.java            # Log inmutable de transiciones con sellado de tiempo
-│   │   │   ├── MetricasExpedienteService.java   # Micrometer: SLAs, alertas de vencimiento
-│   │   │   ├── DocumentoPdfService.java         # Motor PDF local (Anexo 1, 3, 4, Voucher, Licencia)
-│   │   │   ├── Anexo1PdfGenerator.java          # Generador Anexo 1 (2 páginas, Ley 28976)
-│   │   │   ├── Anexo3PdfGenerator.java          # Generador Matriz ITSE (2 páginas, CENEPRED)
-│   │   │   └── Anexo4PdfGenerator.java          # Generador Condiciones de Seguridad (4 páginas)
+│   │   │   ├── ExpedienteService.java       # Máquina de estados (5 estados), lógica y persistencia
+│   │   │   ├── CalculadoraDeTasa.java       # Motor de cálculo dinámico con desglose y fallback a YAML
+│   │   │   ├── TarifaTupaService.java       # Gestión transaccional de tasas municipales TUPA
+│   │   │   ├── AuditoriaService.java        # Log inmutable de transiciones con sellado de tiempo
+│   │   │   ├── MetricasExpedienteService.java # Micrometer/Actuator: SLAs, alertas de vencimiento
+│   │   │   ├── NotificacionEmailService.java # Envío asíncrono de correos con plantillas Thymeleaf y PDF adjunto
+│   │   │   ├── AuthService.java             # Lógica de login con BCrypt y emisión JWT
+│   │   │   ├── DocumentoPdfService.java     # Motor PDF local (Anexo 1, 3, 4, Voucher SAT, Licencia)
+│   │   │   ├── LicenciaPdfGenerator.java    # Certificado oficial de Licencia (doble marco, escudo, QR ZXing, 6 notas)
+│   │   │   ├── Anexo1PdfGenerator.java      # Generador Anexo 1 (2 páginas, Ley 28976)
+│   │   │   ├── Anexo3PdfGenerator.java      # Generador Matriz ITSE (2 páginas, CENEPRED)
+│   │   │   └── Anexo4PdfGenerator.java      # Generador Condiciones de Seguridad (4 páginas)
 │   │   ├── validator/EstadoExpedienteValidator.java # Precondiciones legales de aprobación
-│   │   ├── mapper/ExpedienteMapper.java          # MapStruct: cómputo 15 días hábiles + Anexo 4
+│   │   ├── mapper/ExpedienteMapper.java      # MapStruct: cómputo 15 días hábiles + Anexo 4
 │   │   ├── model/
-│   │   │   ├── Expediente.java                   # Entidad JPA con 45 atributos normativos
-│   │   │   ├── Anexo4Condiciones.java            # Objeto embebido JPA (@Embeddable) 23 campos
-│   │   │   └── HistorialEstado.java              # Auditoría inmutable @Entity
+│   │   │   ├── Expediente.java               # Entidad JPA central con 45 atributos normativos
+│   │   │   ├── Anexo4Condiciones.java        # Objeto embebido JPA (@Embeddable) 23 campos
+│   │   │   ├── HistorialEstado.java          # Auditoría inmutable @Entity
+│   │   │   ├── Usuario.java                  # Entidad JPA de usuarios con roles RBAC y BCrypt
+│   │   │   └── TarifaTupa.java               # Entidad JPA de tarifario municipal con constraints
 │   │   └── repository/
 │   │       ├── ExpedienteRepository.java
-│   │       └── HistorialRepository.java
-│   └── src/main/resources/
-│       ├── application.yml                       # Configuración Spring, JPA, Swagger
-│       ├── application-local.yml                 # Perfil local con PostgreSQL
-│       └── static/                              # Frontend Institucional (Fase 3)
-│           ├── index.html                        # Landing page con 4 tarjetas de acceso
-│           ├── portal-ciudadano.html             # 🆕 Wizard Multipaso: 3 pasos + Descarga PDFs
-│           ├── portal-interno.html               # 🆕 Dashboard KPI + Bandeja con Formatos PDF
-│           ├── verificar-licencia.html           # Portal Público de Verificación QR (RNF-20)
-│           ├── css/styles.css                    # 🆕 Sistema de diseño (820 líneas): wizard, doc-cards, kpi-v2
-│           ├── js/
-│           │   ├── portal-ciudadano.js           # 🆕 Wizard logic: navegación, validaciones, fetch+blob
-│           │   ├── portal-interno.js             # 🆕 renderFormatosPdf(), descargarFormatoInterno()
-│           │   └── verificar-licencia.js         # Consulta QR pública
-│           └── img/escudo-huamanga.png           # Escudo oficial de Huamanga
+│   │       ├── HistorialRepository.java
+│   │       ├── UsuarioRepository.java
+│   │       └── TarifaTupaRepository.java
+│   ├── src/main/resources/
+│   │   ├── application.yml                   # Configuración Spring, JPA, Mail, JWT, Actuator
+│   │   ├── application-local.yml             # Perfil local con PostgreSQL 15
+│   │   ├── templates/email/                  # Plantillas Thymeleaf para notificaciones asíncronas
+│   │   │   ├── email-registro.html           # Notificación de registro con N° Expediente
+│   │   │   ├── email-aprobacion.html         # Notificación de aprobación con Licencia PDF adjunta
+│   │   │   └── email-rechazo.html            # Notificación motivada de denegatoria
+│   │   └── static/                          # Frontend Institucional Completo
+│   │       ├── index.html                    # Landing page con 4 tarjetas de acceso
+│   │       ├── portal-ciudadano.html         # Wizard Multipaso: 3 pasos + Descarga PDFs
+│   │       ├── portal-interno.html           # Dashboard KPI + Bandeja Formatos PDF + Login Modal + CRUD TUPA
+│   │       ├── verificar-licencia.html       # Portal Público de Verificación QR (RNF-20)
+│   │       ├── css/styles.css                # Sistema de diseño integral (wizard, kpi-cards, modales, alertas)
+│   │       ├── js/
+│   │       │   ├── portal-ciudadano.js       # Wizard logic: navegación, validaciones, fetch+blob
+│   │       │   ├── portal-interno.js         # Sesión JWT, renderFormatosPdf(), modales y gestión TUPA
+│   │       │   └── verificar-licencia.js     # Consulta QR pública en tiempo real
+│   │       └── img/escudo-huamanga.png       # Escudo oficial de Huamanga
+│   └── src/test/                            # 67 tests pasando (Unitarios, MockMvc, Concurrencia 150)
 │
 ├── servicio-formularios/                    # Microservicio de Generación Documental PDF (Puerto 8082)
 │   └── src/main/java/.../formularios/
 │       ├── FormulariosApplication.java
+│       ├── config/CorsConfig.java            # Configuración CORS perimetral
 │       ├── controller/FormulariosController.java # 7 endpoints POST de generación PDF
 │       └── service/
-│           ├── GeneradorDocumentoService.java    # Coordinador: delega a generadores especializados
-│           ├── Anexo1PdfGenerator.java           # Formato Ley 28976 con escudo (2 páginas)
-│           ├── Anexo3PdfGenerator.java           # Matriz ITSE CENEPRED, colores oficiales (2 páginas)
-│           └── Anexo4PdfGenerator.java           # Declaración Condiciones de Seguridad (4 páginas)
+│           ├── GeneradorDocumentoService.java # Coordinador OpenPDF 2.0.3 especializado
+│           ├── Anexo1PdfGenerator.java       # Formato Ley 28976 con escudo (2 páginas)
+│           ├── Anexo3PdfGenerator.java       # Matriz ITSE CENEPRED, colores oficiales (2 páginas)
+│           └── Anexo4PdfGenerator.java       # Declaración Condiciones de Seguridad (4 páginas)
 │
 ├── servicio-verificacion-licencias/         # Microservicio de Verificación QR (Puerto 8083)
 │   └── src/main/java/.../verificacion/
-│       ├── controller/VerificacionController.java
-│       └── service/QrGeneratorService.java       # ZXing 3.5.3: QR PNG criptográfico
+│       ├── VerificacionApplication.java
+│       ├── controller/VerificacionController.java # API pública de verificación de autenticidad
+│       └── service/QrGeneratorService.java   # ZXing 3.5.3: QR PNG criptográfico de alta resolución
 │
-├── adaptador-integracion/                   # Adaptador Hexagonal SAT/DefensaCivil (Puerto 8084)
+├── adaptador-integracion/                   # Adaptador Hexagonal SAT / Defensa Civil (Puerto 8084)
 │   └── src/main/java/.../adaptador/
-│       └── [Stubs y puertos de integración externa]
+│       ├── AdaptadorApplication.java
+│       ├── port/                             # Puertos de integración hexagonal
+│       │   ├── SatPort.java
+│       │   ├── DefensaCivilPort.java
+│       │   ├── EdificacionesPort.java
+│       │   └── FiscalizacionPort.java
+│       ├── service/                          # Implementación de adaptadores y stubs
+│       │   ├── SatAdapterService.java
+│       │   ├── DefensaCivilAdapterService.java
+│       │   ├── EdificacionesAdapterService.java
+│       │   └── FiscalizacionAdapterService.java
+│       └── controller/AdaptadorController.java # Endpoints REST del adaptador
 │
 ├── api-gateway/                             # Spring Cloud Gateway Perimetral (Puerto 8080)
-│   └── src/main/resources/application.yml  # Enrutamiento reactivo, CORS, Rate Limiting
+│   ├── src/main/java/.../gateway/
+│   │   └── ApiGatewayApplication.java
+│   └── src/main/resources/application.yml  # Enrutamiento reactivo, CORS unificado, Rate Limiting
 │
 ├── docker/
-│   └── postgres/init/01-init-databases.sql # DDL: 45 columnas, índices, migración en caliente
+│   └── postgres/init/01-init-databases.sql # DDL: 45 columnas, índices, tablas usuarios y tarifas
+│
+├── tests/                                   # Pruebas de Carga y Rendimiento
+│   └── load-test/
+│       ├── k6-load-test.js                  # Suite k6 para simulación de ≥150 usuarios concurrentes
+│       └── run-load-test-150.ps1            # Script de automatización PowerShell
 │
 └── docs/                                    # Documentación Técnica Oficial
     ├── entrega-fase-01.md                   # Entrega Fase 01: Dominio, BD y APIs
     ├── entrega-fase-02.md                   # Entrega Fase 02: Motor PDF (Anexos 1, 3, 4)
-    ├── entrega-fase-03.md                   # 🆕 Entrega Fase 03: Frontend Wizard + Descarga PDFs
+    ├── entrega-fase-03.md                   # Entrega Fase 03: Frontend Wizard + Descarga PDFs
+    ├── entrega-fase-04.md                   # Entrega Fase 04: Sprint 4-A — PDF Licencia Oficial
+    ├── entrega-fase-04-sprint4b.md          # Entrega Fase 04: Sprint 4-B — Notificaciones Email Async
+    ├── entrega-fase-04-sprint4c.md          # Entrega Fase 04: Sprint 4-C — Autenticación JWT + RBAC
+    ├── entrega-fase-04-sprint4d.md          # Entrega Fase 04: Sprint 4-D — CRUD Tarifario TUPA
+    ├── entrega-fase-04-consolidado.md       # Entrega Fase 04 Completa: Consolidado (80/80 tests)
     ├── normativa-legal.md                   # Marco Legal: Ley 28976, Anexos 1, 3 y 4 ITSE
     ├── v0.1-inventario-matriz-campos.md     # Matriz de trazabilidad campo por campo (45 atributos)
-    ├── arquitectura/c4-model.md             # Modelo C4 actualizado (Contexto, Contenedores, Componentes)
-    └── scrum/                               # Product Backlogs e Historias de Usuario
+    ├── arquitectura/c4-model.md             # Modelo C4 actualizado (Contexto, Contenedores, Componentes, Dominio)
+    └── scrum/                               # Product Backlogs e Historias de Usuario (Sprints 0 a 4)
 ```
 
 ---
@@ -373,11 +430,14 @@ git push origin main
 ### Historial de Commits Principales
 
 ```
+a548d65  fix(frontend/ux): permitir lectura publica de expedientes en portal interno, boton demo y cache-busting
+e8fd85c  docs(arquitectura/c4): corregir errores de sintaxis Mermaid en diagramas C4 y actualizar a Fase 04
+29e6beb  docs(readme): actualizar estado a Fase 04 completada, catalogo de endpoints JWT/TUPA y 80 tests passing
+8adf12a  feat(fase-04/sprint4d): CRUD tarifario TUPA para gestion dinamica de tasas municipales y consolidado Fase 04
+f1a0b32  feat(fase-04/sprint4c): seguridad JWT con Spring Security 6 RBAC y login modal
+4f8a71c  feat(fase-04/sprint4b): notificaciones electronicas email async con Thymeleaf y JavaMailSender
+148bc8a  feat(fase-04/sprint4a): generador oficial PDF de Licencia de Funcionamiento con QR y sello institucional
 5330790  feat(fase-03/frontend): wizard multipaso ciudadano + descarga de anexos PDF
-9cabbcb  docs(fase-02): documentar motor de generacion de formatos estandar y endpoints pdf
-6d906d7  feat(fase-02): digitalizar formato oficial de anexo 4 declaracion jurada
-bbb242c  feat(fase-02): digitalizar formato oficial de anexo 3 matriz de riesgo itse
-d2295ca  feat(fase-02): digitalizar formato oficial de anexo 1 declaracion jurada
 ```
 
 ---
@@ -389,13 +449,13 @@ d2295ca  feat(fase-02): digitalizar formato oficial de anexo 1 declaracion jurad
 | Sprint 1 | **Fase 01** | ✅ | BD 45 atributos, dominio JPA, APIs REST, auditoría |
 | Sprint 2 | **Fase 02** | ✅ | PDFs Anexo 1 (2p), Anexo 3 (2p), Anexo 4 (4p), Voucher SAT, Licencia QR |
 | Sprint 3 | **Fase 03** | ✅ | Wizard ciudadano 3 pasos, Dashboard KPI, Descarga inmediata PDF |
-| Sprint 4 | **Fase 04** | 🔄 En progreso | **Sprint 4-A**: PDF Licencia formato oficial municipal ✅ \| Notificaciones email (SMTP) \| JWT + Spring Security \| CRUD TUPA |
-| Sprint 5 | **Fase 05** | ⏳ | Tests integración, adaptadores externos, pruebas de carga |
+| Sprint 4 | **Fase 04** | ✅ | **Sprint 4-A**: PDF Licencia formato oficial municipal ✅ \| **Sprint 4-B**: Notificaciones email async (Thymeleaf + JavaMail) ✅ \| **Sprint 4-C**: JWT + Spring Security 6 RBAC ✅ \| **Sprint 4-D**: CRUD TUPA dinámico ✅ (80/80 tests passing) |
+| Sprint 5 | **Fase 05** | ⏳ | Tests integración, adaptadores externos, pruebas de carga (≥150 usuarios) |
 
 - **✅ Fase 01 (Completada):** [docs/entrega-fase-01.md](docs/entrega-fase-01.md)
 - **✅ Fase 02 (Completada):** [docs/entrega-fase-02.md](docs/entrega-fase-02.md)
 - **✅ Fase 03 (Completada):** [docs/entrega-fase-03.md](docs/entrega-fase-03.md)
-- **🔄 Fase 04 (En progreso):** Sprint 4-A — PDF Licencia formato oficial ✅ (40 tests passing)
+- **✅ Fase 04 (Completada):** [docs/entrega-fase-04-consolidado.md](docs/entrega-fase-04-consolidado.md) (Detalles: [Sprint 4-A](docs/entrega-fase-04.md), [Sprint 4-B](docs/entrega-fase-04-sprint4b.md), [Sprint 4-C](docs/entrega-fase-04-sprint4c.md), [Sprint 4-D](docs/entrega-fase-04-sprint4d.md))
 
 ---
 
