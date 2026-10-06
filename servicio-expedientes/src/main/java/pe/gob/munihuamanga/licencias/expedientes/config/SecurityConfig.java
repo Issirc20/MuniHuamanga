@@ -82,10 +82,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/expedientes/**").permitAll()
 
                         // Operaciones restringidas por rol funcional municipal (RBAC)
-                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/pago").hasAnyRole("CAJERO", "ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/expedientes/*/clasificar-riesgo").hasAnyRole("EVALUADOR", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/aprobar").hasAnyRole("EVALUADOR", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/rechazar").hasAnyRole("EVALUADOR", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/pago", "/api/expedientes/*/registrar-pago").hasAnyRole("CAJERO", "ADMIN")
+                        .requestMatchers("/api/expedientes/*/clasificar-riesgo", "/api/expedientes/*/clasificacion-riesgo").hasAnyRole("EVALUADOR", "ADMIN")
+                        .requestMatchers("/api/expedientes/*/voucher", "/api/expedientes/*/generar-voucher").hasAnyRole("EVALUADOR", "CAJERO", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/aprobar", "/api/expedientes/*/emision-licencia").hasAnyRole("EVALUADOR", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/rechazar", "/api/expedientes/*/observar").hasAnyRole("EVALUADOR", "ADMIN")
 
                         // Tarifario TUPA: Consulta pública / funcionarios, Mantenimiento exclusivo ADMIN (Sprint 4-D)
                         .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()

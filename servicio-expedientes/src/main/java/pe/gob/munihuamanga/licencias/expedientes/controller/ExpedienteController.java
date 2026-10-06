@@ -185,7 +185,7 @@ public class ExpedienteController {
                 .body(pdf);
     }
 
-    @GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
+    @GetMapping(value = {"/{id}/qr", "/{id}/documentos/licencia-qr", "/{id}/documentos/qr"}, produces = MediaType.IMAGE_PNG_VALUE)
     @Operation(summary = "US-10: Obtener la imagen PNG del código QR único de la licencia emitida")
     public ResponseEntity<byte[]> obtenerImagenQrExpediente(
             @PathVariable UUID id,
@@ -197,7 +197,10 @@ public class ExpedienteController {
         return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG).body(qr);
     }
 
-    @PostMapping("/{id}/clasificacion-riesgo")
+    @org.springframework.web.bind.annotation.RequestMapping(
+            value = {"/{id}/clasificar-riesgo", "/{id}/clasificacion-riesgo"},
+            method = {org.springframework.web.bind.annotation.RequestMethod.PATCH, org.springframework.web.bind.annotation.RequestMethod.POST}
+    )
     @Operation(summary = "Defensa Civil: Registrar clasificación de riesgo ITSE y calcular tasa")
     public ResponseEntity<Void> registrarClasificacionRiesgo(
             @PathVariable UUID id,
@@ -207,14 +210,17 @@ public class ExpedienteController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/voucher")
+    @org.springframework.web.bind.annotation.RequestMapping(
+            value = {"/{id}/voucher", "/{id}/generar-voucher"},
+            method = {org.springframework.web.bind.annotation.RequestMethod.POST, org.springframework.web.bind.annotation.RequestMethod.GET}
+    )
     @Operation(summary = "SAT: Generar voucher / orden de pago de la tasa administrativa")
     public ResponseEntity<VoucherDto> generarVoucher(@PathVariable UUID id) {
         VoucherDto voucher = expedienteService.generarVoucher(id);
         return ResponseEntity.ok(voucher);
     }
 
-    @PostMapping("/{id}/pago")
+    @PostMapping(value = {"/{id}/pago", "/{id}/registrar-pago"})
     @Operation(summary = "SAT / Tesorería: Registrar constancia de pago de la tasa")
     public ResponseEntity<Void> registrarPago(
             @PathVariable UUID id,
@@ -224,14 +230,14 @@ public class ExpedienteController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/aprobar")
+    @PostMapping(value = {"/{id}/aprobar", "/{id}/emision-licencia"})
     @Operation(summary = "Gerencia de Licencias: Dictamen final favorable y emisión de licencia con QR")
     public ResponseEntity<Void> aprobar(@PathVariable UUID id) {
         expedienteService.aprobar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/rechazar")
+    @PostMapping(value = {"/{id}/rechazar", "/{id}/observar"})
     @Operation(summary = "Gerencia de Licencias: Dictamen de rechazo u observaciones insubsanables")
     public ResponseEntity<Void> rechazar(
             @PathVariable UUID id,

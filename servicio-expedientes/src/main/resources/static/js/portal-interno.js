@@ -213,7 +213,7 @@ function renderFormatosPdf(exp) {
     `;
   }
 
-  if (exp.voucherSatId) {
+  if (exp.voucherId || exp.voucherSatId) {
     html += `
       <a href="${API_BASE}/${exp.id}/documentos/voucher-sat" target="_blank" class="btn btn-secondary btn-sm" style="color: #0369a1;" title="Descargar Voucher SAT Huamanga">
         🧾 Voucher SAT
@@ -245,11 +245,12 @@ function renderAcciones(exp) {
   }
 
   if (exp.estado === 'DOCUMENTOS_VALIDADOS') {
+    const vchId = exp.voucherId || exp.voucherSatId || '';
     return `
       <button class="btn btn-secondary btn-sm" onclick="generarVoucherSat('${exp.id}')" title="Generar código de voucher SAT">
         🧾 Generar Voucher
       </button>
-      <button class="btn btn-success btn-sm" onclick="abrirModalPago('${exp.id}', '${exp.voucherSatId || ''}')">
+      <button class="btn btn-success btn-sm" onclick="abrirModalPago('${exp.id}', '${vchId}')">
         💳 Validar Pago
       </button>
       <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')">
@@ -330,8 +331,11 @@ async function guardarClasificacionItse() {
 
 async function generarVoucherSat(id) {
   try {
-    const res = await fetchConAuth(`${API_BASE}/${id}/voucher`);
-    if (!res.ok) throw new Error('Error al generar voucher');
+    const res = await fetchConAuth(`${API_BASE}/${id}/voucher`, { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al generar voucher');
+    }
     const vch = await res.json();
     alert(`🧾 Voucher SAT Generado exitosamente:\n\nCódigo: ${vch.voucherId}\nMonto: S/. ${vch.monto.toFixed(2)}\nCódigo de Barras: ${vch.codigoBarrasSat}`);
     cargarExpedientes();

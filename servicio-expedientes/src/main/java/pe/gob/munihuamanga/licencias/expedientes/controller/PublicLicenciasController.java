@@ -19,7 +19,7 @@ import pe.gob.munihuamanga.licencias.expedientes.service.ExpedienteService;
  * para la verificación ciudadana y fiscalización de autenticidad de licencias de funcionamiento.
  */
 @RestController
-@RequestMapping("/api/public/licencias")
+@RequestMapping({"/api/public/licencias", "/api/public/verificar"})
 @RequiredArgsConstructor
 @Tag(name = "Verificación Pública de Licencias", description = "Endpoints de solo lectura para consulta de autenticidad por código QR y ciudadanos (RNF-20)")
 public class PublicLicenciasController {
