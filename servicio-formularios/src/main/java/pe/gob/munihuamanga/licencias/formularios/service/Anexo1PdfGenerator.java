@@ -37,7 +37,6 @@ public class Anexo1PdfGenerator {
     private static final Font F_TITLE_TAG = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.BLACK);
     private static final Font F_TITLE_MAIN = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, Color.BLACK);
     private static final Font F_TITLE_SUB = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 6.5f, Color.DARK_GRAY);
-    private static final Font F_TITLE_VER = FontFactory.getFont(FontFactory.HELVETICA, 6.5f, Color.BLACK);
 
     private static final Font F_BOX_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 6f, Color.BLACK);
     private static final Font F_BOX_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, new Color(0, 51, 102));

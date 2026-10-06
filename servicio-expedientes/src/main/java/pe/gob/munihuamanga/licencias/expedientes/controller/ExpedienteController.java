@@ -21,7 +21,6 @@ import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
-import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -160,7 +159,6 @@ public class ExpedienteController {
     @GetMapping("/{id}/documentos/voucher-sat")
     @Operation(summary = "US-07: Descargar en PDF la Orden de Pago SAT con código de barras")
     public ResponseEntity<byte[]> descargarVoucherSat(@PathVariable UUID id) {
-        Expediente exp = expedienteService.obtenerPorId(id);
         VoucherDto voucher = expedienteService.generarVoucher(id);
         byte[] pdf = documentoPdfService.generarVoucherSatPdf(voucher);
 

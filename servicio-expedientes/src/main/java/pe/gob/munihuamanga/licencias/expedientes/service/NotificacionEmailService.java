@@ -60,7 +60,7 @@ public class NotificacionEmailService {
     // ─── Formateadores ────────────────────────────────────────────────────────
 
     private static final DateTimeFormatter FMT_FECHA =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", new Locale("es", "PE"));
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.of("es", "PE"));
 
     // ─── Constructor ──────────────────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ public class NotificacionEmailService {
         if (!puedeEnviar(expediente)) return;
 
         try {
-            Context ctx = new Context(new Locale("es", "PE"));
+            Context ctx = new Context(Locale.of("es", "PE"));
             ctx.setVariable("titular",      expediente.getNombreTitular());
             ctx.setVariable("numeroTramite", expediente.getNumeroTramite());
             ctx.setVariable("nombreComercial", expediente.getNombreComercial());
@@ -128,7 +128,7 @@ public class NotificacionEmailService {
             String urlVerificacion = portalVerificacion
                     + (expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : "");
 
-            Context ctx = new Context(new Locale("es", "PE"));
+            Context ctx = new Context(Locale.of("es", "PE"));
             ctx.setVariable("titular",         expediente.getNombreTitular());
             ctx.setVariable("numeroTramite",   expediente.getNumeroTramite());
             ctx.setVariable("nombreComercial", expediente.getNombreComercial());
@@ -174,7 +174,7 @@ public class NotificacionEmailService {
         if (!puedeEnviar(expediente)) return;
 
         try {
-            Context ctx = new Context(new Locale("es", "PE"));
+            Context ctx = new Context(Locale.of("es", "PE"));
             ctx.setVariable("titular",         expediente.getNombreTitular());
             ctx.setVariable("numeroTramite",   expediente.getNumeroTramite());
             ctx.setVariable("nombreComercial", expediente.getNombreComercial());

@@ -47,6 +47,7 @@ class AdaptadorControllerTest {
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
+        assertNotNull(resp.getBody());
         assertEquals("PAGADO", resp.getBody().get("estadoPago"));
     }
 
@@ -62,6 +63,7 @@ class AdaptadorControllerTest {
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
+        assertNotNull(resp.getBody());
         assertEquals("FAVORABLE", resp.getBody().get("resultadoInspeccion"));
     }
 
@@ -77,6 +79,7 @@ class AdaptadorControllerTest {
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
+        assertNotNull(resp.getBody());
         assertEquals("COMPATIBLE / PERMITIDO", resp.getBody().get("compatibilidadUso"));
     }
 
@@ -91,6 +94,7 @@ class AdaptadorControllerTest {
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
+        assertNotNull(resp.getBody());
         assertEquals("CONFORME", resp.getBody().get("resultadoFiscalizacion"));
     }
 }

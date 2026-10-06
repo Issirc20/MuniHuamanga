@@ -21,18 +21,12 @@ import com.lowagie.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -195,29 +189,7 @@ public class DocumentoPdfService {
         }
     }
 
-    private String calcularHashSha256(String texto) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(texto.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString().toUpperCase();
-        } catch (Exception e) {
-            return "SHA256-ERROR";
-        }
-    }
 
-    private Paragraph crearTituloSeccion(String titulo) {
-        Font fontSec = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, new Color(0, 51, 102));
-        Paragraph p = new Paragraph(titulo, fontSec);
-        p.setSpacingBefore(4f);
-        p.setSpacingAfter(2f);
-        return p;
-    }
 
     private void agregarFila(PdfPTable table, String campo, String valor) {
         Font fontCampo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.BLACK);

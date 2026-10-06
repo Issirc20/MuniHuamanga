@@ -57,7 +57,7 @@ public class LicenciaPdfGenerator {
 
     // ─── Formateadores ───────────────────────────────────────────────────────
     private static final DateTimeFormatter FMT_LARGA =
-            DateTimeFormatter.ofPattern("dd 'DE' MMMM 'DE' yyyy", new Locale("es", "PE"));
+            DateTimeFormatter.ofPattern("dd 'DE' MMMM 'DE' yyyy", Locale.of("es", "PE"));
 
     // ════════════════════════════════════════════════════════════════════════
     // PUNTO DE ENTRADA PRINCIPAL

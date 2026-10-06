@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import pe.gob.munihuamanga.licencias.common.dto.LoginRequestDto;
 import pe.gob.munihuamanga.licencias.common.dto.LoginResponseDto;
 
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -62,9 +64,9 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Debe denegar acceso (HTTP 401) a la bandeja /api/expedientes si no se envía token")
-    void testBandejaSinToken_Retorna401() throws Exception {
-        mockMvc.perform(get("/api/expedientes")
+    @DisplayName("Debe denegar acceso (HTTP 401) a operaciones administrativas protegidas si no se envía token")
+    void testOperacionProtegidaSinToken_Retorna401() throws Exception {
+        mockMvc.perform(post("/api/expedientes/" + UUID.randomUUID() + "/aprobar")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }

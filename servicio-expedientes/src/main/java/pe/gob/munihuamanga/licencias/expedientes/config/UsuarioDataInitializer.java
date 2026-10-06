@@ -3,7 +3,6 @@ package pe.gob.munihuamanga.licencias.expedientes.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;

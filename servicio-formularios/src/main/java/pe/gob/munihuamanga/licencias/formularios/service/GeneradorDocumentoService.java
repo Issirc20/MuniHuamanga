@@ -349,14 +349,6 @@ public class GeneradorDocumentoService {
         return out.toByteArray();
     }
 
-    private Paragraph crearTituloSeccion(String titulo) {
-        Font fontSec = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, new Color(0, 51, 102));
-        Paragraph p = new Paragraph(titulo, fontSec);
-        p.setSpacingBefore(5f);
-        p.setSpacingAfter(3f);
-        return p;
-    }
-
     private void agregarFila(PdfPTable table, String campo, String valor) {
         Font fontCampo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9, Color.BLACK);
         Font fontValor = FontFactory.getFont(FontFactory.HELVETICA, 9, Color.DARK_GRAY);
