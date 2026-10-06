@@ -45,189 +45,170 @@ graph TD
 
 ---
 
-## 2. Nivel 2 — Diagrama de Contenedores
+## 2. Nivel 2 — Diagrama de Contenedores (Monolito Modular)
 
-Ilustra la separación entre las aplicaciones web cliente, el API Gateway perimetral, los microservicios especializados del backend, el servicio de notificaciones y el almacén de datos relacional:
+Ilustra la arquitectura consolidada de **Monolito Modular con Clean Architecture**, donde un único contenedor de aplicación Spring Boot atiende a los portales web cliente, gestiona el ciclo de vida del expediente, renderiza documentos PDF oficiales, expone puertos de integración desacoplados y persiste datos en PostgreSQL:
 
 ```mermaid
 graph TD
     classDef container fill:#438dd5,stroke:#2e6295,color:#fff;
     classDef db fill:#23527c,stroke:#173752,color:#fff;
-    classDef gateway fill:#08427b,stroke:#073b6f,color:#fff;
     classDef frontend fill:#63a0e2,stroke:#3b7abf,color:#fff;
+    classDef ext fill:#555555,stroke:#333333,color:#fff;
 
-    subgraph CapaPresentacion [Capa de Presentacion - Frontend Institucional]
-        portalCiudadano["Portal Ciudadano<br>(HTML5 / CSS3 / Vanilla JS)<br>Wizard 3 pasos: Solicitante -> Establecimiento -> Confirmacion<br>Descarga inmediata: Anexo 1, 3 y 4<br>Seguimiento con timeline visual"]:::frontend
+    subgraph CapaPresentacion [Capa de Presentacion - Portales Web Institucionales]
+        portalCiudadano["Portal Ciudadano<br>(HTML5 / CSS3 / Vanilla JS)<br>Wizard 3 pasos: Solicitante -> Local -> Confirmacion<br>Descarga inmediata de Anexos 1, 3 y 4<br>Mesa de Ayuda para tramitacion presencial"]:::frontend
         portalInterno["Sistema Interno de Gestion<br>(HTML5 / CSS3 / Vanilla JS)<br>Dashboard KPI con control RBAC JWT<br>Bandeja con columna Formatos PDF y Modales<br>Mantenimiento en caliente del Tarifario TUPA"]:::frontend
-        portalVerificacion["Portal Publico de Verificacion<br>(HTML5 / CSS3 / Vanilla JS)<br>Consulta publica de licencias via QR RNF-20"]:::frontend
-        landing["Landing Page<br>(HTML5 / CSS3)<br>Acceso a los 4 portales del sistema"]:::frontend
+        portalVerificacion["Portal Publico de Verificacion<br>(HTML5 / CSS3 / Vanilla JS)<br>Consulta publica de autenticidad via QR RNF-20"]:::frontend
+        landing["Landing Page Institucional<br>(HTML5 / CSS3)<br>Acceso centralizado al ecosistema municipal"]:::frontend
     end
 
-    gateway["API Gateway Perimetral<br>(Spring Cloud Gateway :8080)<br>Enrutamiento reactivo, CORS unificado,<br>Rate Limiting y control de concurrencia"]:::gateway
-
-    subgraph Backend [Ecosistema de Microservicios - Java 21 / Spring Boot 3.3.4]
-        servicioExpedientes["Servicio de Expedientes<br>(Spring Boot :8081)<br>Maquina de 5 estados, 22 endpoints REST,<br>Spring Security 6 + JJWT, calculo TUPA en caliente,<br>Generador Oficial PDF, Email Async con Thymeleaf"]:::container
-        servicioFormularios["Servicio de Formularios PDF<br>(Spring Boot :8082)<br>7 endpoints POST de generacion documental<br>OpenPDF 2.0.3: Anexo 1, Anexo 3, Anexo 4,<br>Voucher SAT, Licencia QR"]:::container
-        servicioVerificacion["Servicio de Verificacion QR<br>(Spring Boot :8083)<br>ZXing 3.5.3: PNG criptografico<br>API publica de consulta RNF-20"]:::container
-        adaptadorIntegracion["Adaptador de Integracion Hexagonal<br>(Spring Boot :8084)<br>Puertos y stubs para SAT,<br>Defensa Civil y Zonificacion Urbana"]:::container
+    subgraph Backend [Contenedor Principal: Monolito Modular - Java 21 / Spring Boot 3.3.4 :8081]
+        monolito["MuniHuamanga Monolito Modular<br>(servicio-expedientes :8081)<br>• Bounded Context: Expedientes (Workflow y 5 estados)<br>• Bounded Context: Documentos Oficiales (Anexo 1, 3, 4, Licencia QR)<br>• Bounded Context: TUPA Dinamico (Calculo automatizado)<br>• Bounded Context: Verificacion Publica QR (ZXing)<br>• Bounded Context: Integracion (Ports & Adapters SAT, DC)<br>• Bounded Context: Seguridad (Spring Security 6 + JJWT)"]:::container
     end
 
     subgraph Persistencia [Capa de Datos Relacional]
-        postgres[("PostgreSQL 15<br>muni_licencias_db :5432<br>Expedientes 45 atributos, Usuarios RBAC,<br>Tarifario TUPA dinamico e historial auditoria")]:::db
+        postgres[("PostgreSQL 15 / H2<br>muni_licencias_db :5432<br>Expedientes 45 atributos, Usuarios RBAC,<br>Tarifario TUPA dinamico e historial auditoria")]:::db
     end
 
-    subgraph Externos [Servicios de Notificacion y Salida]
-        smtpServer["Servidor SMTP / JavaMail<br>(Notificaciones Electronicas Async)<br>Alertas de Registro, Aprobacion con PDF y Rechazo"]:::container
+    subgraph Externos [Servicios y Entidades Externas]
+        smtpServer["Servidor SMTP / JavaMail<br>(Notificaciones Electronicas Async)<br>Alertas de Registro, Aprobacion con PDF y Rechazo"]:::ext
+        satExt["SAT Huamanga<br>(Recaudacion Tributaria)"]:::ext
+        dcExt["Subgerencia de Defensa Civil<br>(Inspeccion ITSE Presencial)"]:::ext
     end
 
-    portalCiudadano -->|"REST JSON - Wizard registro y descarga PDFs"| servicioExpedientes
-    portalCiudadano -->|"POST fetch blob - Anexo 3 y 4 directo"| servicioFormularios
-    portalInterno -->|"REST JSON con Bearer JWT - Gestion integral y TUPA"| servicioExpedientes
-    portalInterno -->|"POST fetch blob - Formatos PDF internos"| servicioFormularios
-    portalVerificacion -->|"GET /api/licencias/verificar/:codigo"| servicioExpedientes
     landing -->|"Navegacion"| portalCiudadano
+    landing -->|"Navegacion"| portalInterno
+    landing -->|"Navegacion"| portalVerificacion
 
-    gateway -->|"/api/expedientes/**"| servicioExpedientes
-    gateway -->|"/api/formularios/**"| servicioFormularios
-    gateway -->|"/api/verificacion/**"| servicioVerificacion
-    gateway -->|"/api/adaptador/**"| adaptadorIntegracion
+    portalCiudadano -->|"REST JSON / Descarga directa PDFs"| monolito
+    portalInterno -->|"REST JSON con Bearer JWT / Formatos PDF"| monolito
+    portalVerificacion -->|"GET /api/public/licencias/{codigo}"| monolito
 
-    servicioExpedientes -->|"Spring Data JPA / JDBC"| postgres
-    servicioExpedientes -->|"SMTP / JavaMail asincrono"| smtpServer
-    servicioExpedientes -.->|"Delegacion PDF si necesario"| servicioFormularios
-    servicioExpedientes -.->|"Notificaciones externas"| adaptadorIntegracion
+    monolito -->|"Spring Data JPA / Transaccionalidad ACID"| postgres
+    monolito -->|"SMTP / JavaMail asincrono"| smtpServer
+    monolito -.->|"SatPort / Conciliacion de vouchers"| satExt
+    monolito -.->|"DefensaCivilPort / Dictamenes ITSE"| dcExt
 ```
 
 ---
 
-## 3. Nivel 3 — Diagrama de Componentes: Servicio de Expedientes (:8081)
+## 3. Nivel 3 — Diagrama de Componentes: Monolito Modular (:8081)
 
-Detalla la arquitectura interna del microservicio central, incorporando la seguridad Spring Security 6 / JWT, la máquina de estados, el generador oficial de licencias y el mantenimiento TUPA:
+Detalla la arquitectura interna basada en **Clean Architecture** (Arquitectura Limpia y Hexagonal / Ports & Adapters) dentro del contenedor unificado:
 
 ```mermaid
 graph TD
     classDef comp fill:#63a0e2,stroke:#3b7abf,color:#fff;
     classDef pdf fill:#d4a017,stroke:#a07812,color:#fff;
     classDef sec fill:#d9534f,stroke:#b52b27,color:#fff;
+    classDef port fill:#2e7d32,stroke:#1b5e20,color:#fff;
     classDef db fill:#23527c,stroke:#173752,color:#fff;
-    classDef ext fill:#777777,stroke:#555555,color:#fff;
     classDef frontend fill:#2d9e6b,stroke:#1f7048,color:#fff;
 
-    subgraph Frontend [Portales Web Institucionales]
-        wizardCiudadano["Portal Ciudadano<br>(Wizard 3 pasos + descarga PDFs)"]:::frontend
-        dashboardInterno["Portal Interno<br>(Dashboard KPI + RBAC + Tarifario TUPA)"]:::frontend
+    subgraph ClientesWeb [Clientes Web Frontales]
+        wizardCiudadano["Portal Ciudadano (Wizard 3 pasos + Mesa de Ayuda)"]:::frontend
+        dashboardInterno["Portal Interno (Dashboard KPI + RBAC)"]:::frontend
     end
 
-    subgraph ServicioExpedientes [Servicio de Expedientes :8081]
-        subgraph SecurityModule [Modulo de Seguridad Spring Security 6]
-            secConfig["SecurityConfig<br>(SecurityFilterChain stateless)"]:::sec
-            jwtFilter["JwtAuthenticationFilter<br>(Intercepta Bearer token)"]:::sec
-            jwtProvider["JwtTokenProvider<br>(JJWT 0.12.6 generacion y validacion)"]:::sec
+    subgraph MonolitoModular [Monolito Modular - servicio-expedientes]
+        subgraph CapaPresentacionDelivery [Capa de Presentacion / Web Delivery]
+            expController["ExpedienteController<br>(REST Controller)"]:::comp
             authController["AuthController<br>(POST /api/auth/login)"]:::sec
+            tupaController["TarifaTupaController<br>(REST Controller)"]:::comp
+            publicController["PublicLicenciasController<br>(REST Verificacion QR)"]:::comp
+            docController["DocumentosFormulariosController<br>(REST /api/formularios)"]:::comp
+            adaptController["AdaptadorController<br>(REST /api/integraciones)"]:::comp
         end
 
-        controller["ExpedienteController<br>(REST Controller)<br>19 endpoints: Mesa de Partes, ITSE,<br>SAT, PDFs, QR, Resoluciones"]:::comp
-        publicController["PublicLicenciasController<br>(REST Controller)<br>Endpoint publico /api/licencias/verificar/:codigo"]:::comp
-        tupaController["TarifaTupaController<br>(REST Controller)<br>GET /api/tupa/tarifas y PUT dinamico ADMIN"]:::comp
-        exceptionHandler["GlobalExceptionHandler<br>(ControllerAdvice)<br>Mapeo de excepciones HTTP"]:::comp
-
-        service["ExpedienteService<br>(Transactional Service)<br>Orquesta la maquina de 5 estados,<br>reglas de negocio y derivaciones"]:::comp
-        tupaService["TarifaTupaService<br>(Service)<br>Gestion en caliente de tasas TUPA"]:::comp
-        emailService["NotificacionEmailService<br>(Async Service)<br>Envio de correos con plantillas Thymeleaf"]:::comp
-        validator["EstadoExpedienteValidator<br>(Business Validator)<br>Precondiciones legales de aprobacion"]:::comp
-        calculadora["CalculadoraDeTasa<br>(TUPA Component)<br>Consulta BD con fallback automatico a YAML"]:::comp
-        auditoria["AuditoriaService<br>(Audit Service)<br>Log inmutable con sellado de tiempo"]:::comp
-        metricas["MetricasExpedienteService<br>(Micrometer)<br>Contadores de SLAs y alertas de vencimiento"]:::comp
-
-        subgraph PDFEngine [Motor de Generacion PDF OpenPDF 2.0.3]
-            pdfService["DocumentoPdfService<br>(PDF Orchestrator)"]:::pdf
-            licenciaGen["LicenciaPdfGenerator<br>(Certificado Oficial Municipal)<br>Marco ornamental, escudo, marca de agua,<br>cuadro rojo, 6 indicaciones y QR ZXing"]:::pdf
-            anexo1Gen["Anexo1PdfGenerator<br>(2 paginas - Declaracion Jurada Ley 28976)"]:::pdf
-            anexo3Gen["Anexo3PdfGenerator<br>(2 paginas - Matriz Riesgo ITSE CENEPRED)"]:::pdf
-            anexo4Gen["Anexo4PdfGenerator<br>(4 paginas - Condiciones de Seguridad)"]:::pdf
+        subgraph CapaSeguridad [Capa de Seguridad Spring Security 6]
+            secConfig["SecurityConfig (Stateless FilterChain)"]:::sec
+            jwtFilter["JwtAuthenticationFilter"]:::sec
+            jwtProvider["JwtTokenProvider (JJWT 0.12.6)"]:::sec
         end
 
-        expedienteRepo["ExpedienteRepository<br>(Spring Data JPA)"]:::comp
-        tupaRepo["TarifaTupaRepository<br>(Spring Data JPA)"]:::comp
-        usuarioRepo["UsuarioRepository<br>(Spring Data JPA)"]:::comp
-        historialRepo["HistorialRepository<br>(Spring Data JPA)"]:::comp
+        subgraph CapaAplicacion [Capa de Aplicacion / Casos de Uso]
+            expService["ExpedienteService (Maquina de 5 Estados)"]:::comp
+            tupaService["TarifaTupaService (Tarifario TUPA)"]:::comp
+            calculadora["CalculadoraDeTasa (Calculo dinamico)"]:::comp
+            auditoria["AuditoriaService (Trazabilidad inmutable)"]:::comp
+            emailService["NotificacionEmailService (@Async)"]:::comp
+            validator["EstadoExpedienteValidator / MesaPartesValidator"]:::comp
+            pdfService["DocumentoPdfService (Coordinador PDF)"]:::pdf
+        end
+
+        subgraph CapaPuertosAdaptadores [Capa de Integracion / Ports & Adapters]
+            satPort["SatPort (Interface)"]:::port
+            dcPort["DefensaCivilPort (Interface)"]:::port
+            edifPort["EdificacionesPort (Interface)"]:::port
+            fiscPort["FiscalizacionPort (Interface)"]:::port
+
+            satAdapter["SatAdapterService"]:::comp
+            dcAdapter["DefensaCivilAdapterService"]:::comp
+            edifAdapter["EdificacionesAdapterService"]:::comp
+            fiscAdapter["FiscalizacionAdapterService"]:::comp
+        end
+
+        subgraph MotorPDF [Motor de Renderizado PDF OpenPDF / ZXing]
+            a1Gen["Anexo1PdfGenerator (2 paginas)"]:::pdf
+            a3Gen["Anexo3PdfGenerator (2 paginas Matriz ITSE)"]:::pdf
+            a4Gen["Anexo4PdfGenerator (4 paginas Condiciones Seguridad)"]:::pdf
+            licGen["LicenciaPdfGenerator (Certificado con QR ZXing)"]:::pdf
+        end
+
+        subgraph CapaPersistencia [Capa de Persistencia JPA]
+            expRepo["ExpedienteRepository"]:::comp
+            tupaRepo["TarifaTupaRepository"]:::comp
+            histRepo["HistorialRepository"]:::comp
+            userRepo["UsuarioRepository"]:::comp
+        end
     end
 
-    postgres[("PostgreSQL 15 / H2<br>muni_licencias_db")]:::db
+    postgres[("PostgreSQL 15 / H2")]:::db
 
-    wizardCiudadano -->|"POST /api/expedientes (publico)"| controller
-    dashboardInterno -->|"POST /api/auth/login"| authController
-    dashboardInterno -->|"Bearer JWT a endpoints protegidos"| jwtFilter
-    jwtFilter --> controller
+    wizardCiudadano --> expController
+    wizardCiudadano --> docController
+    dashboardInterno --> authController
+    dashboardInterno --> expController
+    dashboardInterno --> tupaController
+
+    jwtFilter --> expController
     jwtFilter --> tupaController
 
-    controller --> service
-    controller --> pdfService
+    expController --> expService
+    expController --> pdfService
+    docController --> pdfService
     tupaController --> tupaService
+    adaptController --> satPort
+    adaptController --> dcPort
+    adaptController --> edifPort
+    adaptController --> fiscPort
+
+    expService --> validator
+    expService --> calculadora
+    expService --> auditoria
+    expService --> emailService
+    expService --> expRepo
     tupaService --> tupaRepo
     tupaService --> calculadora
 
-    service --> validator
-    service --> calculadora
-    service --> auditoria
-    service --> emailService
-    service --> metricas
-    service --> expedienteRepo
+    pdfService --> a1Gen
+    pdfService --> a3Gen
+    pdfService --> a4Gen
+    pdfService --> licGen
 
-    pdfService --> licenciaGen
-    pdfService --> anexo1Gen
-    pdfService --> anexo3Gen
-    pdfService --> anexo4Gen
+    satAdapter --> satPort
+    dcAdapter --> dcPort
+    edifAdapter --> edifPort
+    fiscAdapter --> fiscPort
 
-    expedienteRepo --> postgres
+    expRepo --> postgres
     tupaRepo --> postgres
-    usuarioRepo --> postgres
-    historialRepo --> postgres
+    histRepo --> postgres
+    userRepo --> postgres
 ```
 
 ---
-
-## 4. Nivel 3 — Diagrama de Componentes: Servicio de Formularios (:8082)
-
-```mermaid
-graph TD
-    classDef comp fill:#438dd5,stroke:#2e6295,color:#fff;
-    classDef pdf fill:#d4a017,stroke:#a07812,color:#fff;
-    classDef ext fill:#777777,stroke:#555555,color:#fff;
-
-    portalCiudadano["Portal Ciudadano<br>(POST fetch blob)"]:::ext
-    portalInterno["Portal Interno<br>(descargarFormatoInterno)"]:::ext
-    servicioExpedientes["Servicio de Expedientes<br>(:8081)"]:::ext
-
-    subgraph ServicioFormularios [Servicio de Formularios :8082]
-        controller["FormulariosController<br>(REST Controller)<br>7 endpoints POST que reciben<br>ExpedienteResponseDto o VoucherDto<br>y retornan byte[] PDF"]:::comp
-
-        genService["GeneradorDocumentoService<br>(Service Orchestrator)<br>Coordina todos los generadores<br>de documentos oficiales"]:::comp
-
-        subgraph Generadores [Generadores OpenPDF 2.0.3]
-            a1["Anexo1PdfGenerator<br>2 paginas - Ley 28976<br>Declaracion Jurada Licencia"]:::pdf
-            a3["Anexo3PdfGenerator<br>2 paginas - CENEPRED<br>Matriz Riesgo ITSE<br>Colores: BAJO, MEDIO, ALTO, MUY_ALTO"]:::pdf
-            a4["Anexo4PdfGenerator<br>4 paginas - D.S. 002-2018<br>Condiciones de Seguridad<br>3 ejes: Edificacion/Equipos/Evacuacion"]:::pdf
-            dj["DeclaracionJuradaGenerator<br>Formato DJ estandar"]:::pdf
-            voucher["VoucherSatGenerator<br>Code 128 barcode<br>Codigo SAT + monto + vigencia"]:::pdf
-            licencia["LicenciaGenerator<br>Certificado oficial con QR ZXing<br>y datos de la resolucion"]:::pdf
-        end
-    end
-
-    portalCiudadano -->|"POST /api/formularios/anexo3-matriz-riesgo-itse"| controller
-    portalCiudadano -->|"POST /api/formularios/anexo4-condiciones-seguridad"| controller
-    portalInterno -->|"POST /api/formularios/anexo1-declaracion-jurada"| controller
-    portalInterno -->|"POST /api/formularios/voucher-sat"| controller
-    servicioExpedientes -.->|"Delegacion documental"| controller
-
-    controller --> genService
-    genService --> a1
-    genService --> a3
-    genService --> a4
-    genService --> dj
-    genService --> voucher
-    genService --> licencia
-```
 
 ---
 

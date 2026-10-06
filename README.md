@@ -31,7 +31,7 @@ El presente proyecto implementa la arquitectura de software empresarial para dig
 
 ## 🏗️ 2. Estructura de Módulos del Repositorio
 
-El proyecto está organizado como un repositorio multi-módulo Maven (`muni-licencias-parent`):
+El proyecto está estructurado bajo el estilo arquitectónico de **Monolito Modular (Modular Monolith)** con un enfoque interno de **Clean Architecture (Arquitectura Limpia y Hexagonal / Ports & Adapters)**, organizado como un proyecto multi-módulo Maven (`muni-licencias-parent`):
 
 ```text
 MuniHuamanga/
@@ -39,7 +39,7 @@ MuniHuamanga/
 ├── docker-compose.yml                       # Orquestación de PostgreSQL 15 y pgAdmin 4
 ├── .gitignore                               # Exclusiones optimizadas para Java, Maven e IDEs
 │
-├── common-domain/                           # Contratos compartidos y DTOs inter-servicio
+├── common-domain/                           # Contratos compartidos y DTOs del dominio
 │   └── src/main/java/.../common/
 │       ├── enums/
 │       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS → DOCUMENTOS_VALIDADOS → EN_EVALUACION_FINAL → APROBADO/RECHAZADO
@@ -49,7 +49,7 @@ MuniHuamanga/
 │       │   ├── TipoDocumento.java         # DNI, RUC, CARNET_EXTRANJERIA
 │       │   ├── ModalidadTramite.java      # Sección I Anexo 1 (Indeterminada, Temporal, Anuncio, etc.)
 │       │   └── FuncionEdificacion.java    # Anexos 3 y 4 ITSE (Salud, Encuentro, Comercio, etc.)
-│       ├── dto/                            # 14 DTOs de contrato inter-servicio
+│       ├── dto/                            # 14 DTOs de contrato del dominio
 │       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (45 campos normativos, Anexo 1 + SUNARP + Dirección)
 │       │   ├── ExpedienteResponseDto.java # Payload integral (estado, plazos, tasas, desglose, licenciaQrCode)
 │       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (23 campos booleanos)
@@ -68,28 +68,38 @@ MuniHuamanga/
 │           ├── TransicionInvalidaException.java
 │           └── RecursoNoEncontradoException.java
 │
-├── servicio-expedientes/                    # Microservicio Núcleo del Trámite (Puerto 8081)
+├── servicio-expedientes/                    # Aplicación Principal: Monolito Modular con Clean Architecture (Puerto 8081)
 │   ├── src/main/java/.../expedientes/
-│   │   ├── ExpedientesApplication.java
+│   │   ├── ExpedientesApplication.java      # Punto de entrada autónomo Spring Boot
 │   │   ├── config/
 │   │   │   ├── AsyncConfig.java             # Pool de hilos @Async para notificaciones email
 │   │   │   ├── SecurityConfig.java          # Spring Security 6: filtros JWT y reglas RBAC
 │   │   │   ├── DataInitializer.java          # Datos semilla de prueba (expedientes con 45 atributos)
 │   │   │   └── UsuarioDataInitializer.java   # Usuarios semilla institucionales (BCrypt: admin, evaluador, cajero)
-│   │   ├── controller/
+│   │   │
+│   │   ├── controller/                      # Capa Web / Adaptadores de Entrega REST
 │   │   │   ├── AuthController.java          # Autenticación JWT (/api/auth/login, /api/auth/me)
-│   │   │   ├── ExpedienteController.java    # 18 endpoints REST del trámite y workflow
+│   │   │   ├── ExpedienteController.java    # Ciclo de vida y gestión integral del expediente
 │   │   │   ├── PublicLicenciasController.java # Endpoint público de verificación QR (RNF-20)
 │   │   │   ├── TarifaTupaController.java    # CRUD y actualización en caliente del tarifario TUPA
+│   │   │   ├── DocumentosFormulariosController.java # Generación y descarga directa de formatos oficiales en PDF
 │   │   │   └── GlobalExceptionHandler.java  # Manejo global de errores HTTP (RFC-7807)
-│   │   ├── security/                        # Capa de seguridad JWT sin estado (Stateless)
-│   │   │   ├── JwtTokenProvider.java        # Firma HMAC-SHA256, generación y validación de tokens JJWT
-│   │   │   ├── JwtAuthenticationFilter.java # Filtro OncePerRequest para interceptar Bearer token
-│   │   │   ├── JwtAuthenticationEntryPoint.java # Manejo de error 401 Unauthorized en JSON
-│   │   │   ├── JwtAccessDeniedHandler.java  # Manejo de error 403 Forbidden en JSON
-│   │   │   ├── CustomUserDetails.java       # Wrapper UserDetails de Spring Security
-│   │   │   └── CustomUserDetailsService.java # Carga de usuario desde base de datos
-│   │   ├── service/
+│   │   │
+│   │   ├── integracion/                     # Bounded Context: Puertos y Adaptadores Externos (Clean Architecture)
+│   │   │   ├── port/                        # Puertos de salida (Interfaces del dominio)
+│   │   │   │   ├── DefensaCivilPort.java    # Puerto de integración con Defensa Civil (ITSE D.S. 002-2018-PCM)
+│   │   │   │   ├── EdificacionesPort.java   # Puerto de compatibilidad de zonificación PDU
+│   │   │   │   ├── FiscalizacionPort.java   # Puerto de actas de control y fiscalización posterior
+│   │   │   │   └── SatPort.java             # Puerto de recaudación y conciliación de vouchers SAT
+│   │   │   ├── adapter/                     # Adaptadores de infraestructura
+│   │   │   │   ├── DefensaCivilAdapterService.java
+│   │   │   │   ├── EdificacionesAdapterService.java
+│   │   │   │   ├── FiscalizacionAdapterService.java
+│   │   │   │   └── SatAdapterService.java
+│   │   │   └── controller/
+│   │   │       └── AdaptadorController.java # Endpoints de simulación e interoperabilidad (/api/integraciones)
+│   │   │
+│   │   ├── service/                         # Capa de Aplicación / Casos de Uso
 │   │   │   ├── ExpedienteService.java       # Máquina de estados (5 estados), lógica y persistencia
 │   │   │   ├── CalculadoraDeTasa.java       # Motor de cálculo dinámico con desglose y fallback a YAML
 │   │   │   ├── TarifaTupaService.java       # Gestión transaccional de tasas municipales TUPA
@@ -97,24 +107,36 @@ MuniHuamanga/
 │   │   │   ├── MetricasExpedienteService.java # Micrometer/Actuator: SLAs, alertas de vencimiento
 │   │   │   ├── NotificacionEmailService.java # Envío asíncrono de correos con plantillas Thymeleaf y PDF adjunto
 │   │   │   ├── AuthService.java             # Lógica de login con BCrypt y emisión JWT
-│   │   │   ├── DocumentoPdfService.java     # Motor PDF local (Anexo 1, 3, 4, Voucher SAT, Licencia)
+│   │   │   ├── DocumentoPdfService.java     # Coordinador de renderizado PDF en memoria (OpenPDF 2.0.3)
 │   │   │   ├── LicenciaPdfGenerator.java    # Certificado oficial de Licencia (doble marco, escudo, QR ZXing, 6 notas)
 │   │   │   ├── Anexo1PdfGenerator.java      # Generador Anexo 1 (2 páginas, Ley 28976)
 │   │   │   ├── Anexo3PdfGenerator.java      # Generador Matriz ITSE (2 páginas, CENEPRED)
 │   │   │   └── Anexo4PdfGenerator.java      # Generador Condiciones de Seguridad (4 páginas)
-│   │   ├── validator/EstadoExpedienteValidator.java # Precondiciones legales de aprobación
+│   │   │
+│   │   ├── security/                        # Capa de seguridad JWT sin estado (Stateless)
+│   │   │   ├── JwtTokenProvider.java        # Firma HMAC-SHA256, generación y validación de tokens JJWT
+│   │   │   ├── JwtAuthenticationFilter.java # Filtro OncePerRequest para interceptar Bearer token
+│   │   │   ├── JwtAuthenticationEntryPoint.java # Manejo de error 401 Unauthorized en JSON
+│   │   │   ├── JwtAccessDeniedHandler.java  # Manejo de error 403 Forbidden en JSON
+│   │   │   ├── CustomUserDetails.java       # Wrapper UserDetails de Spring Security
+│   │   │   └── CustomUserDetailsService.java # Carga de usuario desde base de datos
+│   │   │
+│   │   ├── validator/                       # Validadores de Reglas de Negocio
+│   │   │   ├── EstadoExpedienteValidator.java # Precondiciones legales de aprobación
+│   │   │   └── MesaPartesValidator.java      # Validación estricta de solicitud y requisitos TUPA
 │   │   ├── mapper/ExpedienteMapper.java      # MapStruct: cómputo 15 días hábiles + Anexo 4
-│   │   ├── model/
-│   │   │   ├── Expediente.java               # Entidad JPA central con 45 atributos normativos
+│   │   ├── model/                           # Entidades del Dominio (JPA)
+│   │   │   ├── Expediente.java               # Entidad central con 45 atributos normativos
 │   │   │   ├── Anexo4Condiciones.java        # Objeto embebido JPA (@Embeddable) 23 campos
 │   │   │   ├── HistorialEstado.java          # Auditoría inmutable @Entity
 │   │   │   ├── Usuario.java                  # Entidad JPA de usuarios con roles RBAC y BCrypt
 │   │   │   └── TarifaTupa.java               # Entidad JPA de tarifario municipal con constraints
-│   │   └── repository/
+│   │   └── repository/                      # Adaptadores de Persistencia (Spring Data JPA)
 │   │       ├── ExpedienteRepository.java
 │   │       ├── HistorialRepository.java
 │   │       ├── UsuarioRepository.java
 │   │       └── TarifaTupaRepository.java
+│   │
 │   ├── src/main/resources/
 │   │   ├── application.yml                   # Configuración Spring, JPA, Mail, JWT, Actuator
 │   │   ├── application-local.yml             # Perfil local con PostgreSQL 15
@@ -123,54 +145,17 @@ MuniHuamanga/
 │   │   │   ├── email-aprobacion.html         # Notificación de aprobación con Licencia PDF adjunta
 │   │   │   └── email-rechazo.html            # Notificación motivada de denegatoria
 │   │   └── static/                          # Frontend Institucional Completo
-│   │       ├── index.html                    # Landing page con 4 tarjetas de acceso
-│   │       ├── portal-ciudadano.html         # Wizard Multipaso: 3 pasos + Descarga PDFs
+│   │       ├── index.html                    # Landing page con tarjetas de acceso institucional
+│   │       ├── portal-ciudadano.html         # Wizard Ciudadano Multipaso: 3 pasos + Descarga PDFs + Mesa de Ayuda
 │   │       ├── portal-interno.html           # Dashboard KPI + Bandeja Formatos PDF + Login Modal + CRUD TUPA
 │   │       ├── verificar-licencia.html       # Portal Público de Verificación QR (RNF-20)
 │   │       ├── css/styles.css                # Sistema de diseño integral (wizard, kpi-cards, modales, alertas)
 │   │       ├── js/
-│   │       │   ├── portal-ciudadano.js       # Wizard logic: navegación, validaciones, fetch+blob
+│   │       │   ├── portal-ciudadano.js       # Wizard logic: navegación, validaciones, fetch directo al monolito y Mesa de Ayuda
 │   │       │   ├── portal-interno.js         # Sesión JWT, renderFormatosPdf(), modales y gestión TUPA
 │   │       │   └── verificar-licencia.js     # Consulta QR pública en tiempo real
 │   │       └── img/escudo-huamanga.png       # Escudo oficial de Huamanga
-│   └── src/test/                            # 67 tests pasando (Unitarios, MockMvc, Concurrencia 150)
-│
-├── servicio-formularios/                    # Microservicio de Generación Documental PDF (Puerto 8082)
-│   └── src/main/java/.../formularios/
-│       ├── FormulariosApplication.java
-│       ├── config/CorsConfig.java            # Configuración CORS perimetral
-│       ├── controller/FormulariosController.java # 7 endpoints POST de generación PDF
-│       └── service/
-│           ├── GeneradorDocumentoService.java # Coordinador OpenPDF 2.0.3 especializado
-│           ├── Anexo1PdfGenerator.java       # Formato Ley 28976 con escudo (2 páginas)
-│           ├── Anexo3PdfGenerator.java       # Matriz ITSE CENEPRED, colores oficiales (2 páginas)
-│           └── Anexo4PdfGenerator.java       # Declaración Condiciones de Seguridad (4 páginas)
-│
-├── servicio-verificacion-licencias/         # Microservicio de Verificación QR (Puerto 8083)
-│   └── src/main/java/.../verificacion/
-│       ├── VerificacionApplication.java
-│       ├── controller/VerificacionController.java # API pública de verificación de autenticidad
-│       └── service/QrGeneratorService.java   # ZXing 3.5.3: QR PNG criptográfico de alta resolución
-│
-├── adaptador-integracion/                   # Adaptador Hexagonal SAT / Defensa Civil (Puerto 8084)
-│   └── src/main/java/.../adaptador/
-│       ├── AdaptadorApplication.java
-│       ├── port/                             # Puertos de integración hexagonal
-│       │   ├── SatPort.java
-│       │   ├── DefensaCivilPort.java
-│       │   ├── EdificacionesPort.java
-│       │   └── FiscalizacionPort.java
-│       ├── service/                          # Implementación de adaptadores y stubs
-│       │   ├── SatAdapterService.java
-│       │   ├── DefensaCivilAdapterService.java
-│       │   ├── EdificacionesAdapterService.java
-│       │   └── FiscalizacionAdapterService.java
-│       └── controller/AdaptadorController.java # Endpoints REST del adaptador
-│
-├── api-gateway/                             # Spring Cloud Gateway Perimetral (Puerto 8080)
-│   ├── src/main/java/.../gateway/
-│   │   └── ApiGatewayApplication.java
-│   └── src/main/resources/application.yml  # Enrutamiento reactivo, CORS unificado, Rate Limiting
+│   └── src/test/                            # 80 tests pasando al 100% (Unitarios, Integración, Clean Architecture, Concurrencia 150)
 │
 ├── docker/
 │   └── postgres/init/01-init-databases.sql # DDL: 45 columnas, índices, tablas usuarios y tarifas
@@ -181,17 +166,16 @@ MuniHuamanga/
 │       └── run-load-test-150.ps1            # Script de automatización PowerShell
 │
 └── docs/                                    # Documentación Técnica Oficial
+    ├── arquitectura/
+    │   ├── diseno-arquitectonico-monolito-modular-clean-architecture.md # Documento Maestro de Diseño
+    │   └── c4-model.md                      # Modelo C4 (Contexto, Contenedores, Componentes, Dominio)
+    ├── auditoria-codigo-calidad-resolucion-101-problemas.md # Auditoría de Calidad y 0 Errores
     ├── entrega-fase-01.md                   # Entrega Fase 01: Dominio, BD y APIs
     ├── entrega-fase-02.md                   # Entrega Fase 02: Motor PDF (Anexos 1, 3, 4)
     ├── entrega-fase-03.md                   # Entrega Fase 03: Frontend Wizard + Descarga PDFs
-    ├── entrega-fase-04.md                   # Entrega Fase 04: Sprint 4-A — PDF Licencia Oficial
-    ├── entrega-fase-04-sprint4b.md          # Entrega Fase 04: Sprint 4-B — Notificaciones Email Async
-    ├── entrega-fase-04-sprint4c.md          # Entrega Fase 04: Sprint 4-C — Autenticación JWT + RBAC
-    ├── entrega-fase-04-sprint4d.md          # Entrega Fase 04: Sprint 4-D — CRUD Tarifario TUPA
     ├── entrega-fase-04-consolidado.md       # Entrega Fase 04 Completa: Consolidado (80/80 tests)
     ├── normativa-legal.md                   # Marco Legal: Ley 28976, Anexos 1, 3 y 4 ITSE
     ├── v0.1-inventario-matriz-campos.md     # Matriz de trazabilidad campo por campo (45 atributos)
-    ├── arquitectura/c4-model.md             # Modelo C4 actualizado (Contexto, Contenedores, Componentes, Dominio)
     └── scrum/                               # Product Backlogs e Historias de Usuario (Sprints 0 a 4)
 ```
 
@@ -204,7 +188,7 @@ MuniHuamanga/
 | **JDK** | 21 LTS | Eclipse Adoptium Temurin recomendado |
 | **Apache Maven** | 3.9+ | Multi-módulo POM |
 | **Docker Desktop** | Cualquiera con Compose v2 | Para PostgreSQL 15 |
-| **Git** | 2.x+ | |
+| **Git** | 2.x+ | Control de versiones |
 
 ---
 
@@ -220,50 +204,34 @@ docker-compose up -d postgres
 
 ### Paso 2: Compilar y Ejecutar Pruebas (80 tests)
 ```powershell
-$env:JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
-$env:PATH="$env:JAVA_HOME\bin;C:\tools\apache-maven-3.9.16-bin\apache-maven-3.9.16\bin;$env:PATH"
-
 mvn clean test
-# Expected: BUILD SUCCESS — Tests run: 80, Failures: 0, Errors: 0
+# Salida esperada: BUILD SUCCESS — Tests run: 80, Failures: 0, Errors: 0
 ```
 
-### Paso 3: Ejecutar los Microservicios
+### Paso 3: Ejecutar el Monolito Modular
+A diferencia del esquema inicial de múltiples microservicios dispersos, toda la solución se ejecuta en un **único proceso de alta eficiencia**:
 ```powershell
-# Terminal 1 — Expedientes + Frontend (Portal Ciudadano, Interno, Verificación)
 mvn spring-boot:run -pl servicio-expedientes
-
-# Terminal 2 — Generación de PDF Oficiales (Anexos 1, 3, 4, Voucher, Licencia)
-mvn spring-boot:run -pl servicio-formularios
-
-# Terminal 3 — Verificación QR Pública
-mvn spring-boot:run -pl servicio-verificacion-licencias
-
-# Terminal 4 — Adaptador SAT/Defensa Civil
-mvn spring-boot:run -pl adaptador-integracion
-
-# Terminal 5 — API Gateway (punto único de entrada)
-mvn spring-boot:run -pl api-gateway
 ```
+> El servicio se inicia en el puerto **`8081`**, exponiendo tanto el backend REST, el motor documental PDF, los puertos de integración y todos los portales web frontales.
 
-### Paso 4: Acceso a los Portales
-| Portal | URL |
-|--------|-----|
-| **Landing Page** | http://localhost:8081/ |
-| **Portal Ciudadano (Wizard)** | http://localhost:8081/portal-ciudadano.html |
-| **Gestión Interna (Dashboard + RBAC)** | http://localhost:8081/portal-interno.html |
-| **Verificación QR Pública** | http://localhost:8081/verificar-licencia.html |
+### Paso 4: Acceso a los Portales Web
+| Portal | URL | Descripción |
+|--------|-----|-------------|
+| **Landing Page** | http://localhost:8081/ | Página principal con accesos institucionales |
+| **Portal Ciudadano (Wizard)** | http://localhost:8081/portal-ciudadano.html | Mesa de Partes Virtual (3 pasos) + Descarga de Anexos + Mesa de Ayuda |
+| **Gestión Interna (Dashboard + RBAC)** | http://localhost:8081/portal-interno.html | Bandeja de expedientes, evaluación, emisión y tarifario TUPA |
+| **Verificación QR Pública** | http://localhost:8081/verificar-licencia.html | Consulta pública ciudadana y fiscalización en tiempo real (RNF-20) |
 
 ---
 
 ## 📖 5. Documentación Interactiva de APIs (Swagger / OpenAPI)
 
+El sistema expone la totalidad de sus contratos y servicios centralizados en una única interfaz OpenAPI 3.0:
+
 | Servicio | URL Swagger |
 |----------|-------------|
-| Servicio de Expedientes | http://localhost:8081/swagger-ui.html |
-| Servicio de Formularios | http://localhost:8082/swagger-ui.html |
-| Servicio de Verificación | http://localhost:8083/swagger-ui.html |
-| Adaptador de Integración | http://localhost:8084/swagger-ui.html |
-| API Gateway (entrada) | http://localhost:8080 |
+| **Monolito Modular Unificado** | http://localhost:8081/swagger-ui.html |
 
 ---
 
@@ -296,23 +264,34 @@ mvn spring-boot:run -pl api-gateway
 | `POST` | `/api/expedientes/{id}/rechazar` | Gerencia Licencias: Dictamen de rechazo | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
 | `GET` | `/api/licencias/verificar/{codigo}` | Portal público de verificación de autenticidad | Público |
 
-### 6.2 Servicio de Formularios (`servicio-formularios` :8082)
+### 6.2 Endpoints de Formularios y Documentos Oficiales (`/api/formularios/**`)
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/formularios/declaracion-jurada` | PDF Anexo 1 desde payload ExpedienteResponseDto |
-| `POST` | `/api/formularios/anexo1-declaracion-jurada` | PDF Anexo 1 (2 páginas, Ley 28976) |
-| `POST` | `/api/formularios/anexo3-matriz-riesgo-itse` | PDF Anexo 3 (2 páginas, Matriz ITSE CENEPRED) |
-| `POST` | `/api/formularios/anexo4-condiciones-seguridad` | PDF Anexo 4 (4 páginas, Condiciones Seguridad) |
-| `POST` | `/api/formularios/defensa-civil` | PDF Solicitud ITSE (D.S. N° 002-2018-PCM) |
-| `POST` | `/api/formularios/voucher-sat` | PDF Voucher SAT con código de barras Code 128 |
-| `POST` | `/api/formularios/licencia` | PDF Licencia Oficial con QR y Sello Digital |
+| Método | Endpoint | Descripción | Acceso |
+|--------|----------|-------------|--------|
+| `POST` | `/api/formularios/anexo1-declaracion-jurada` | Generar PDF oficial Anexo 1 (2 páginas, Ley N° 28976) | Público |
+| `POST` | `/api/formularios/declaracion-jurada` | Generar PDF Anexo 1 desde DTO alternativo | Público |
+| `POST` | `/api/formularios/anexo3-matriz-riesgo-itse` | Generar PDF oficial Anexo 3 (2 páginas, Matriz ITSE CENEPRED) | Público |
+| `GET`  | `/api/formularios/anexo-3/{id}/pdf` | Descargar PDF oficial Anexo 3 por ID de expediente | Público |
+| `POST` | `/api/formularios/anexo4-condiciones-seguridad` | Generar PDF oficial Anexo 4 (4 páginas, Condiciones de Seguridad) | Público |
+| `GET`  | `/api/formularios/anexo-4/{id}/pdf` | Descargar PDF oficial Anexo 4 por ID de expediente | Público |
+| `POST` | `/api/formularios/defensa-civil` | Generar PDF de Solicitud ITSE (D.S. N° 002-2018-PCM) | Público |
+| `POST` | `/api/formularios/voucher-sat` | Generar PDF Voucher SAT con código de barras Code 128 | Público |
+| `POST` | `/api/formularios/licencia` | Generar PDF Licencia Oficial con QR y Sello Digital | Público |
+
+### 6.3 Puertos y Adaptadores de Integración Externa (`/api/integraciones/**`)
+
+| Método | Endpoint | Descripción | Entidad Receptora |
+|--------|----------|-------------|-------------------|
+| `GET`  | `/api/integraciones/sat/validar-pago/{voucherId}` | Consulta y conciliación bancaria de tasa | SAT Huamanga (`SatPort`) |
+| `POST` | `/api/integraciones/defensa-civil/simular-dictamen` | Simulación de dictamen técnico de inspección ITSE | Defensa Civil (`DefensaCivilPort`) |
+| `GET`  | `/api/integraciones/edificaciones/zonificacion` | Validación de compatibilidad de uso y PDU | Desarrollo Urbano (`EdificacionesPort`) |
+| `POST` | `/api/integraciones/fiscalizacion/acta` | Registro de acta de inspección posterior in situ | Fiscalización (`FiscalizacionPort`) |
 
 ---
 
 ## 🔄 7. Flujo del Sistema y Máquina de Estados
 
-### A. Estructura de Anexos Digitalizados
+### A. Estructura de Anexos Digitalizados y Tramitación Física
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -335,6 +314,13 @@ mvn spring-boot:run -pl api-gateway
 └──────────────────────────────────────┘             └───────────────────────────────────┘
 ```
 
+> **📌 Regla de Negocio Crítica — Tramitación de Anexos 3 y 4:**
+> 1. **Generación Automática:** Al concluir el registro de la solicitud en el Portal Ciudadano, el Monolito Modular genera de forma automatizada los archivos PDF oficiales de los **Anexos 1, 3 y 4** conteniendo los datos del titular y del local.
+> 2. **Descarga e Impresión Física:** El administrado descarga estos documentos para **imprimirlos físicamente**:
+>    - **Anexo 3 (Matriz de Riesgo ITSE):** Debe imprimirse para acudir físicamente a la **Subgerencia de Defensa Civil (Gestión de Riesgo de Desastres)**, donde el inspector técnico acreditado CENEPRED evalúa los factores agravantes y suscribe el dictamen.
+>    - **Anexo 4 (Condiciones de Seguridad):** Debe imprimirse (4 páginas) para suscripción manuscrita y huella digital del solicitante (y firma de profesional colegiado en caso de riesgo Alto/Muy Alto), presentándose en mesa de partes / ventanilla de licencias.
+> 3. **Mesa de Ayuda (Asistencia al Administrado):** El portal ciudadano incorpora un módulo visual de **Mesa de Ayuda** con modales informativos que guían al administrado en el trámite y pasos de llenado. Se deja establecido que el asistente interactivo y visor dinámico paso a paso de llenado se habilitará en la etapa final de despliegue.
+
 ### B. Máquina de Estados Finitos C4
 
 ```text
@@ -351,7 +337,7 @@ mvn spring-boot:run -pl api-gateway
     (Licencia PDF + QR)   (Resolución de Denegatoria)
 ```
 
-### C. Flujo del Wizard Ciudadano (Fase 3)
+### C. Flujo del Wizard Ciudadano (Monolito Modular)
 
 ```text
 PASO 1: Datos del Solicitante  →  PASO 2: Datos del Establecimiento  →  PASO 3: Confirmación
@@ -364,8 +350,9 @@ PASO 1: Datos del Solicitante  →  PASO 2: Datos del Establecimiento  →  PASO
                                                                     │   EXP-2026-XXXXX    │
                                                                     │                     │
                                                                     │ 📋 Anexo 1 (GET)    │
-                                                                    │ 🛡️ Anexo 3 (POST)   │
-                                                                    │ 🔒 Anexo 4 (POST)   │
+                                                                    │ 🛡️ Anexo 3 (GET)    │
+                                                                    │ 🔒 Anexo 4 (GET)    │
+                                                                    │ 💡 Mesa de Ayuda    │
                                                                     └─────────────────────┘
 ```
 
@@ -393,6 +380,7 @@ sequenceDiagram
             DC->>Adm: Exige Anexo 1 ITSE Previa e inspección en campo
             DC-->>GL: Informe Técnico ITSE Favorable / Desfavorable
         end
+        DC-->>Adm: Administrado presenta Anexos 3 y 4 impresos para firma oficial
     and Verificación Urbanística
         MP->>DU: Consulta Compatibilidad de Uso y Zonificación PDU
         DU-->>GL: Visto Bueno de Zonificación Conforme

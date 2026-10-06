@@ -97,3 +97,10 @@
 
 ### E. Firma Digital y Verificación Pública por Código QR
 * Cumpliendo con la **Ley N° 27269** (*Ley de Firmas y Certificados Digitales*), el sistema estampa en la licencia el sello digital y el **Código QR criptográfico único** (`RNF-13` y `RNF-20`) para fiscalización ciudadana inmediata.
+
+### F. Tramitación Física y Visación Presencial de Anexos 3 y 4
+* Conforme al procedimiento administrativo de la Municipalidad Provincial de Huamanga:
+  * **Anexo 3 (Matriz de Riesgo ITSE):** El administrado descarga el formato PDF generado por el sistema y lo **imprime físicamente en dos ejemplares** para acudir a la sede de la **Subgerencia de Defensa Civil (Oficina de Gestión de Riesgo de Desastres)**. En dicha unidad, el Inspector Acreditado CENEPRED realiza la verificación técnica y suscribe el dictamen oficial.
+  * **Anexo 4 (Condiciones de Seguridad en Edificación):** El administrado imprime el formato oficial de cuatro (4) páginas, lo suscribe con **firma manuscrita y huella digital** (incorporando el protocolo de pruebas de pozo a tierra firmado por ingeniero colegiado si corresponde a riesgo Alto o Muy Alto) y lo entrega para anexarse al legajo físico municipal.
+  * **Mesa de Ayuda (Etapa Final):** La plataforma incorpora modales informativos de orientación al administrado sobre los requisitos de cada anexo. El componente interactivo avanzado con visores de ejemplo y llenado guiado paso a paso se habilitará en la etapa final de despliegue.
+
