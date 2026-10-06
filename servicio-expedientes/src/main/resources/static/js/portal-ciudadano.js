@@ -254,14 +254,14 @@ async function descargarAnexo(tipoFormato) {
   }
 
   try {
-    // En el Monolito Modular, todos los documentos se descargan directamente desde /api/expedientes/{id}/documentos/...
+    // En el Monolito Modular, todos los documentos se descargan directamente desde /api/formularios/anexo-X/{id}/pdf
     let url;
     if (tipoFormato === 'declaracion-jurada') {
-      url = `${API_BASE}/${exp.id}/documentos/anexo1-declaracion-jurada`;
+      url = `/api/formularios/anexo-1/${exp.id}/pdf`;
     } else if (tipoFormato === 'anexo3-matriz-riesgo-itse') {
-      url = `${API_BASE}/${exp.id}/documentos/anexo3-matriz-riesgo-itse`;
+      url = `/api/formularios/anexo-3/${exp.id}/pdf`;
     } else if (tipoFormato === 'anexo4-condiciones-seguridad') {
-      url = `${API_BASE}/${exp.id}/documentos/anexo4-condiciones-seguridad`;
+      url = `/api/formularios/anexo-4/${exp.id}/pdf`;
     }
 
     let blob;

@@ -55,6 +55,18 @@ public class DocumentosFormulariosController {
                 .body(pdf);
     }
 
+    @GetMapping("/anexo-1/{id}/pdf")
+    @Operation(summary = "Descargar PDF oficial de Anexo 1 por ID de expediente")
+    public ResponseEntity<byte[]> descargarAnexo1PorId(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(dto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     @PostMapping("/anexo3-matriz-riesgo-itse")
     @Operation(summary = "Generar PDF oficial del Anexo 3 de 2 páginas (Matriz de Riesgo ITSE según D.S. N° 002-2018-PCM)")
     public ResponseEntity<byte[]> generarAnexo3MatrizRiesgoItse(@RequestBody ExpedienteResponseDto expediente) {
@@ -124,6 +136,19 @@ public class DocumentosFormulariosController {
     public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
         byte[] pdf = documentoPdfService.generarLicenciaPdf(expediente);
         String codigo = expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : expediente.getNumeroTramite();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/licencia/{id}/pdf")
+    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente")
+    public ResponseEntity<byte[]> descargarLicenciaPorId(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);
+        String codigo = exp.getLicenciaQrCode() != null ? exp.getLicenciaQrCode() : exp.getNumeroTramite();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
