@@ -4,8 +4,8 @@
  * Ley N° 28976 / D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM
  */
 
-const API_BASE       = '/api/expedientes';
-const API_FORMULARIOS = '/api/formularios';  // servicio-formularios (puerto 8082 en dev, proxy en prod)
+const API_BASE        = '/api/expedientes';
+const API_FORMULARIOS = '/api/formularios';  // Endpoints integrados en el Monolito Modular
 
 // ─── Estado global del wizard ─────────────────────────────────────────────────
 let wizardState = {
@@ -254,26 +254,23 @@ async function descargarAnexo(tipoFormato) {
   }
 
   try {
-    // Intentar vía el proxy del servicio-expedientes (mismo origen)
-    // El ExpedienteController expone GET /{id}/documentos/declaracion-jurada, etc.
+    // En el Monolito Modular, todos los documentos se descargan directamente desde /api/expedientes/{id}/documentos/...
     let url;
     if (tipoFormato === 'declaracion-jurada') {
-      url = `${API_BASE}/${exp.id}/documentos/declaracion-jurada`;
+      url = `${API_BASE}/${exp.id}/documentos/anexo1-declaracion-jurada`;
     } else if (tipoFormato === 'anexo3-matriz-riesgo-itse') {
-      // Llamada directa al servicio-formularios via POST
-      url = null;
+      url = `${API_BASE}/${exp.id}/documentos/anexo3-matriz-riesgo-itse`;
     } else if (tipoFormato === 'anexo4-condiciones-seguridad') {
-      url = null;
+      url = `${API_BASE}/${exp.id}/documentos/anexo4-condiciones-seguridad`;
     }
 
     let blob;
     if (url) {
-      // GET directo para declaracion-jurada (ya tiene endpoint GET en servicio-expedientes)
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Error al generar PDF: HTTP ${res.status}`);
       blob = await res.blob();
     } else {
-      // POST a servicio-formularios pasando el ExpedienteResponseDto como body
+      // Fallback al endpoint POST integrado en el monolito si fuera necesario
       const endpoint = tipoFormato === 'anexo3-matriz-riesgo-itse'
         ? `${API_FORMULARIOS}/anexo3-matriz-riesgo-itse`
         : `${API_FORMULARIOS}/anexo4-condiciones-seguridad`;
@@ -306,13 +303,80 @@ async function descargarAnexo(tipoFormato) {
     }
 
   } catch (err) {
-    alert('❌ Error al descargar el PDF: ' + err.message +
-          '\n\nAsegúrese de que el servicio de formularios esté activo (puerto 8082).');
+    alert('❌ Error al descargar el PDF: ' + err.message);
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = textoOriginal;
     }
   }
+}
+
+// =============================================================================
+// MESA DE AYUDA / GUÍA DE LLENADO DE ANEXOS 3 Y 4 (FASE PREPARATORIA)
+// =============================================================================
+function abrirMesaAyuda(tipoAnexo) {
+  const modal = document.getElementById('modalMesaAyuda');
+  const titulo = document.getElementById('mesaAyudaTitulo');
+  const contenido = document.getElementById('mesaAyudaContenido');
+  if (!modal) return;
+
+  if (tipoAnexo === 'anexo3') {
+    titulo.innerHTML = '🛡️ Mesa de Ayuda: Llenado y Trámite del Anexo 3 (Matriz de Riesgo ITSE)';
+    contenido.innerHTML = `
+      <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+        <strong style="color: #92400e;">⚠️ Instrucción Importante para el Administrado:</strong>
+        <p style="margin: 0.5rem 0 0 0; color: #78350f; font-size: 0.88rem;">
+          Este documento ha sido generado automáticamente con los datos de su actividad y local comercial. Debe <strong>descargarlo, imprimirlo y llevarlo físicamente</strong> ante la <strong>Subgerencia de Defensa Civil (Gestión de Riesgo de Desastres)</strong> de la MPH para su revisión y firma oficial por el Inspector Técnico acreditado.
+        </p>
+      </div>
+      <h4 style="margin-top: 1rem; color: #1e293b;">📋 Pasos para su Tramitación:</h4>
+      <ol style="margin-left: 1.25rem; font-size: 0.88rem; color: #334155; line-height: 1.6;">
+        <li><strong>Imprima 2 copias</strong> del Anexo 3 generado en tamaño A4.</li>
+        <li>Acérquese a las oficinas de <strong>Defensa Civil de la MPH</strong> (Jr. Bellido N° 123).</li>
+        <li>El Inspector Acreditado CENEPRED verificará los factores agravantes (aforo, almacenamiento de GLP, pisos) y suscribirá el dictamen de inspección.</li>
+      </ol>
+      <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 0.75rem; border-radius: 6px; margin-top: 1rem;">
+        <span style="color: #0369a1; font-size: 0.85rem;">
+          💡 <strong>Próximamente (Etapa Final):</strong> Se habilitará un visor de ejemplo interactivo con ayuda contextual campo a campo y validación asistida en línea.
+        </span>
+      </div>
+    `;
+  } else if (tipoAnexo === 'anexo4') {
+    titulo.innerHTML = '🔒 Mesa de Ayuda: Llenado y Trámite del Anexo 4 (Condiciones de Seguridad)';
+    contenido.innerHTML = `
+      <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+        <strong style="color: #065f46;">⚠️ Instrucción Importante para el Administrado:</strong>
+        <p style="margin: 0.5rem 0 0 0; color: #047857; font-size: 0.88rem;">
+          El Anexo 4 es una Declaración Jurada de 4 páginas sobre las condiciones de seguridad en edificaciones (extintores, señalética, tablero eléctrico, pozo a tierra). Debe <strong>imprimirlo, firmarlo personalmente y llevarlo</strong> a la Subgerencia correspondiente según el nivel de riesgo.
+        </p>
+      </div>
+      <h4 style="margin-top: 1rem; color: #1e293b;">📋 Recomendaciones Clave de Llenado y Firma:</h4>
+      <ul style="margin-left: 1.25rem; font-size: 0.88rem; color: #334155; line-height: 1.6;">
+        <li><strong>Firma del Administrado:</strong> Suscribir en la última hoja con firma manuscrita y huella digital (o firma del representante legal si es persona jurídica).</li>
+        <li><strong>Firma Técnica (si aplica):</strong> Para locales de riesgo Alto o Muy Alto, adjuntar el protocolo de pruebas de pozo a tierra firmado por un Ingeniero Electricista o Mecánico Electricista colegiado.</li>
+        <li><strong>Presentación:</strong> Presentar conjuntamente con el cargo del expediente en mesa de partes / ventanilla de licencias.</li>
+      </ul>
+      <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 0.75rem; border-radius: 6px; margin-top: 1rem;">
+        <span style="color: #0369a1; font-size: 0.85rem;">
+          💡 <strong>Próximamente (Etapa Final):</strong> Se integrará la ventana interactiva de ejemplo con modelos resueltos de llenado según su tipo de establecimiento comercial.
+        </span>
+      </div>
+    `;
+  } else {
+    titulo.innerHTML = 'ℹ️ Mesa de Ayuda de Trámites y Formatos';
+    contenido.innerHTML = `
+      <p style="font-size: 0.88rem; color: #334155;">
+        Para asistencia personalizada sobre el llenado de formatos, puede consultar a la Plataforma de Atención al Ciudadano de la Municipalidad Provincial de Huamanga o al correo <em>licencias@munihuamanga.gob.pe</em>.
+      </p>
+    `;
+  }
+
+  modal.style.display = 'flex';
+}
+
+function cerrarMesaAyuda() {
+  const modal = document.getElementById('modalMesaAyuda');
+  if (modal) modal.style.display = 'none';
 }
 
 // =============================================================================

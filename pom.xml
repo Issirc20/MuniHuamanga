@@ -22,10 +22,6 @@
     <modules>
         <module>common-domain</module>
         <module>servicio-expedientes</module>
-        <module>servicio-formularios</module>
-        <module>servicio-verificacion-licencias</module>
-        <module>adaptador-integracion</module>
-        <module>api-gateway</module>
     </modules>
 
     <properties>

@@ -13,8 +13,8 @@
     <artifactId>servicio-expedientes</artifactId>
     <packaging>jar</packaging>
 
-    <name>Servicio de Expedientes</name>
-    <description>Microservicio principal de orquestación, flujo y máquina de estados del expediente</description>
+    <name>MuniHuamanga - Monolito Modular</name>
+    <description>Aplicación principal monolítica modular basada en Clean Architecture para la tramitación integral de Licencias de Funcionamiento</description>
 
     <dependencies>
         <dependency>

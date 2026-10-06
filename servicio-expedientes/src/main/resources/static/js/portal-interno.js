@@ -204,10 +204,10 @@ function renderFormatosPdf(exp) {
 
   if (exp.nivelRiesgo) {
     html += `
-      <a href="${API_FORMULARIOS}/anexo-3/${exp.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Descargar Anexo 3 - Reporte de Riesgo ITSE">
+      <a href="${API_BASE}/${exp.id}/documentos/anexo3-matriz-riesgo-itse" target="_blank" class="btn btn-secondary btn-sm" title="Descargar Anexo 3 - Reporte de Riesgo ITSE">
         🛡️ Anexo 3
       </a>
-      <a href="${API_FORMULARIOS}/anexo-4/${exp.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Descargar Anexo 4 - Declaración de Condiciones de Seguridad">
+      <a href="${API_BASE}/${exp.id}/documentos/anexo4-condiciones-seguridad" target="_blank" class="btn btn-secondary btn-sm" title="Descargar Anexo 4 - Declaración de Condiciones de Seguridad">
         📋 Anexo 4
       </a>
     `;

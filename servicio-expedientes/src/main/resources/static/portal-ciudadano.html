@@ -227,11 +227,16 @@
               <span class="doc-card-badge automatico">Auto-generado</span>
               <div class="doc-card-title">Anexo 3 — Matriz de Riesgo ITSE</div>
               <div class="doc-card-desc">
-                Formulario de 2 páginas. Clasificación de nivel de riesgo ITSE (Bajo / Medio / Alto / Muy Alto) conforme al D.S. N° 002-2018-PCM y lineamientos CENEPRED.
+                Formulario de 2 páginas. Clasificación de riesgo ITSE. <strong>Imprima este PDF</strong> para presentarlo ante la <strong>Subgerencia de Defensa Civil</strong> para firma y dictamen del inspector CENEPRED.
               </div>
-              <button class="btn btn-secondary" id="btnAnexo3" onclick="descargarAnexo('anexo3-matriz-riesgo-itse')" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
-                ⬇ Descargar Anexo 3 (PDF)
-              </button>
+              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                <button class="btn btn-secondary" id="btnAnexo3" onclick="descargarAnexo('anexo3-matriz-riesgo-itse')" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                  ⬇ Descargar Formato PDF (Imprimir)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="abrirMesaAyuda('anexo3')" style="background: #f8fafc; font-size: 0.8rem; border: 1px dashed #cbd5e1;">
+                  💡 Mesa de Ayuda / ¿Cómo se tramita?
+                </button>
+              </div>
             </div>
 
             <!-- Anexo 4 -->
@@ -240,11 +245,16 @@
               <span class="doc-card-badge obligatorio">Obligatorio</span>
               <div class="doc-card-title">Anexo 4 — Condiciones de Seguridad</div>
               <div class="doc-card-desc">
-                Formulario de 4 páginas. Declaración Jurada de Cumplimiento de Condiciones de Seguridad (infraestructura, equipos, evacuación). D.S. N° 002-2018-PCM.
+                Formulario de 4 páginas. Declaración Jurada de Condiciones de Seguridad. <strong>Imprima y firme físicamente</strong> para llevarlo a la gerencia correspondiente según su nivel de riesgo.
               </div>
-              <button class="btn btn-success" id="btnAnexo4" onclick="descargarAnexo('anexo4-condiciones-seguridad')">
-                ⬇ Descargar Anexo 4 (PDF)
-              </button>
+              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                <button class="btn btn-success" id="btnAnexo4" onclick="descargarAnexo('anexo4-condiciones-seguridad')">
+                  ⬇ Descargar Formato PDF (Imprimir y Firmar)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="abrirMesaAyuda('anexo4')" style="background: #f8fafc; font-size: 0.8rem; border: 1px dashed #cbd5e1;">
+                  💡 Mesa de Ayuda / Instrucciones de Llenado
+                </button>
+              </div>
             </div>
 
           </div>
@@ -395,6 +405,22 @@
         </div>
       </div>
     </section>
+
+    <!-- Modal Mesa de Ayuda / Ventana de Ejemplo de Llenado (Etapa Final) -->
+    <div id="modalMesaAyuda" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px);">
+      <div style="background: #ffffff; border-radius: 12px; max-width: 650px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; animation: fadeIn 0.2s ease-out;">
+        <div style="background: #0f172a; color: #f8fafc; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <h3 id="mesaAyudaTitulo" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Mesa de Ayuda - Formatos Oficiales</h3>
+          <button type="button" onclick="cerrarMesaAyuda()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+        <div id="mesaAyudaContenido" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
+          <!-- Contenido inyectado dinámicamente -->
+        </div>
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; text-align: right;">
+          <button type="button" class="btn btn-primary" onclick="cerrarMesaAyuda()">Entendido y Cerrar</button>
+        </div>
+      </div>
+    </div>
 
   </main>
 
