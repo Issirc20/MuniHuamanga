@@ -1,33 +1,35 @@
 package pe.gob.munihuamanga.licencias.expedientes.service;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.Element;
-import com.lowagie.text.Font;
-import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
-import com.lowagie.text.PageSize;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfStamper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
+import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDate;
+import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 
 /**
  * Generador PDF Oficial del Anexo N° 1:
  * FORMATO DE DECLARACIÓN JURADA PARA LICENCIA DE FUNCIONAMIENTO (Versión 03)
  * Conforme a la Ley N° 28976, D.S. N° 046-2017-PCM y D.S. N° 163-2020-PCM.
- * Genera exactamente dos (2) páginas idénticas al formato estándar oficial de la Municipalidad de Huamanga.
+ *
+ * Utiliza estampación vectorial directa (PdfReader + PdfStamper) sobre la plantilla oficial
+ * anexo1-oficial-v03.pdf (2 páginas A4), preservando exactamente todos los textos legales,
+ * tablas y formato normativo sin rasterización.
  */
 @Slf4j
 @Component
@@ -35,550 +37,496 @@ public class Anexo1PdfGenerator {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    private static final Font F_TITLE_TAG = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8f, Color.BLACK);
-    private static final Font F_TITLE_MAIN = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, Color.BLACK);
-    private static final Font F_TITLE_SUB = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 6.5f, Color.DARK_GRAY);
+    private static final Color COLOR_VAL = new Color(0, 51, 102);     // Azul institucional para datos
+    private static final Color COLOR_MARK = new Color(0, 32, 96);     // Azul oscuro para marcas X
+    private static final Color COLOR_BLACK = Color.BLACK;
 
-    private static final Font F_BOX_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 6f, Color.BLACK);
-    private static final Font F_BOX_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, new Color(0, 51, 102));
+    private final ResourceLoader resourceLoader;
 
-    private static final Font F_SEC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, Color.BLACK);
-    private static final Font F_COL_HEADER = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6f, Color.BLACK);
-    private static final Font F_ITEM = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.BLACK);
-    private static final Font F_ITEM_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, Color.BLACK);
+    @Value("${muni.documentos.anexo1.plantilla-path:classpath:templates/pdf/anexo1-oficial-v03.pdf}")
+    private String plantillaPath;
 
-    private static final Font F_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.DARK_GRAY);
-    private static final Font F_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.2f, Color.BLACK);
+    @Value("${muni.documentos.escudo-path:classpath:static/img/escudo-huamanga.png}")
+    private String escudoPath;
 
-    private static final Font F_FOOT_NOTE = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 5.2f, Color.DARK_GRAY);
-    private static final Font F_INST_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, Color.BLACK);
-    private static final Font F_INST_BODY = FontFactory.getFont(FontFactory.HELVETICA, 5.2f, new Color(40, 40, 40));
+    public Anexo1PdfGenerator(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
 
-    private static final Color BG_HEADER = new Color(240, 240, 240);
-    private static final Color BORDER_COLOR = new Color(160, 160, 160);
+    // Constructor sin dependencias para compatibilidad con tests unitarios
+    public Anexo1PdfGenerator() {
+        this.resourceLoader = null;
+        this.plantillaPath = "classpath:templates/pdf/anexo1-oficial-v03.pdf";
+        this.escudoPath = "classpath:static/img/escudo-huamanga.png";
+    }
 
     public byte[] generarPdf(ExpedienteResponseDto exp) {
-        Document document = new Document(PageSize.A4, 20f, 20f, 18f, 18f);
+        if (exp == null) {
+            throw new IllegalArgumentException("El expediente no puede ser nulo");
+        }
+
+        byte[] templateBytes = cargarPlantilla();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         try {
-            PdfWriter.getInstance(document, baos);
-            document.open();
+            PdfReader reader = new PdfReader(templateBytes);
+            int totalPages = reader.getNumberOfPages();
+            if (totalPages != 2) {
+                log.warn("La plantilla oficial tiene {} páginas (se esperaban exactamente 2)", totalPages);
+            }
 
-            // ==================== PÁGINA 1 ====================
-            agregarEncabezado(document, exp, 1);
+            PdfStamper stamper = new PdfStamper(reader, baos);
 
-            Paragraph pVerInst = new Paragraph("VER INSTRUCCIONES PARA EL LLENADO (Página 2)", F_FOOT_NOTE);
-            pVerInst.setAlignment(Element.ALIGN_CENTER);
-            pVerInst.setSpacingAfter(3f);
-            document.add(pVerInst);
+            BaseFont fontRegular = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+            BaseFont fontBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
 
-            agregarSeccionI(document, exp);
-            agregarSeccionII(document, exp);
-            agregarSeccionIII(document, exp);
-            agregarSeccionIV(document, exp);
+            // ==================== ESTAMPADO PÁGINA 1 ====================
+            PdfContentByte cb1 = stamper.getOverContent(1);
+            estamparEscudo(cb1, 1);
+            estamparEncabezado(cb1, exp, 1, fontRegular, fontBold);
+            estamparSeccionI(cb1, exp, fontRegular, fontBold);
+            estamparSeccionII(cb1, exp, fontRegular, fontBold);
+            estamparSeccionIII(cb1, exp, fontRegular, fontBold);
+            estamparSeccionIV(cb1, exp, fontRegular, fontBold);
 
-            Paragraph pFoot1 = new Paragraph("* Esta información es llenada por el representante de la municipalidad.", F_FOOT_NOTE);
-            pFoot1.setSpacingBefore(2f);
-            document.add(pFoot1);
+            // ==================== ESTAMPADO PÁGINA 2 ====================
+            if (totalPages >= 2) {
+                PdfContentByte cb2 = stamper.getOverContent(2);
+                estamparEscudo(cb2, 2);
+                estamparEncabezado(cb2, exp, 2, fontRegular, fontBold);
+                estamparSeccionV(cb2, exp, fontRegular, fontBold);
+                estamparSeccionVI(cb2, exp, fontRegular, fontBold);
+            }
 
-            // ==================== PÁGINA 2 ====================
-            document.newPage();
-            agregarEncabezado(document, exp, 2);
+            stamper.close();
+            reader.close();
 
-            agregarSeccionV(document, exp);
-            agregarSeccionVI(document, exp);
-            agregarInstruccionesLlenado(document);
-
-            document.close();
+            log.info("Anexo 1 oficial generado exitosamente para expediente: {}", exp.getNumeroTramite());
             return baos.toByteArray();
         } catch (Exception e) {
-            log.error("Error al generar PDF del Anexo 1 oficial", e);
-            throw new RuntimeException("Error al generar PDF del Anexo 1", e);
+            log.error("Error crítico al estampar PDF del Anexo 1 oficial: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al generar PDF del Anexo 1 oficial", e);
         }
     }
 
-    private void agregarEncabezado(Document document, ExpedienteResponseDto exp, int pagina) throws Exception {
-        PdfPTable t = new PdfPTable(3);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{20f, 55f, 25f});
-        t.setSpacingAfter(2f);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CARGA DE RECURSOS
+    // ─────────────────────────────────────────────────────────────────────────────
 
-        // Celda Izquierda: Logo institucional
-        PdfPCell cLogo = new PdfPCell();
-        cLogo.setBorder(PdfPCell.BOX);
-        cLogo.setBorderColor(BORDER_COLOR);
-        cLogo.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cLogo.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cLogo.setPadding(3f);
-
+    private byte[] cargarPlantilla() {
         try {
-            java.net.URL logoUrl = getClass().getResource("/static/img/escudo-huamanga.png");
-            if (logoUrl != null) {
-                Image imgLogo = Image.getInstance(logoUrl);
-                imgLogo.scaleToFit(38f, 38f);
-                imgLogo.setAlignment(Element.ALIGN_CENTER);
-                cLogo.addElement(imgLogo);
+            InputStream is = resolverInputStream(plantillaPath, "/templates/pdf/anexo1-oficial-v03.pdf");
+            if (is == null) {
+                throw new IllegalStateException("No se pudo localizar la plantilla PDF oficial en: " + plantillaPath);
+            }
+            try (is) {
+                return is.readAllBytes();
             }
         } catch (Exception e) {
-            log.warn("No se pudo cargar el escudo institucional: {}", e.getMessage());
+            log.error("Fallo al leer plantilla PDF de: {}", plantillaPath, e);
+            throw new RuntimeException("Plantilla oficial no encontrada", e);
         }
-
-        Paragraph pLogo = new Paragraph("MUNICIPALIDAD PROVINCIAL\nDE HUAMANGA", F_TITLE_TAG);
-        pLogo.setAlignment(Element.ALIGN_CENTER);
-        cLogo.addElement(pLogo);
-        t.addCell(cLogo);
-
-        // Celda Centro: Título oficial
-        PdfPCell cTitulo = new PdfPCell();
-        cTitulo.setBorder(PdfPCell.BOX);
-        cTitulo.setBorderColor(BORDER_COLOR);
-        cTitulo.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cTitulo.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cTitulo.setPadding(4f);
-
-        Paragraph pAnx = new Paragraph("Anexo N° 1", F_TITLE_TAG);
-        pAnx.setAlignment(Element.ALIGN_CENTER);
-        cTitulo.addElement(pAnx);
-
-        Paragraph pNom = new Paragraph("FORMATO DE DECLARACIÓN JURADA PARA LICENCIA DE\nFUNCIONAMIENTO", F_TITLE_MAIN);
-        pNom.setAlignment(Element.ALIGN_CENTER);
-        cTitulo.addElement(pNom);
-
-        Paragraph pLey = new Paragraph("LEY Nº 28976 - Ley Marco de Licencia de Funcionamiento y modificatorias\nVersión 03", F_TITLE_SUB);
-        pLey.setAlignment(Element.ALIGN_CENTER);
-        cTitulo.addElement(pLey);
-        t.addCell(cTitulo);
-
-        // Celda Derecha: Recuadro de control municipal
-        PdfPCell cBox = new PdfPCell();
-        cBox.setBorder(PdfPCell.BOX);
-        cBox.setBorderColor(BORDER_COLOR);
-        cBox.setPadding(3f);
-
-        String fechaRecep = exp.getFechaCreacion() != null ? exp.getFechaCreacion().format(DATE_FMT) : "-";
-        String voucher = exp.getVoucherId() != null ? exp.getVoucherId() : "...................";
-        String fechaPago = exp.getFechaPagoSat() != null ? exp.getFechaPagoSat().format(DATE_FMT) : "...................";
-
-        Paragraph pB = new Paragraph();
-        pB.add(new Phrase("N° de expediente: ", F_BOX_LABEL));
-        pB.add(new Phrase(exp.getNumeroTramite() != null ? exp.getNumeroTramite() : "-", F_BOX_VAL));
-        pB.add(new Phrase("\nPágina: " + pagina + " de 2", F_BOX_LABEL));
-        pB.add(new Phrase("\nFecha de recepción: " + fechaRecep, F_BOX_LABEL));
-        pB.add(new Phrase("\nN° de recibo de pago: " + voucher, F_BOX_LABEL));
-        pB.add(new Phrase("\nFecha de pago: " + fechaPago, F_BOX_LABEL));
-        cBox.addElement(pB);
-        t.addCell(cBox);
-
-        document.add(t);
     }
 
-    private void agregarSeccionI(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(3);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{37f, 35f, 28f});
-        t.setSpacingAfter(3f);
+    private void estamparEscudo(PdfContentByte cb, int page) {
+        try {
+            InputStream is = resolverInputStream(escudoPath, "/static/img/escudo-huamanga.png");
+            if (is == null) {
+                log.debug("Escudo no disponible, conservando espacio del recuadro oficial");
+                return;
+            }
+            byte[] imgBytes;
+            try (is) {
+                imgBytes = is.readAllBytes();
+            }
+            Image img = Image.getInstance(imgBytes);
 
-        // Título de la sección I
-        PdfPCell cTit = new PdfPCell(new Phrase("I MODALIDAD DEL TRÁMITE QUE SOLICITA (marcar más de una alternativa si corresponde)", F_SEC_TITLE));
-        cTit.setColspan(3);
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
+            // Dimensiones del recuadro "Logo de la Entidad": Ancho máx ~75pt, Alto máx ~45pt
+            float maxW = 75f;
+            float maxH = 46f;
+            float origW = img.getWidth();
+            float origH = img.getHeight();
+            float scale = Math.min(maxW / origW, maxH / origH);
+            float finalW = origW * scale;
+            float finalH = origH * scale;
 
+            // Centro del recuadro Logo: x ~ 115, y ~ 700
+            float posX = 115f - (finalW / 2f);
+            float posY = 700f - (finalH / 2f);
+
+            img.setAbsolutePosition(posX, posY);
+            img.scaleAbsolute(finalW, finalH);
+            cb.addImage(img);
+        } catch (Exception e) {
+            log.warn("No se pudo cargar o estampar el escudo institucional (se continúa sin imagen): {}", e.getMessage());
+        }
+    }
+
+    private InputStream resolverInputStream(String path, String classpathFallback) {
+        if (resourceLoader != null && path != null) {
+            try {
+                Resource resource = resourceLoader.getResource(path);
+                if (resource.exists()) {
+                    return resource.getInputStream();
+                }
+            } catch (Exception ignored) {}
+        }
+        // Fallback por classloader
+        InputStream is = getClass().getResourceAsStream(classpathFallback);
+        if (is != null) {
+            return is;
+        }
+        if (path != null && path.startsWith("classpath:")) {
+            String cp = path.substring("classpath:".length());
+            if (!cp.startsWith("/")) cp = "/" + cp;
+            return getClass().getResourceAsStream(cp);
+        }
+        return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ENCABEZADO (Páginas 1 y 2)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void estamparEncabezado(PdfContentByte cb, ExpedienteResponseDto exp, int pagina, BaseFont fReg, BaseFont fBold) {
+        // N° de expediente (ej: EXP-2024-001234)
+        String nroExp = exp.getNumeroTramite() != null ? exp.getNumeroTramite() : "";
+        drawText(cb, nroExp, 420f, 710.44f, 6.8f, true, COLOR_VAL, fBold);
+
+        // Fecha de recepción
+        if (exp.getFechaCreacion() != null) {
+            String fRecep = exp.getFechaCreacion().format(DATE_FMT);
+            drawText(cb, fRecep, 465f, 696.47f, 6.5f, true, COLOR_VAL, fBold);
+        }
+
+        // N° de recibo de pago
+        String nroRecibo = exp.getNumeroOperacionSat() != null ? exp.getNumeroOperacionSat() : exp.getVoucherId();
+        if (nroRecibo != null && !nroRecibo.isBlank()) {
+            drawText(cb, nroRecibo, 425f, 682.71f, 6.5f, true, COLOR_VAL, fBold);
+        }
+
+        // Fecha de pago
+        if (exp.getFechaPagoSat() != null) {
+            String fPago = exp.getFechaPagoSat().format(DATE_FMT);
+            drawText(cb, fPago, 425f, 668.41f, 6.5f, true, COLOR_VAL, fBold);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN I: MODALIDAD DEL TRÁMITE
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void estamparSeccionI(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
         ModalidadTramite mod = exp.getModalidadTramite() != null ? exp.getModalidadTramite() : ModalidadTramite.LICENCIA_INDETERMINADA;
 
-        // Col 1: Licencia de funcionamiento
-        PdfPCell c1 = new PdfPCell();
-        c1.setBorderColor(BORDER_COLOR);
-        c1.setPadding(3f);
-        c1.addElement(new Paragraph("Licencia de funcionamiento", F_COL_HEADER));
-        c1.addElement(crearCheckItem("Indeterminada", mod == ModalidadTramite.LICENCIA_INDETERMINADA));
-        String plazo = exp.getPlazoTemporalMeses() != null ? exp.getPlazoTemporalMeses() + " meses" : ".....................";
-        c1.addElement(crearCheckItem("Temporal (Indicar plazo: " + plazo + ")", mod == ModalidadTramite.LICENCIA_TEMPORAL));
-        String tipoAnuncio = exp.getTipoAnuncio() != null ? exp.getTipoAnuncio() : ".....................";
-        c1.addElement(crearCheckItem("Licencia más autorización de anuncio publicitario\n(Tipo de anuncio: " + tipoAnuncio + ")", mod == ModalidadTramite.LICENCIA_CON_ANUNCIO));
-        String licPrinc = exp.getNumeroLicenciaPrincipal() != null ? exp.getNumeroLicenciaPrincipal() : ".....................";
-        c1.addElement(crearCheckItem("Licencia para cesionario\n(N° lic. principal: " + licPrinc + ")", mod == ModalidadTramite.LICENCIA_CESIONARIO));
-        c1.addElement(crearCheckItem("Licencias para mercados de abastos, galerías y centros comerciales", mod == ModalidadTramite.LICENCIA_MERCADOS_GALERIAS));
-        t.addCell(c1);
-
-        // Col 2: Cambios o modificaciones
-        PdfPCell c2 = new PdfPCell();
-        c2.setBorderColor(BORDER_COLOR);
-        c2.setPadding(3f);
-        c2.addElement(new Paragraph("Cambios o modificaciones", F_COL_HEADER));
-        c2.addElement(crearCheckItem("Cambio de denominación o nombre comercial de persona jurídica (Solo Secc. II, III y V)", mod == ModalidadTramite.CAMBIO_DENOMINACION));
-        c2.addElement(new Paragraph("  N° lic: ..................... Nueva denom: .....................", F_ITEM));
-        c2.addElement(crearCheckItem("Transferencia de Licencia de Funcionamiento (Solo Secc. II, III, V y adjuntar copia de contrato)", mod == ModalidadTramite.TRANSFERENCIA_LICENCIA));
-        c2.addElement(new Paragraph("  N° licencia anterior: .......................................", F_ITEM));
-        t.addCell(c2);
-
-        // Col 3: Otros
-        PdfPCell c3 = new PdfPCell();
-        c3.setBorderColor(BORDER_COLOR);
-        c3.setPadding(3f);
-        c3.addElement(new Paragraph("Otros", F_COL_HEADER));
-        c3.addElement(crearCheckItem("Cese de actividades (Solo Secc. II, III y V)\nN° licencia: .......................................", mod == ModalidadTramite.CESE_ACTIVIDADES));
-        c3.addElement(crearCheckItem("Otros (especificar):\n...........................................................", mod == ModalidadTramite.OTROS));
-        t.addCell(c3);
-
-        document.add(t);
-    }
-
-    private void agregarSeccionII(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(4);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{25f, 25f, 25f, 25f});
-        t.setSpacingAfter(3f);
-
-        PdfPCell cTit = new PdfPCell(new Phrase("II DATOS DEL SOLICITANTE", F_SEC_TITLE));
-        cTit.setColspan(4);
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
-
-        // Fila 1: Apellidos y nombres / Razón social
-        String nombreOrazon = (exp.getRazonSocial() != null && !exp.getRazonSocial().isBlank())
-                ? exp.getRazonSocial()
-                : (exp.getNombreTitular() != null ? exp.getNombreTitular() : "-");
-        PdfPCell cNom = new PdfPCell();
-        cNom.setColspan(4);
-        cNom.setBorderColor(BORDER_COLOR);
-        cNom.setPadding(2f);
-        cNom.addElement(new Phrase("Apellidos y Nombres / Razón social:", F_LABEL));
-        cNom.addElement(new Phrase(" " + nombreOrazon, F_VAL));
-        t.addCell(cNom);
-
-        // Fila 2: Documentos y contacto
-        String dni = (exp.getTipoPersona() == TipoPersona.NATURAL) ? exp.getDocumentoIdentidad() : "-";
-        String ruc = (exp.getTipoPersona() == TipoPersona.JURIDICA || (exp.getDocumentoIdentidad() != null && exp.getDocumentoIdentidad().length() == 11))
-                ? exp.getDocumentoIdentidad() : (exp.getRazonSocial() != null ? exp.getDocumentoIdentidad() : "-");
-
-        t.addCell(crearCeldaDoble("N° DNI / N° C.E.:", dni));
-        t.addCell(crearCeldaDoble("N° RUC:", ruc));
-        t.addCell(crearCeldaDoble("N° Teléfono:", exp.getTelefono() != null ? exp.getTelefono() : "-"));
-        t.addCell(crearCeldaDoble("Correo electrónico:", exp.getCorreoElectronico() != null ? exp.getCorreoElectronico() : "-"));
-
-        // Fila 3: Dirección desglosada del solicitante
-        String via = (exp.getTipoVia() != null ? exp.getTipoVia() + " " : "") + (exp.getNombreVia() != null ? exp.getNombreVia() : exp.getDireccionEstablecimiento());
-        String num = (exp.getNumeroVivienda() != null ? "N° " + exp.getNumeroVivienda() : "") + (exp.getInterior() != null ? " Int. " + exp.getInterior() : "");
-        String urb = exp.getUrbanizacion() != null ? exp.getUrbanizacion() : "-";
-        String distProv = (exp.getDistrito() != null ? exp.getDistrito() : "Ayacucho") + " / " + (exp.getProvincia() != null ? exp.getProvincia() : "Huamanga");
-
-        t.addCell(crearCeldaDoble("Av./Jr./Ca./Pje./Otros:", via));
-        t.addCell(crearCeldaDoble("N°/Int. /Mz/Lt./Otros:", num.isBlank() ? "-" : num));
-        t.addCell(crearCeldaDoble("Urb./ AA.HH./Otros:", urb));
-        t.addCell(crearCeldaDoble("Distrito y Provincia:", distProv));
-
-        document.add(t);
-    }
-
-    private void agregarSeccionIII(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(3);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{45f, 20f, 35f});
-        t.setSpacingAfter(3f);
-
-        PdfPCell cTit = new PdfPCell(new Phrase("III DATOS DEL REPRESENTANTE LEGAL O APODERADO", F_SEC_TITLE));
-        cTit.setColspan(3);
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
-
-        String repNom = exp.getNombreRepresentante() != null ? exp.getNombreRepresentante() : "-";
-        String repDni = exp.getDniRepresentante() != null ? exp.getDniRepresentante() : "-";
-        String sunarp = (exp.getPartidaSunarp() != null ? "Partida: " + exp.getPartidaSunarp() : "")
-                + (exp.getAsientoSunarp() != null ? " Asiento: " + exp.getAsientoSunarp() : "");
-        if (sunarp.isBlank()) sunarp = "-";
-
-        t.addCell(crearCeldaDoble("Apellidos y Nombres:", repNom));
-        t.addCell(crearCeldaDoble("N° DNI / N° C.E.:", repDni));
-        t.addCell(crearCeldaDoble("N° partida electrónica y asiento SUNARP:", sunarp));
-
-        document.add(t);
-    }
-
-    private void agregarSeccionIV(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(4);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{25f, 25f, 25f, 25f});
-        t.setSpacingAfter(3f);
-
-        PdfPCell cTit = new PdfPCell(new Phrase("IV DATOS DEL ESTABLECIMIENTO", F_SEC_TITLE));
-        cTit.setColspan(4);
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
-
-        // Nombre comercial
-        PdfPCell cNom = new PdfPCell();
-        cNom.setColspan(4);
-        cNom.setBorderColor(BORDER_COLOR);
-        cNom.setPadding(2f);
-        cNom.addElement(new Phrase("Nombre comercial:", F_LABEL));
-        cNom.addElement(new Phrase(" " + (exp.getNombreComercial() != null ? exp.getNombreComercial() : "-"), F_VAL));
-        t.addCell(cNom);
-
-        // Código CIIU, Giro, Actividad, Zonificación
-        t.addCell(crearCeldaDoble("Código CIIU *:", exp.getCiiuCodigo() != null ? exp.getCiiuCodigo() : "-"));
-        t.addCell(crearCeldaDoble("Giro/s *:", exp.getGiroNegocio() != null ? exp.getGiroNegocio() : "-"));
-        t.addCell(crearCeldaDoble("Actividad:", exp.getActividadDetallada() != null ? exp.getActividadDetallada() : exp.getGiroNegocio()));
-        t.addCell(crearCeldaDoble("Zonificación:", exp.getZonificacion() != null ? exp.getZonificacion() : "ZRE-CH"));
-
-        // Dirección del local
-        String via = (exp.getTipoVia() != null ? exp.getTipoVia() + " " : "") + (exp.getNombreVia() != null ? exp.getNombreVia() : exp.getDireccionEstablecimiento());
-        String num = (exp.getNumeroVivienda() != null ? "N° " + exp.getNumeroVivienda() : "") + (exp.getInterior() != null ? " Int. " + exp.getInterior() : "");
-        String urb = exp.getUrbanizacion() != null ? exp.getUrbanizacion() : "Huamanga";
-        String prov = exp.getProvincia() != null ? exp.getProvincia() : "Huamanga";
-
-        t.addCell(crearCeldaDoble("Av./Jr./Ca./Pje./Otros:", via));
-        t.addCell(crearCeldaDoble("N°/Int. /Mz/Lt./Otros:", num.isBlank() ? "-" : num));
-        t.addCell(crearCeldaDoble("Urb./ AA.HH./Otros:", urb));
-        t.addCell(crearCeldaDoble("Provincia:", prov));
-
-        // Autorización Sectorial
-        PdfPCell cSecTit = new PdfPCell(new Phrase("Autorización Sectorial (de corresponder):", F_ITEM_BOLD));
-        cSecTit.setColspan(4);
-        cSecTit.setBackgroundColor(new Color(248, 248, 248));
-        cSecTit.setBorderColor(BORDER_COLOR);
-        cSecTit.setPadding(2f);
-        t.addCell(cSecTit);
-
-        String entidad = exp.getSectorEntidad() != null ? exp.getSectorEntidad() : "-";
-        String denom = exp.getSectorDenominacion() != null ? exp.getSectorDenominacion() : "-";
-        String fecha = exp.getSectorFecha() != null ? exp.getSectorFecha() : "-";
-        String numero = exp.getSectorNumero() != null ? exp.getSectorNumero() : "-";
-
-        t.addCell(crearCeldaDoble("Entidad que otorga:", entidad));
-        t.addCell(crearCeldaDoble("Denominación:", denom));
-        t.addCell(crearCeldaDoble("Fecha autorización:", fecha));
-        t.addCell(crearCeldaDoble("Número autorización:", numero));
-
-        // Fila Dividida: Área total solicitada y Croquis de Ubicación
-        PdfPCell cArea = new PdfPCell();
-        cArea.setColspan(2);
-        cArea.setBorderColor(BORDER_COLOR);
-        cArea.setPadding(3f);
-        cArea.addElement(new Phrase("Área total solicitada (m²):", F_LABEL));
-        cArea.addElement(new Phrase("\n" + (exp.getAreaMetrosCuadrados() != null ? exp.getAreaMetrosCuadrados() + " m²" : "-"), F_VAL));
-        if (exp.getAforoPersonas() != null) {
-            cArea.addElement(new Phrase("\nAforo estimado: " + exp.getAforoPersonas() + " personas", F_LABEL));
+        switch (mod) {
+            case LICENCIA_INDETERMINADA -> drawMark(cb, 88.5f, 615.82f, fBold);
+            case LICENCIA_TEMPORAL -> {
+                drawMark(cb, 162.5f, 615.82f, fBold);
+                if (exp.getPlazoTemporalMeses() != null && exp.getPlazoTemporalMeses() > 0) {
+                    drawText(cb, exp.getPlazoTemporalMeses() + " meses", 155f, 591.60f, 6.0f, true, COLOR_VAL, fBold);
+                }
+            }
+            case LICENCIA_CON_ANUNCIO -> {
+                drawMark(cb, 88.5f, 579.55f, fBold);
+                if (exp.getTipoAnuncio() != null) {
+                    drawFittedText(cb, exp.getTipoAnuncio(), 100f, 558.21f, 130f, 6.0f, false, COLOR_VAL, fReg);
+                }
+            }
+            case LICENCIA_CESIONARIO -> {
+                drawMark(cb, 88.5f, 542.85f, fBold);
+                if (exp.getNumeroLicenciaPrincipal() != null) {
+                    drawText(cb, exp.getNumeroLicenciaPrincipal(), 100f, 522.47f, 6.0f, true, COLOR_VAL, fBold);
+                }
+            }
+            case LICENCIA_MERCADOS_GALERIAS -> drawMark(cb, 88.5f, 503.06f, fBold);
+            case CAMBIO_DENOMINACION -> {
+                drawMark(cb, 236.5f, 615.82f, fBold);
+                if (exp.getNumeroLicenciaPrincipal() != null) {
+                    drawText(cb, exp.getNumeroLicenciaPrincipal(), 246.76f, 591.60f, 6.0f, true, COLOR_VAL, fBold);
+                }
+                if (exp.getRazonSocial() != null) {
+                    drawFittedText(cb, exp.getRazonSocial(), 246.76f, 566.96f, 135f, 5.8f, true, COLOR_VAL, fBold);
+                }
+            }
+            case TRANSFERENCIA_LICENCIA -> {
+                drawMark(cb, 236.5f, 549.46f, fBold);
+                if (exp.getNumeroLicenciaPrincipal() != null) {
+                    drawText(cb, exp.getNumeroLicenciaPrincipal(), 246.76f, 497.72f, 6.0f, true, COLOR_VAL, fBold);
+                }
+            }
+            case CESE_ACTIVIDADES -> {
+                drawMark(cb, 382.5f, 615.82f, fBold);
+                if (exp.getNumeroLicenciaPrincipal() != null) {
+                    drawText(cb, exp.getNumeroLicenciaPrincipal(), 392.91f, 589.58f, 6.0f, true, COLOR_VAL, fBold);
+                }
+            }
+            case OTROS -> drawMark(cb, 382.5f, 580.40f, fBold);
         }
-        t.addCell(cArea);
-
-        PdfPCell cCroquis = new PdfPCell();
-        cCroquis.setColspan(2);
-        cCroquis.setBorderColor(BORDER_COLOR);
-        cCroquis.setPadding(3f);
-        cCroquis.addElement(new Phrase("Croquis de ubicación:", F_LABEL));
-        cCroquis.addElement(crearMiniCroquis());
-        t.addCell(cCroquis);
-
-        document.add(t);
     }
 
-    private void agregarSeccionV(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(1);
-        t.setWidthPercentage(100);
-        t.setSpacingAfter(3f);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN II: DATOS DEL SOLICITANTE
+    // ─────────────────────────────────────────────────────────────────────────────
 
-        PdfPCell cTit = new PdfPCell(new Phrase("V DECLARACIÓN JURADA", F_SEC_TITLE));
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
+    private void estamparSeccionII(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
+        // Fila 1: Apellidos y Nombres / Razón Social
+        String titular = exp.getTipoPersona() == TipoPersona.JURIDICA && exp.getRazonSocial() != null
+                ? exp.getRazonSocial()
+                : (exp.getNombreTitular() != null ? exp.getNombreTitular() : "");
+        drawFittedText(cb, titular, 80f, 453.5f, 430f, 6.8f, true, COLOR_VAL, fBold);
 
-        PdfPCell cDecl = new PdfPCell();
-        cDecl.setBorderColor(BORDER_COLOR);
-        cDecl.setPadding(3f);
-        cDecl.addElement(new Paragraph("Declaro (DE CORRESPONDER MARCAR CON X)", F_ITEM_BOLD));
-        cDecl.addElement(crearCheckItem("Cuento con poder suficiente vigente para actuar como representante legal de la persona jurídica conductora (alternativamente, de la persona natural que represento).", true));
-        cDecl.addElement(crearCheckItem("El establecimiento cumple con las condiciones de seguridad en edificaciones y me someto a la inspección técnica que corresponda en función al nivel de riesgo, de conformidad con la legislación aplicable.", true));
-        cDecl.addElement(crearCheckItem("Cuento con título profesional vigente y estoy habilitado por el colegio profesional correspondiente (en el caso de servicios relacionados con la salud).", false));
-        cDecl.addElement(crearCheckItem("Tengo conocimiento de que la presente Declaración Jurada y documentación está sujeta a la fiscalización posterior. En caso de haber proporcionado información, documentos, formatos o declaraciones que no corresponden a la verdad, se me aplicarán las sanciones administrativas y penales correspondientes, declarándose la nulidad o revocatoria de la licencia o autorización otorgada. Asimismo, brindaré las facilidades necesarias para las acciones de control de la autoridad municipal competente.", true));
-        cDecl.addElement(new Paragraph("\nObservaciones o comentarios del solicitante: Ninguna.", F_ITEM));
-        t.addCell(cDecl);
+        // Fila 2: Documentos y Contacto
+        String doc = exp.getDocumentoIdentidad() != null ? exp.getDocumentoIdentidad() : "";
+        if (exp.getTipoPersona() == TipoPersona.JURIDICA || (exp.getTipoDocumento() == TipoDocumento.RUC)) {
+            drawCenteredText(cb, doc, 185f, 428.0f, 6.5f, true, COLOR_VAL, fBold);
+        } else {
+            drawCenteredText(cb, doc, 112f, 428.0f, 6.5f, true, COLOR_VAL, fBold);
+        }
 
-        // Fila de Fecha y Firma
-        PdfPTable tFirma = new PdfPTable(2);
-        tFirma.setWidthPercentage(100);
-        tFirma.setWidths(new float[]{40f, 60f});
+        if (exp.getTelefono() != null) {
+            drawCenteredText(cb, exp.getTelefono(), 286f, 428.0f, 6.5f, true, COLOR_VAL, fBold);
+        }
+        if (exp.getCorreoElectronico() != null) {
+            drawFittedText(cb, exp.getCorreoElectronico(), 345f, 428.0f, 160f, 6.5f, true, COLOR_VAL, fBold);
+        }
 
-        PdfPCell cFecha = new PdfPCell();
-        cFecha.setBorder(PdfPCell.NO_BORDER);
-        cFecha.setPadding(4f);
-        String fecha = exp.getFechaCreacion() != null ? exp.getFechaCreacion().format(DATE_FMT) : LocalDate.now().format(DATE_FMT);
-        cFecha.addElement(new Phrase("Fecha: " + fecha, F_VAL));
-        tFirma.addCell(cFecha);
+        // Fila 3: Dirección desglosada
+        String via = construirVia(exp);
+        drawFittedText(cb, via, 80f, 393.0f, 115f, 6.2f, false, COLOR_VAL, fReg);
 
-        PdfPCell cFirmaBox = new PdfPCell();
-        cFirmaBox.setBorder(PdfPCell.BOX);
-        cFirmaBox.setBorderColor(BORDER_COLOR);
-        cFirmaBox.setPadding(4f);
-        cFirmaBox.setHorizontalAlignment(Element.ALIGN_CENTER);
+        String nroInt = construirNroInt(exp);
+        drawCenteredText(cb, nroInt, 235f, 393.0f, 6.2f, true, COLOR_VAL, fBold);
 
-        Paragraph pF = new Paragraph();
-        pF.add(new Phrase("\n\n_____________________________________________________\n", F_ITEM));
-        pF.add(new Phrase("Firma del solicitante/ Representante legal/ Apoderado\n", F_ITEM_BOLD));
-        pF.add(new Phrase("DNI: " + (exp.getDocumentoIdentidad() != null ? exp.getDocumentoIdentidad() : "..................") + "\n", F_ITEM));
-        pF.add(new Phrase("Nombres y Apellidos: " + (exp.getNombreTitular() != null ? exp.getNombreTitular() : "................................................"), F_ITEM));
-        pF.setAlignment(Element.ALIGN_CENTER);
-        cFirmaBox.addElement(pF);
-        tFirma.addCell(cFirmaBox);
+        String urb = exp.getUrbanizacion() != null ? exp.getUrbanizacion() : "";
+        drawFittedText(cb, urb, 275f, 393.0f, 105f, 6.2f, false, COLOR_VAL, fReg);
 
-        PdfPCell cWrap = new PdfPCell(tFirma);
-        cWrap.setBorderColor(BORDER_COLOR);
-        cWrap.setPadding(3f);
-        t.addCell(cWrap);
-
-        document.add(t);
+        String distProv = construirDistritoProvincia(exp);
+        drawFittedText(cb, distProv, 385f, 393.0f, 125f, 6.2f, false, COLOR_VAL, fReg);
     }
 
-    private void agregarSeccionVI(Document document, ExpedienteResponseDto exp) throws Exception {
-        PdfPTable t = new PdfPTable(4);
-        t.setWidthPercentage(100);
-        t.setWidths(new float[]{25f, 25f, 25f, 25f});
-        t.setSpacingAfter(3f);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN III: REPRESENTANTE LEGAL O APODERADO
+    // ─────────────────────────────────────────────────────────────────────────────
 
-        PdfPCell cTit = new PdfPCell(new Phrase("VI CLASIFICACIÓN DEL NIVEL DE RIESGO (Para ser llenado por el calificador designado de la municipalidad) *", F_SEC_TITLE));
-        cTit.setColspan(4);
-        cTit.setBackgroundColor(BG_HEADER);
-        cTit.setBorderColor(BORDER_COLOR);
-        cTit.setPadding(2f);
-        t.addCell(cTit);
-
-        NivelRiesgo riesgo = exp.getNivelRiesgo();
-        t.addCell(crearCeldaCheckCentro("ITSE Riesgo bajo", riesgo == NivelRiesgo.BAJO));
-        t.addCell(crearCeldaCheckCentro("ITSE Riesgo medio", riesgo == NivelRiesgo.MEDIO));
-        t.addCell(crearCeldaCheckCentro("ITSE Riesgo alto", riesgo == NivelRiesgo.ALTO));
-        t.addCell(crearCeldaCheckCentro("ITSE Riesgo muy alto", riesgo == NivelRiesgo.MUY_ALTO));
-
-        PdfPCell cFirmaMuni = new PdfPCell();
-        cFirmaMuni.setColspan(4);
-        cFirmaMuni.setBorderColor(BORDER_COLOR);
-        cFirmaMuni.setPadding(4f);
-        cFirmaMuni.setHorizontalAlignment(Element.ALIGN_CENTER);
-
-        Paragraph pFM = new Paragraph();
-        pFM.add(new Phrase("\n\n_____________________________________________________\n", F_ITEM));
-        pFM.add(new Phrase("Firma y sello del calificador municipal\n", F_ITEM_BOLD));
-        String inspector = exp.getNumeroInformeItse() != null
-                ? "Subgerencia de Defensa Civil (Informe: " + exp.getNumeroInformeItse() + ")"
-                : "Subgerencia de Defensa Civil y Gestión del Riesgo";
-        pFM.add(new Phrase("Nombres y Apellidos: " + inspector + "\n", F_ITEM));
-        pFM.setAlignment(Element.ALIGN_CENTER);
-        cFirmaMuni.addElement(pFM);
-        t.addCell(cFirmaMuni);
-
-        document.add(t);
-
-        Paragraph pNoteVI = new Paragraph("* Esta información debe ser llenada por el calificador designado por la municipalidad, de acuerdo con los anexos 2 y 3 del Manual de Ejecución de Inspección Técnica de Seguridad en Edificaciones.", F_FOOT_NOTE);
-        pNoteVI.setSpacingAfter(3f);
-        document.add(pNoteVI);
+    private void estamparSeccionIII(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
+        if (exp.getNombreRepresentante() != null && !exp.getNombreRepresentante().isBlank()) {
+            drawFittedText(cb, exp.getNombreRepresentante(), 80f, 345.0f, 230f, 6.5f, true, COLOR_VAL, fBold);
+        }
+        if (exp.getDniRepresentante() != null && !exp.getDniRepresentante().isBlank()) {
+            drawCenteredText(cb, exp.getDniRepresentante(), 345f, 345.0f, 6.5f, true, COLOR_VAL, fBold);
+        }
+        if (exp.getPartidaSunarp() != null && !exp.getPartidaSunarp().isBlank()) {
+            String sunarp = exp.getPartidaSunarp();
+            if (exp.getAsientoSunarp() != null && !exp.getAsientoSunarp().isBlank()) {
+                sunarp += " - Asiento " + exp.getAsientoSunarp();
+            }
+            drawFittedText(cb, sunarp, 380f, 345.0f, 130f, 6.2f, true, COLOR_VAL, fBold);
+        }
     }
 
-    private void agregarInstruccionesLlenado(Document document) throws Exception {
-        PdfPTable t = new PdfPTable(1);
-        t.setWidthPercentage(100);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN IV: DATOS DEL ESTABLECIMIENTO
+    // ─────────────────────────────────────────────────────────────────────────────
 
-        PdfPCell c = new PdfPCell();
-        c.setBorderColor(BORDER_COLOR);
-        c.setPadding(4f);
+    private void estamparSeccionIV(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
+        // Fila 1: Nombre comercial
+        if (exp.getNombreComercial() != null) {
+            drawFittedText(cb, exp.getNombreComercial(), 80f, 298.0f, 430f, 6.8f, true, COLOR_VAL, fBold);
+        }
 
-        Paragraph p = new Paragraph("INSTRUCCIONES PARA EL LLENADO\n", F_INST_TITLE);
-        p.add(new Phrase("Sección I: Marcar con una \"X\" en la casilla según la modalidad del trámite que solicita, en caso de corresponder puede marcar más de una alternativa. De haber marcado \"Cambio de denominación o nombre comercial de la persona jurídica\" o \"Cese de actividades\", solo debe completar las secciones II, III y V. De haber marcado \"Transferencia de Licencia de Funcionamiento\", debe adjuntar copia simple del contrato de transferencia y solo debe completar las secciones II, III y V.\n" +
-                "Nota: Si el establecimiento ya cuenta con una licencia de funcionamiento y el titular o un tercero va a realizar alguna de las actividades simultáneas y adicionales establecidas por el Ministerio de la Producción en el Numeral II denominado \"Listado de actividades simultáneas y adicionales que pueden desarrollarse con la presentación de una declaración jurada ante las municipalidades\" (D.S. N° 011-2017-PRODUCE), no corresponde utilizar este Formato sino el Formato de Actividades Simultáneas. Si ya cuenta con licencia, el titular puede realizar actividades de cajero corresponsal sin necesidad de trámite adicional.\n" +
-                "Sección II: En caso de persona natural, consignar los datos personales del solicitante. En caso de persona jurídica, consignar la razón social y número de RUC.\n" +
-                "Sección III: En caso de representación de personas naturales, adjuntar carta poder simple firmada por el poderdante indicando su documento de identidad. En caso de representación de personas jurídicas consignar los datos del representante legal, número de partida electrónica y asiento de inscripción en la Superintendencia Nacional de Registros Públicos (SUNARP).\n" +
-                "Sección IV: Consignar los datos del establecimiento, tipo de actividad a desarrollar y zonificación. Los campos correspondientes al \"Código CIIU\" y \"Giro/s\" son completados por el representante de la municipalidad. Para aquellas actividades que, conforme al D.S. N° 006-2013-PCM, requieran autorización sectorial previa, consignar los datos de la autorización. Consignar el área total del establecimiento y en el croquis la ubicación exacta.\n" +
-                "Sección V: De corresponder, marcar con una X los compromisos legales y firmar.\n" +
-                "Sección VI: Sección llenada por el calificador designado de la municipalidad.", F_INST_BODY));
-        c.addElement(p);
-        t.addCell(c);
+        // Fila 2: CIIU, Giro, Actividad, Zonificación
+        if (exp.getCiiuCodigo() != null) {
+            drawCenteredText(cb, exp.getCiiuCodigo(), 114f, 271.0f, 6.5f, true, COLOR_VAL, fBold);
+        }
+        if (exp.getGiroNegocio() != null) {
+            drawFittedText(cb, exp.getGiroNegocio(), 175f, 271.0f, 90f, 6.0f, false, COLOR_VAL, fReg);
+        }
+        if (exp.getActividadDetallada() != null) {
+            drawFittedText(cb, exp.getActividadDetallada(), 270f, 271.0f, 140f, 6.0f, false, COLOR_VAL, fReg);
+        }
+        if (exp.getZonificacion() != null) {
+            drawFittedText(cb, exp.getZonificacion(), 415f, 271.0f, 95f, 6.0f, true, COLOR_VAL, fBold);
+        }
 
-        document.add(t);
+        // Fila 3: Dirección del establecimiento
+        String via = construirVia(exp);
+        drawFittedText(cb, via, 80f, 237.0f, 115f, 6.2f, false, COLOR_VAL, fReg);
+
+        String nroInt = construirNroInt(exp);
+        drawCenteredText(cb, nroInt, 235f, 237.0f, 6.2f, true, COLOR_VAL, fBold);
+
+        String urb = exp.getUrbanizacion() != null ? exp.getUrbanizacion() : "";
+        drawFittedText(cb, urb, 275f, 237.0f, 105f, 6.2f, false, COLOR_VAL, fReg);
+
+        String distProv = construirDistritoProvincia(exp);
+        drawFittedText(cb, distProv, 385f, 237.0f, 125f, 6.2f, false, COLOR_VAL, fReg);
+
+        // Fila 4: Autorización Sectorial (solo si corresponde)
+        if (Boolean.TRUE.equals(exp.getRequiereAutorizacionSectorial())) {
+            if (exp.getSectorEntidad() != null) {
+                drawFittedText(cb, exp.getSectorEntidad(), 80f, 198.0f, 95f, 6.0f, true, COLOR_VAL, fBold);
+            }
+            if (exp.getSectorDenominacion() != null) {
+                drawFittedText(cb, exp.getSectorDenominacion(), 180f, 198.0f, 140f, 6.0f, false, COLOR_VAL, fReg);
+            }
+            if (exp.getSectorFecha() != null) {
+                drawCenteredText(cb, exp.getSectorFecha(), 360f, 198.0f, 6.0f, true, COLOR_VAL, fBold);
+            }
+            if (exp.getSectorNumero() != null) {
+                drawFittedText(cb, exp.getSectorNumero(), 410f, 198.0f, 95f, 6.0f, true, COLOR_VAL, fBold);
+            }
+        }
+
+        // Fila 5: Área total solicitada (m²)
+        if (exp.getAreaMetrosCuadrados() != null) {
+            String areaStr = String.format("%.2f", exp.getAreaMetrosCuadrados());
+            drawCenteredText(cb, areaStr, 130f, 145.0f, 7.5f, true, COLOR_VAL, fBold);
+        }
     }
 
-    private Paragraph crearCheckItem(String texto, boolean marcado) {
-        Paragraph p = new Paragraph();
-        p.add(new Phrase(marcado ? "[ X ] " : "[   ] ", F_ITEM_BOLD));
-        p.add(new Phrase(texto, F_ITEM));
-        return p;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN V: DECLARACIÓN JURADA (Página 2)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void estamparSeccionV(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
+        // Casilla 1: Poder suficiente (PJ o representante)
+        if (exp.getTipoPersona() == TipoPersona.JURIDICA || (exp.getNombreRepresentante() != null && !exp.getNombreRepresentante().isBlank())) {
+            drawMark(cb, 83.5f, 628.0f, fBold);
+        }
+
+        // Casilla 2: Condiciones de seguridad ITSE (aplica por defecto a toda solicitud válida)
+        drawMark(cb, 83.5f, 619.0f, fBold);
+
+        // Casilla 3: Título profesional en salud (si aplica al giro)
+        if (exp.getGiroNegocio() != null && exp.getGiroNegocio().toLowerCase().contains("salud")) {
+            drawMark(cb, 83.5f, 604.0f, fBold);
+        }
+
+        // Observaciones o comentarios del solicitante
+        if (exp.getMotivoObservacion() != null && !exp.getMotivoObservacion().isBlank()) {
+            drawFittedText(cb, exp.getMotivoObservacion(), 80f, 540.0f, 430f, 6.0f, false, COLOR_VAL, fReg);
+        }
+
+        // Fecha de declaración
+        String fechaDec = exp.getFechaCreacion() != null ? exp.getFechaCreacion().format(DATE_FMT) : "";
+        if (!fechaDec.isBlank()) {
+            drawText(cb, fechaDec, 130f, 509.74f, 6.5f, true, COLOR_VAL, fBold);
+        }
+
+        // Datos del firmante (DNI y Nombres) - El espacio de firma física se conserva limpio
+        String dniFirmante = exp.getDniRepresentante() != null && !exp.getDniRepresentante().isBlank()
+                ? exp.getDniRepresentante()
+                : (exp.getDocumentoIdentidad() != null ? exp.getDocumentoIdentidad() : "");
+        if (!dniFirmante.isBlank()) {
+            drawText(cb, dniFirmante, 310f, 458.61f, 6.5f, true, COLOR_VAL, fBold);
+        }
+
+        String nombreFirmante = exp.getNombreRepresentante() != null && !exp.getNombreRepresentante().isBlank()
+                ? exp.getNombreRepresentante()
+                : (exp.getNombreTitular() != null ? exp.getNombreTitular() : "");
+        if (!nombreFirmante.isBlank()) {
+            drawFittedText(cb, nombreFirmante, 330f, 447.0f, 180f, 6.5f, true, COLOR_VAL, fBold);
+        }
     }
 
-    private PdfPCell crearCeldaCheckCentro(String texto, boolean marcado) {
-        PdfPCell c = new PdfPCell();
-        c.setBorderColor(BORDER_COLOR);
-        c.setPadding(3f);
-        c.setHorizontalAlignment(Element.ALIGN_CENTER);
-        Paragraph p = new Paragraph();
-        p.add(new Phrase(marcado ? "[ X ] " : "[   ] ", F_ITEM_BOLD));
-        p.add(new Phrase(texto, F_ITEM));
-        p.setAlignment(Element.ALIGN_CENTER);
-        c.addElement(p);
-        return c;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SECCIÓN VI: CLASIFICACIÓN DEL NIVEL DE RIESGO (Página 2)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void estamparSeccionVI(PdfContentByte cb, ExpedienteResponseDto exp, BaseFont fReg, BaseFont fBold) {
+        if (exp.getNivelRiesgo() != null) {
+            switch (exp.getNivelRiesgo()) {
+                case BAJO -> drawMark(cb, 88.0f, 405.0f, fBold);
+                case MEDIO -> drawMark(cb, 190.0f, 405.0f, fBold);
+                case ALTO -> drawMark(cb, 295.0f, 405.0f, fBold);
+                case MUY_ALTO -> drawMark(cb, 400.0f, 405.0f, fBold);
+            }
+        }
+        // Firma y sello del calificador municipal se conservan en blanco para el funcionario.
     }
 
-    private PdfPCell crearCeldaDoble(String etiqueta, String valor) {
-        PdfPCell c = new PdfPCell();
-        c.setBorderColor(BORDER_COLOR);
-        c.setPadding(2f);
-        c.addElement(new Phrase(etiqueta, F_LABEL));
-        c.addElement(new Phrase(" " + (valor != null ? valor : "-"), F_VAL));
-        return c;
+    // ─────────────────────────────────────────────────────────────────────────────
+    // HELPERS DE RENDERIZADO
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    private void drawText(PdfContentByte cb, String text, float x, float y, float size, boolean bold, Color color, BaseFont font) {
+        if (text == null || text.isBlank()) return;
+        cb.saveState();
+        cb.beginText();
+        cb.setFontAndSize(font, size);
+        cb.setColorFill(color);
+        cb.setTextMatrix(x, y);
+        cb.showText(text);
+        cb.endText();
+        cb.restoreState();
     }
 
-    private Element crearMiniCroquis() {
-        PdfPTable t = new PdfPTable(3);
-        t.setWidthPercentage(90);
-        t.setWidths(new float[]{45f, 10f, 45f});
+    private void drawCenteredText(PdfContentByte cb, String text, float xCenter, float y, float size, boolean bold, Color color, BaseFont font) {
+        if (text == null || text.isBlank()) return;
+        cb.saveState();
+        cb.beginText();
+        cb.setFontAndSize(font, size);
+        cb.setColorFill(color);
+        cb.showTextAligned(PdfContentByte.ALIGN_CENTER, text, xCenter, y, 0);
+        cb.endText();
+        cb.restoreState();
+    }
 
-        PdfPCell cM1 = new PdfPCell(new Phrase("MANZANA A", F_FOOT_NOTE));
-        cM1.setBackgroundColor(new Color(230, 230, 230));
-        cM1.setBorderColor(Color.GRAY);
-        cM1.setFixedHeight(18f);
-        cM1.setHorizontalAlignment(Element.ALIGN_CENTER);
+    private void drawFittedText(PdfContentByte cb, String text, float x, float y, float maxWidth, float baseSize, boolean bold, Color color, BaseFont font) {
+        if (text == null || text.isBlank()) return;
+        float size = baseSize;
+        float textWidth = font.getWidthPoint(text, size);
+        while (textWidth > maxWidth && size > 4.5f) {
+            size -= 0.3f;
+            textWidth = font.getWidthPoint(text, size);
+        }
+        drawText(cb, text, x, y, size, bold, color, font);
+    }
 
-        PdfPCell cCalleV = new PdfPCell();
-        cCalleV.setBorder(PdfPCell.NO_BORDER);
+    private void drawMark(PdfContentByte cb, float x, float y, BaseFont fBold) {
+        cb.saveState();
+        cb.beginText();
+        cb.setFontAndSize(fBold, 8.5f);
+        cb.setColorFill(COLOR_MARK);
+        cb.showTextAligned(PdfContentByte.ALIGN_CENTER, "X", x, y, 0);
+        cb.endText();
+        cb.restoreState();
+    }
 
-        PdfPCell cM2 = new PdfPCell(new Phrase("MANZANA B", F_FOOT_NOTE));
-        cM2.setBackgroundColor(new Color(230, 230, 230));
-        cM2.setBorderColor(Color.GRAY);
-        cM2.setFixedHeight(18f);
-        cM2.setHorizontalAlignment(Element.ALIGN_CENTER);
+    private String construirVia(ExpedienteResponseDto exp) {
+        if (exp.getTipoVia() != null && exp.getNombreVia() != null) {
+            return exp.getTipoVia() + " " + exp.getNombreVia();
+        }
+        if (exp.getDireccionEstablecimiento() != null) {
+            return exp.getDireccionEstablecimiento();
+        }
+        return "";
+    }
 
-        t.addCell(cM1);
-        t.addCell(cCalleV);
-        t.addCell(cM2);
+    private String construirNroInt(ExpedienteResponseDto exp) {
+        StringBuilder sb = new StringBuilder();
+        if (exp.getNumeroVivienda() != null && !exp.getNumeroVivienda().isBlank()) {
+            sb.append("N° ").append(exp.getNumeroVivienda());
+        }
+        if (exp.getInterior() != null && !exp.getInterior().isBlank()) {
+            if (!sb.isEmpty()) sb.append(" Int. ");
+            sb.append(exp.getInterior());
+        }
+        if (exp.getManzana() != null && !exp.getManzana().isBlank()) {
+            if (!sb.isEmpty()) sb.append(" Mz. ");
+            sb.append(exp.getManzana());
+        }
+        if (exp.getLote() != null && !exp.getLote().isBlank()) {
+            if (!sb.isEmpty()) sb.append(" Lt. ");
+            sb.append(exp.getLote());
+        }
+        return sb.toString();
+    }
 
-        PdfPCell cCalleH = new PdfPCell(new Phrase("=== VÍA PÚBLICA / CALLE PRINCIPAL ===", F_FOOT_NOTE));
-        cCalleH.setColspan(3);
-        cCalleH.setBorder(PdfPCell.NO_BORDER);
-        cCalleH.setHorizontalAlignment(Element.ALIGN_CENTER);
-        t.addCell(cCalleH);
-
-        PdfPCell cM3 = new PdfPCell(new Phrase("[ LOCAL OBJETO ]", F_ITEM_BOLD));
-        cM3.setBackgroundColor(new Color(254, 240, 138));
-        cM3.setBorderColor(Color.RED);
-        cM3.setFixedHeight(18f);
-        cM3.setHorizontalAlignment(Element.ALIGN_CENTER);
-
-        PdfPCell cM4 = new PdfPCell(new Phrase("MANZANA D", F_FOOT_NOTE));
-        cM4.setBackgroundColor(new Color(230, 230, 230));
-        cM4.setBorderColor(Color.GRAY);
-        cM4.setFixedHeight(18f);
-        cM4.setHorizontalAlignment(Element.ALIGN_CENTER);
-
-        t.addCell(cM3);
-        t.addCell(cCalleV);
-        t.addCell(cM4);
-
-        return t;
+    private String construirDistritoProvincia(ExpedienteResponseDto exp) {
+        String dist = exp.getDistrito() != null ? exp.getDistrito() : "Ayacucho";
+        String prov = exp.getProvincia() != null ? exp.getProvincia() : "Huamanga";
+        return dist + " - " + prov;
     }
 }

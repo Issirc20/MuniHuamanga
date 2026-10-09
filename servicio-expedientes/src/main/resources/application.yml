@@ -85,3 +85,12 @@ portal:
 jwt:
   secret: ${JWT_SECRET:MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}
   expiration-ms: ${JWT_EXPIRATION_MS:28800000} # 8 horas (jornada laboral municipal)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Generación Documental Oficial (Anexo 1, Escudo Institucional)
+# ──────────────────────────────────────────────────────────────────────────────
+muni:
+  documentos:
+    escudo-path: ${MUNI_ESCUDO_PATH:classpath:static/img/escudo-huamanga.png}
+    anexo1:
+      plantilla-path: ${MUNI_ANEXO1_PLANTILLA:classpath:templates/pdf/anexo1-oficial-v03.pdf}
