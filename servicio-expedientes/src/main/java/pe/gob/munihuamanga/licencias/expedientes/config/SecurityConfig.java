@@ -49,54 +49,69 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Archivos estáticos y páginas web públicas
+                        // 1. Archivos estáticos y páginas web públicas
                         .requestMatchers(
                                 "/", "/index.html", "/portal-ciudadano.html",
                                 "/portal-interno.html", "/verificar-licencia.html",
                                 "/favicon.ico", "/css/**", "/js/**", "/img/**"
                         ).permitAll()
 
-                        // Endpoint público de autenticación
+                        // 2. Endpoint público de autenticación
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Endpoints ciudadanos públicos (Mesa de partes virtual y seguimiento)
+                        // 3. Mesa de partes virtual pública (registro) y consulta de seguimiento acotada (H07)
                         .requestMatchers(HttpMethod.POST, "/api/expedientes").permitAll()
                         .requestMatchers("/api/expedientes/tramite/**").permitAll()
-                        .requestMatchers("/api/expedientes/*/documentos/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/formularios/**").permitAll()
 
-                        // Documentación Swagger / OpenAPI y Monitorización Actuator / H2
+                        // 4. Documentación Swagger / OpenAPI y Health Check
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // Consultas de expedientes públicas y de lectura (Bandeja, métricas, seguimiento)
-                        .requestMatchers(HttpMethod.GET, "/api/expedientes/**").permitAll()
+                        // 5. Descargas de documentos ciudadanos
+                        .requestMatchers("/api/expedientes/*/documentos/declaracion-jurada",
+                                         "/api/expedientes/*/documentos/voucher-sat",
+                                         "/api/expedientes/*/documentos/licencia",
+                                         "/api/expedientes/*/qr").permitAll()
 
-                        // Operaciones restringidas por rol funcional municipal (RBAC)
+                        // 6. Formularios PDF generales (Anexos 1, 3, 4) y Licencia oficial (H08)
+                        .requestMatchers("/api/formularios/declaracion-jurada",
+                                         "/api/formularios/anexo3-matriz-riesgo",
+                                         "/api/formularios/anexo4-condiciones",
+                                         "/api/formularios/voucher-sat").permitAll()
+                        .requestMatchers("/api/formularios/licencia/**").hasAnyRole("EVALUADOR", "ADMIN")
+
+                        // 7. Tarifario TUPA: Consulta pública / funcionarios, Mantenimiento exclusivo ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
+                        .requestMatchers("/api/tupa/**").hasRole("ADMIN")
+
+                        // 8. Integraciones y Adaptadores (H10): Solo funcionarios autorizados
+                        .requestMatchers("/api/integraciones/**").hasAnyRole("EVALUADOR", "ADMIN", "CAJERO")
+
+                        // 9. Operaciones restringidas por rol funcional municipal (RBAC - H01)
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/pago", "/api/expedientes/*/registrar-pago").hasAnyRole("CAJERO", "ADMIN")
                         .requestMatchers("/api/expedientes/*/clasificar-riesgo", "/api/expedientes/*/clasificacion-riesgo").hasAnyRole("EVALUADOR", "ADMIN")
                         .requestMatchers("/api/expedientes/*/voucher", "/api/expedientes/*/generar-voucher").hasAnyRole("EVALUADOR", "CAJERO", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/aprobar", "/api/expedientes/*/emision-licencia").hasAnyRole("EVALUADOR", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/rechazar", "/api/expedientes/*/observar").hasAnyRole("EVALUADOR", "ADMIN")
 
-                        // Tarifario TUPA: Consulta pública / funcionarios, Mantenimiento exclusivo ADMIN (Sprint 4-D)
-                        .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
-                        .requestMatchers("/api/tupa/**").hasRole("ADMIN")
+                        // 10. Consultas de expedientes internas protegidas por rol (H01)
+                        .requestMatchers(HttpMethod.GET, "/api/expedientes/**").hasAnyRole("EVALUADOR", "ADMIN", "CAJERO")
 
-                        // Cualquier otra mutación de expedientes requiere autenticación
+                        // 11. Cualquier otra mutación de expedientes requiere autenticación
                         .requestMatchers("/api/expedientes/**").authenticated()
 
-                        // Cualquier otra petición
-                        .anyRequest().permitAll()
+                        // 12. Regla Default-Deny: cualquier otra petición exige autenticación (H05)
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

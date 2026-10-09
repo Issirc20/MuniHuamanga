@@ -92,4 +92,4 @@ portal:
 # ──────────────────────────────────────────────────────────────────────────────
 jwt:
   secret: ${JWT_SECRET:MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}
-  expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24 horas (en milisegundos)
+  expiration-ms: ${JWT_EXPIRATION_MS:28800000} # 8 horas (jornada laboral municipal)

@@ -3,6 +3,7 @@ package pe.gob.munihuamanga.licencias.expedientes.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -16,9 +17,11 @@ import java.util.UUID;
 
 /**
  * Inicializador de datos semilla para agilizar pruebas en entornos de desarrollo local.
+ * Excluido del entorno de producción ('prod').
  */
 @Slf4j
 @Component
+@Profile("!prod")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 

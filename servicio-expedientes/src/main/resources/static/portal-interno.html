@@ -330,7 +330,7 @@
         <input type="password" id="txtPassword" placeholder="••••••••" required>
       </div>
 
-      <div style="margin-bottom: 1.25rem; background: var(--surface-alt, #f8fafc); padding: 0.75rem; border-radius: 8px; border: 1px dashed var(--border, #cbd5e1);">
+      <div id="demoCredentialsBox" style="margin-bottom: 1.25rem; background: var(--surface-alt, #f8fafc); padding: 0.75rem; border-radius: 8px; border: 1px dashed var(--border, #cbd5e1);">
         <span class="hint" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Acceso rápido de prueba (1 clic):</span>
         <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'admin123')">🔑 Admin</button>
@@ -340,7 +340,7 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; gap: 0.5rem;">
-        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalLogin')">Modo Lectura</button>
+        <button type="button" class="btn btn-secondary" onclick="cerrarModal('modalLogin')">Cancelar</button>
         <button type="button" class="btn btn-primary" style="flex: 1;" onclick="iniciarSesion()">Ingresar al Sistema</button>
       </div>
     </div>

@@ -26,13 +26,27 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
+    public static final String DEFAULT_DEV_SECRET = "MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!";
+
     private final SecretKey key;
     private final long expirationMs;
 
+    public JwtTokenProvider(String secret, long expirationMs) {
+        this(secret, expirationMs, "");
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
     public JwtTokenProvider(
-            @Value("${jwt.secret:MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}") String secret,
-            @Value("${jwt.expiration-ms:86400000}") long expirationMs
+            @Value("${jwt.secret:" + DEFAULT_DEV_SECRET + "}") String secret,
+            @Value("${jwt.expiration-ms:28800000}") long expirationMs,
+            @Value("${spring.profiles.active:}") String activeProfiles
     ) {
+        if ("prod".equalsIgnoreCase(activeProfiles) && (secret == null || secret.equals(DEFAULT_DEV_SECRET) || secret.length() < 32)) {
+            throw new IllegalStateException("CRÍTICO DE SEGURIDAD: En perfil 'prod', JWT_SECRET debe configurarse mediante variable de entorno segura con al menos 256 bits (32 caracteres).");
+        }
+        if (DEFAULT_DEV_SECRET.equals(secret)) {
+            log.warn("[SEGURIDAD - ADVERTENCIA] Se está utilizando la clave secreta JWT por defecto de desarrollo. Configurar variable JWT_SECRET en entornos productivos.");
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }

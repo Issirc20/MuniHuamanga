@@ -4,6 +4,10 @@ const API_AUTH        = '/api/auth';
 const API_TUPA        = '/api/tupa/tarifas';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const demoBox = document.getElementById('demoCredentialsBox');
+  if (demoBox && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    demoBox.style.display = 'none';
+  }
   verificarSesion();
   cargarExpedientes();
 });

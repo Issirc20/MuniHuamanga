@@ -132,8 +132,11 @@ public class DocumentosFormulariosController {
     }
 
     @PostMapping("/licencia")
-    @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR")
+    @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR (Requiere estado APROBADO)")
     public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
+        if (expediente.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
+            throw new IllegalArgumentException("No se puede emitir el Certificado de Licencia para un expediente que no esté en estado APROBADO. Estado actual: " + expediente.getEstado());
+        }
         byte[] pdf = documentoPdfService.generarLicenciaPdf(expediente);
         String codigo = expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : expediente.getNumeroTramite();
         return ResponseEntity.ok()
@@ -143,9 +146,12 @@ public class DocumentosFormulariosController {
     }
 
     @GetMapping("/licencia/{id}/pdf")
-    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente")
+    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente (Requiere estado APROBADO)")
     public ResponseEntity<byte[]> descargarLicenciaPorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
+        if (exp.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
+            throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " no se encuentra APROBADO. Estado actual: " + exp.getEstado());
+        }
         ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
         byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);
         String codigo = exp.getLicenciaQrCode() != null ? exp.getLicenciaQrCode() : exp.getNumeroTramite();

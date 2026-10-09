@@ -5,16 +5,16 @@ services:
     container_name: muni_licencias_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: muni_licencias_db
-      POSTGRES_USER: muni_user
-      POSTGRES_PASSWORD: muni_pass123
+      POSTGRES_DB: ${POSTGRES_DB:-muni_licencias_db}
+      POSTGRES_USER: ${POSTGRES_USER:-muni_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-muni_pass123}
     ports:
       - "5432:5432"
     volumes:
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U muni_user -d muni_licencias_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-muni_user} -d ${POSTGRES_DB:-muni_licencias_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,8 +27,8 @@ services:
     container_name: muni_licencias_pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@munihuamanga.gob.pe
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@munihuamanga.gob.pe}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin_secret_huamanga2026}
     ports:
       - "5050:80"
     depends_on:

@@ -439,9 +439,9 @@ async function consultarTramite() {
 
     // Rellenar ficha
     document.getElementById('resNumeroTramite').innerText = exp.numeroTramite;
-    document.getElementById('resTitular').innerText = exp.nombreTitular + (exp.razonSocial ? ` (${exp.razonSocial})` : '');
-    document.getElementById('resGiro').innerText = exp.giroNegocio;
-    document.getElementById('resDireccion').innerText = exp.direccionEstablecimiento + ` (${exp.areaMetrosCuadrados} m²)`;
+    document.getElementById('resTitular').innerText = (exp.titularOfuscado || exp.nombreTitular || 'Administrado') + (exp.razonSocial ? ` (${exp.razonSocial})` : '');
+    document.getElementById('resGiro').innerText = exp.giroNegocio || '-';
+    document.getElementById('resDireccion').innerText = exp.direccionEstablecimiento + (exp.areaMetrosCuadrados ? ` (${exp.areaMetrosCuadrados} m²)` : '');
     document.getElementById('resNivelRiesgo').innerText = exp.nivelRiesgo ? `${exp.nivelRiesgo} (${exp.tipoItse || ''})` : 'Pendiente de inspección ITSE';
     document.getElementById('resMontoTasa').innerText = exp.montoTasa ? `S/. ${exp.montoTasa.toFixed(2)}` : 'Por calcular';
 

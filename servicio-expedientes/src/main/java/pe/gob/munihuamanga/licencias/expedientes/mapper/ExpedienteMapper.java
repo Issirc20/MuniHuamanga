@@ -26,6 +26,13 @@ public interface ExpedienteMapper {
     @Mapping(target = "tipoItse", expression = "java(expediente.getTipoItse())")
     ExpedienteResponseDto toDto(Expediente expediente);
 
+    @Mapping(target = "diasHabilesRestantes", source = "fechaLimite", qualifiedByName = "calcularDiasHabiles")
+    @Mapping(target = "alertaVencimiento", source = "fechaLimite", qualifiedByName = "evaluarAlertaVencimiento")
+    @Mapping(target = "titularOfuscado", source = "nombreTitular", qualifiedByName = "ofuscarNombre")
+    @Mapping(target = "documentoIdentidadOfuscado", source = "documentoIdentidad", qualifiedByName = "ofuscarDocumento")
+    @Mapping(target = "tipoItse", expression = "java(expediente.getTipoItse())")
+    pe.gob.munihuamanga.licencias.common.dto.SeguimientoCiudadanoDto toSeguimientoDto(Expediente expediente);
+
     List<ExpedienteResponseDto> toDtoList(List<Expediente> expedientes);
 
     HistorialEstadoDto toHistorialDto(HistorialEstado historial);
@@ -64,4 +71,24 @@ public interface ExpedienteMapper {
         // Alerta si quedan 3 o menos días hábiles para el límite legal de 15 días hábiles (RNF-22)
         return dias <= 3;
     }
+
+    @Named("ofuscarNombre")
+    default String ofuscarNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) return "";
+        String[] partes = nombre.trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (String p : partes) {
+            if (!p.isEmpty()) {
+                sb.append(p.charAt(0)).append("*** ");
+            }
+        }
+        return sb.toString().trim();
+    }
+
+    @Named("ofuscarDocumento")
+    default String ofuscarDocumento(String doc) {
+        if (doc == null || doc.length() < 4) return "****";
+        return doc.substring(0, 2) + "***" + doc.substring(doc.length() - 2);
+    }
 }
+

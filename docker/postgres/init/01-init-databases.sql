@@ -200,6 +200,33 @@ CREATE TABLE IF NOT EXISTS historial_estados (
     CONSTRAINT fk_historial_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE
 );
 
+-- Tabla de Usuarios del Sistema Municipal (RBAC - Spring Security)
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    nombre_completo VARCHAR(150) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    rol VARCHAR(30) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de Tarifas TUPA (Ley N° 28976 / Ordenanza N° 018-2024-MPH)
+CREATE TABLE IF NOT EXISTS tarifas_tupa (
+    id UUID PRIMARY KEY,
+    codigo_tupa VARCHAR(50) NOT NULL UNIQUE,
+    nivel_riesgo VARCHAR(20) NOT NULL UNIQUE,
+    concepto VARCHAR(255) NOT NULL,
+    monto_total NUMERIC(10, 2) NOT NULL,
+    derecho_tramite NUMERIC(10, 2) NOT NULL,
+    costo_itse NUMERIC(10, 2) NOT NULL,
+    base_legal VARCHAR(255),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    usuario_modificacion VARCHAR(100)
+);
+
 -- Índices para optimización de consultas concurrentes (RNF-01 y RNF-02: <3s de respuesta)
 CREATE INDEX IF NOT EXISTS idx_expedientes_numero_tramite ON expedientes(numero_tramite);
 CREATE INDEX IF NOT EXISTS idx_expedientes_solicitante_id ON expedientes(solicitante_id);
@@ -208,13 +235,15 @@ CREATE INDEX IF NOT EXISTS idx_expedientes_modalidad ON expedientes(modalidad_tr
 CREATE INDEX IF NOT EXISTS idx_expedientes_tipo_persona ON expedientes(tipo_persona);
 CREATE INDEX IF NOT EXISTS idx_historial_expediente_id ON historial_estados(expediente_id);
 CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_estados(fecha);
+CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+CREATE INDEX IF NOT EXISTS idx_tarifas_tupa_nivel ON tarifas_tupa(nivel_riesgo);
 
 -- Datos semilla iniciales para pruebas del entorno
 INSERT INTO expedientes (
     id, numero_tramite, solicitante_id, modalidad_tramite, tipo_persona, tipo_documento,
     nombre_titular, documento_identidad, razon_social, partida_sunarp, asiento_sunarp,
     dni_representante, nombre_representante, poder_sunarp,
-    nombreComercial, ciiu_codigo, giro_negocio, actividad_detallada, zonificacion, funcion_edificacion,
+    nombre_comercial, ciiu_codigo, giro_negocio, actividad_detallada, zonificacion, funcion_edificacion,
     direccion_establecimiento, tipo_via, nombre_via, numero_vivienda, urbanizacion, distrito, provincia, departamento,
     area_metros_cuadrados, area_terreno, aforo_personas, estado, nivel_riesgo, monto_tasa, voucher_id,
     licencia_qr_code, fecha_creacion, fecha_limite
@@ -270,3 +299,13 @@ INSERT INTO historial_estados (
     'Ingreso virtual de solicitud y generación de anexos preliminares (Anexo 1 y Anexo 4)',
     CURRENT_TIMESTAMP
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Tasas Oficiales TUPA Huamanga (Ordenanza Municipal N° 018-2024-MPH)
+INSERT INTO tarifas_tupa (
+    id, codigo_tupa, nivel_riesgo, concepto, monto_total, derecho_tramite, costo_itse, base_legal, activo, fecha_actualizacion, usuario_modificacion
+) VALUES
+    ('c1d2e3f4-a5b6-7890-bcde-f12345678901', 'TUPA-ITSE-01', 'BAJO', 'Licencia de Funcionamiento con Inspección Técnica de Seguridad en Edificaciones Posterior (Riesgo Bajo)', 154.50, 45.00, 109.50, 'Ordenanza Municipal N° 018-2024-MPH / D.S. N° 046-2017-PCM', TRUE, CURRENT_TIMESTAMP, 'SISTEMA_INICIALIZADOR'),
+    ('c2d3e4f5-a6b7-8901-bcde-f23456789012', 'TUPA-ITSE-02', 'MEDIO', 'Licencia de Funcionamiento con Inspección Técnica de Seguridad en Edificaciones Posterior (Riesgo Medio)', 218.00, 45.00, 173.00, 'Ordenanza Municipal N° 018-2024-MPH / D.S. N° 046-2017-PCM', TRUE, CURRENT_TIMESTAMP, 'SISTEMA_INICIALIZADOR'),
+    ('c3d4e5f6-a7b8-8901-bcde-f34567890123', 'TUPA-ITSE-03', 'ALTO', 'Licencia de Funcionamiento con Inspección Técnica de Seguridad en Edificaciones Previa (Riesgo Alto)', 345.20, 45.00, 300.20, 'Ordenanza Municipal N° 018-2024-MPH / D.S. N° 046-2017-PCM', TRUE, CURRENT_TIMESTAMP, 'SISTEMA_INICIALIZADOR'),
+    ('c4d5e6f7-a8b9-8901-bcde-f45678901234', 'TUPA-ITSE-04', 'MUY_ALTO', 'Licencia de Funcionamiento con Inspección Técnica de Seguridad en Edificaciones Previa (Riesgo Muy Alto)', 480.00, 45.00, 435.00, 'Ordenanza Municipal N° 018-2024-MPH / D.S. N° 046-2017-PCM', TRUE, CURRENT_TIMESTAMP, 'SISTEMA_INICIALIZADOR')
+ON CONFLICT (codigo_tupa) DO NOTHING;

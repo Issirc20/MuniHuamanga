@@ -21,6 +21,7 @@ import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
+import pe.gob.munihuamanga.licencias.common.dto.SeguimientoCiudadanoDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -66,10 +67,10 @@ public class ExpedienteController {
     }
 
     @GetMapping("/tramite/{numeroTramite}")
-    @Operation(summary = "Seguimiento ciudadano: Consultar estado por número de trámite (ej. EXP-2026-XXXXX)")
-    public ResponseEntity<ExpedienteResponseDto> obtenerPorNumeroTramite(@PathVariable String numeroTramite) {
+    @Operation(summary = "Seguimiento ciudadano público: Consultar estado acotado por número de trámite (H07 / Ley N° 29733)")
+    public ResponseEntity<SeguimientoCiudadanoDto> obtenerPorNumeroTramite(@PathVariable String numeroTramite) {
         Expediente expediente = expedienteService.obtenerPorNumeroTramite(numeroTramite);
-        return ResponseEntity.ok(expedienteMapper.toDto(expediente));
+        return ResponseEntity.ok(expedienteMapper.toSeguimientoDto(expediente));
     }
 
     @GetMapping

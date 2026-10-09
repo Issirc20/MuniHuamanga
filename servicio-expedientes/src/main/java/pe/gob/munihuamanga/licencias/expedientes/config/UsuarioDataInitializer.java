@@ -3,6 +3,7 @@ package pe.gob.munihuamanga.licencias.expedientes.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
@@ -14,9 +15,11 @@ import java.util.UUID;
 
 /**
  * Inicializador de usuarios semilla para desarrollo y pruebas del sistema municipal.
+ * Excluido del entorno de producción ('prod') por razones de seguridad (H02).
  */
 @Slf4j
 @Component
+@Profile("!prod")
 @RequiredArgsConstructor
 public class UsuarioDataInitializer implements CommandLineRunner {
 
