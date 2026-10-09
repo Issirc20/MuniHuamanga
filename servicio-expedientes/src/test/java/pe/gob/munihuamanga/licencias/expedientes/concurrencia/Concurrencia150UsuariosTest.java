@@ -2,91 +2,49 @@ package pe.gob.munihuamanga.licencias.expedientes.concurrencia;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
-import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
-import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
-import pe.gob.munihuamanga.licencias.expedientes.service.CalculadoraDeTasa;
 import pe.gob.munihuamanga.licencias.expedientes.service.ExpedienteService;
-import pe.gob.munihuamanga.licencias.expedientes.service.MetricasExpedienteService;
-import pe.gob.munihuamanga.licencias.expedientes.validator.EstadoExpedienteValidator;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 /**
- * US-15: Prueba de estrés y alta concurrencia para validar la capacidad objetivo de >= 150 usuarios concurrentes (RNF-01).
- * Verifica que el sistema no presente condiciones de carrera, bloqueos mutuos o latencias superiores a 3 segundos (RNF-02).
+ * US-15 / RNF-01 / RNF-02 / H13:
+ * Prueba de estres y alta concurrencia acoplada a Base de Datos Real (H2 en modo PostgreSQL / HikariCP).
+ * Valida la capacidad objetivo de >= 150 usuarios concurrentes sin mocks en memoria,
+ * verificando contencion de hilos, transacciones y latencia < 3.0s con 0% de errores.
  */
-@ExtendWith(MockitoExtension.class)
-@DisplayName("Pruebas de Carga y Concurrencia para >= 150 Usuarios Concurrentes (US-15, RNF-01, RNF-02)")
+@SpringBootTest
+@ActiveProfiles("local")
+@DisplayName("Pruebas de Carga y Concurrencia con Persistencia Real para >= 150 Usuarios (US-15, RNF-01, RNF-02, H13)")
 class Concurrencia150UsuariosTest {
 
     private static final int USUARIOS_CONCURRENTES = 150;
 
-    @Mock
-    private ExpedienteRepository expedienteRepository;
-
-    @Spy
-    private EstadoExpedienteValidator estadoExpedienteValidator = new EstadoExpedienteValidator();
-
-    @Spy
-    private CalculadoraDeTasa calculadoraDeTasa = new CalculadoraDeTasa(
-            new BigDecimal("154.50"),
-            new BigDecimal("218.00"),
-            new BigDecimal("345.20"),
-            new BigDecimal("480.00")
-    );
-
-    @Mock
-    private AuditoriaService auditoriaService;
-
-    @Mock
-    private MetricasExpedienteService metricasExpedienteService;
-
-    @InjectMocks
+    @Autowired
     private ExpedienteService expedienteService;
 
-    @Test
-    @DisplayName("RNF-01 / RNF-02: 150 peticiones simultáneas de verificación de licencias y expedientes deben responder en < 3s con 0% de error")
-    void test150UsuariosConcurrentesVerificacionLicencia() throws InterruptedException, ExecutionException {
-        String codigoLicencia = "LIC-2026-00000002";
-        Expediente exp = Expediente.builder()
-                .id(UUID.randomUUID())
-                .numeroTramite("EXP-2026-00002")
-                .licenciaQrCode(codigoLicencia)
-                .estado(EstadoExpediente.APROBADO)
-                .nombreTitular("Carlos Raúl Mendoza Gutiérrez")
-                .documentoIdentidad("20608765432")
-                .razonSocial("CONSORCIO GASTRONÓMICO DE HUAMANGA S.A.C.")
-                .nombreComercial("Restaurante Tradición Ayacuchana")
-                .giroNegocio("Restaurante, café y servicios afines")
-                .direccionEstablecimiento("Portal Constitución N° 12, Plaza Mayor de Huamanga")
-                .areaMetrosCuadrados(new BigDecimal("145.00"))
-                .nivelRiesgo(NivelRiesgo.MEDIO)
-                .montoTasa(new BigDecimal("218.00"))
-                .fechaCreacion(LocalDateTime.now())
-                .build();
+    @Autowired
+    private ExpedienteRepository expedienteRepository;
 
-        when(expedienteRepository.findByLicenciaQrCode(codigoLicencia)).thenReturn(Optional.of(exp));
+    @Test
+    @DisplayName("H13 / RNF-01 / RNF-02: 150 peticiones simultaneas de verificacion de licencias contra BD real en < 3s con 0% error")
+    void test150UsuariosConcurrentesVerificacionLicenciaRealDb() throws InterruptedException {
+        String codigoLicencia = "LIC-2026-00000002";
+
+        // Verificar que el registro exista realmente en la base de datos
+        assertTrue(expedienteRepository.findByLicenciaQrCode(codigoLicencia).isPresent(),
+                "El expediente de prueba con licencia LIC-2026-00000002 debe existir en la BD");
 
         ExecutorService executor = Executors.newFixedThreadPool(USUARIOS_CONCURRENTES);
         CountDownLatch barrier = new CountDownLatch(1);
@@ -101,7 +59,7 @@ class Concurrencia150UsuariosTest {
         for (int i = 0; i < USUARIOS_CONCURRENTES; i++) {
             executor.submit(() -> {
                 try {
-                    // Esperar a que los 150 hilos estén listos para disparar simultáneamente
+                    // Sincronizacion de barrera: asegurar disparo simultaneo real de los 150 hilos
                     barrier.await();
 
                     Instant inicioReq = Instant.now();
@@ -122,28 +80,88 @@ class Concurrencia150UsuariosTest {
             });
         }
 
-        // Disparar las 150 peticiones concurrentes
+        // Disparar las 150 peticiones concurrentes simultaneamente
         barrier.countDown();
 
-        // Esperar a que terminen los 150 hilos (timeout de 10 segundos)
-        boolean completado = endLatch.await(10, TimeUnit.SECONDS);
+        // Esperar a que terminen los 150 hilos (timeout de 15 segundos)
+        boolean completado = endLatch.await(15, TimeUnit.SECONDS);
         Instant finGlobal = Instant.now();
 
         executor.shutdown();
 
         assertTrue(completado, "Las 150 peticiones concurrentes deben completarse antes del timeout");
         assertEquals(USUARIOS_CONCURRENTES, exitos.get(), "Las 150 peticiones deben haber sido procesadas exitosamente");
-        assertEquals(0, fallos.get(), "No debe haber ningún fallo ni excepción por concurrencia");
+        assertEquals(0, fallos.get(), "No debe haber ningun fallo ni excepcion de conexion/timeout en BD");
+
+        double latenciaMedia = latenciasMs.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        long latenciaMax = latenciasMs.stream().mapToLong(Long::longValue).max().orElse(0L);
+        long duracionTotalMs = Duration.between(inicioGlobal, finGlobal).toMillis();
+
+        System.out.printf("[PRUEBA DE CARGA BD REAL] Peticiones: %d | Exitos: %d | Fallos: %d%n",
+                USUARIOS_CONCURRENTES, exitos.get(), fallos.get());
+        System.out.printf("[PRUEBA DE CARGA BD REAL] Duracion total: %d ms | Media: %.2f ms | Max: %d ms%n",
+                duracionTotalMs, latenciaMedia, latenciaMax);
+
+        // Cumplimiento del RNF-02: Latencia estrictamente menor a 3 segundos (3000 ms)
+        assertTrue(latenciaMedia < 3000.0, "La latencia media en base de datos real debe ser menor a 3000 ms (RNF-02)");
+    }
+
+    @Test
+    @DisplayName("H13 / RNF-01: 150 peticiones simultaneas de seguimiento ciudadano de expediente contra BD real")
+    void test150UsuariosConcurrentesSeguimientoCiudadanoRealDb() throws InterruptedException {
+        String numeroTramite = "EXP-2026-00001";
+
+        assertTrue(expedienteRepository.findByNumeroTramite(numeroTramite).isPresent(),
+                "El expediente EXP-2026-00001 debe existir en la BD");
+
+        ExecutorService executor = Executors.newFixedThreadPool(USUARIOS_CONCURRENTES);
+        CountDownLatch barrier = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(USUARIOS_CONCURRENTES);
+
+        AtomicInteger exitos = new AtomicInteger(0);
+        AtomicInteger fallos = new AtomicInteger(0);
+        List<Long> latenciasMs = new CopyOnWriteArrayList<>();
+
+        Instant inicioGlobal = Instant.now();
+
+        for (int i = 0; i < USUARIOS_CONCURRENTES; i++) {
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+
+                    Instant inicioReq = Instant.now();
+                    Expediente resultado = expedienteService.obtenerPorNumeroTramite(numeroTramite);
+                    long latencia = Duration.between(inicioReq, Instant.now()).toMillis();
+                    latenciasMs.add(latencia);
+
+                    if (resultado != null && numeroTramite.equals(resultado.getNumeroTramite())) {
+                        exitos.incrementAndGet();
+                    } else {
+                        fallos.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    fallos.incrementAndGet();
+                } finally {
+                    endLatch.countDown();
+                }
+            });
+        }
+
+        barrier.countDown();
+        boolean completado = endLatch.await(15, TimeUnit.SECONDS);
+        Instant finGlobal = Instant.now();
+        executor.shutdown();
+
+        assertTrue(completado, "Las 150 peticiones concurrentes deben completarse antes del timeout");
+        assertEquals(USUARIOS_CONCURRENTES, exitos.get(), "Las 150 peticiones de seguimiento deben ser exitosas");
+        assertEquals(0, fallos.get(), "Cero fallos en consultas de seguimiento contra la BD");
 
         double latenciaMedia = latenciasMs.stream().mapToLong(Long::longValue).average().orElse(0.0);
         long duracionTotalMs = Duration.between(inicioGlobal, finGlobal).toMillis();
 
-        System.out.printf("[PRUEBA DE CARGA] Peticiones concurrentes: %d | Exitosas: %d | Fallos: %d%n",
-                USUARIOS_CONCURRENTES, exitos.get(), fallos.get());
-        System.out.printf("[PRUEBA DE CARGA] Duración total: %d ms | Latencia media: %.2f ms%n",
-                duracionTotalMs, latenciaMedia);
+        System.out.printf("[PRUEBA SEGUIMIENTO BD REAL] Peticiones: %d | Exitos: %d | Duracion: %d ms | Media: %.2f ms%n",
+                USUARIOS_CONCURRENTES, exitos.get(), duracionTotalMs, latenciaMedia);
 
-        // Cumplimiento del RNF-02: Latencia inferior a 3 segundos (3000 ms)
-        assertTrue(latenciaMedia < 3000.0, "La latencia media debe ser estrictamente menor a 3000 ms (RNF-02)");
+        assertTrue(latenciaMedia < 3000.0, "La latencia media debe ser menor a 3000 ms (RNF-02)");
     }
 }
