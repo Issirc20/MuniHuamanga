@@ -88,6 +88,7 @@
             <option value="FORMATOS_GENERADOS">Formatos Generados</option>
             <option value="DOCUMENTOS_VALIDADOS">Documentos Validados</option>
             <option value="EN_EVALUACION_FINAL">En Evaluación Final</option>
+            <option value="OBSERVADO">Observados (LPAG)</option>
             <option value="APROBADO">Aprobados</option>
             <option value="RECHAZADO">Rechazados</option>
           </select>
@@ -197,6 +198,47 @@
       <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button class="btn btn-secondary" onclick="cerrarModal('modalRechazo')">Cancelar</button>
         <button class="btn btn-danger" onclick="confirmarRechazo()">Confirmar Rechazo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Formular Observaciones (Ley N° 27444 LPAG) -->
+  <div id="modalObservacion" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="card-title" style="color: #d97706;">⚠️ Formular Observaciones Técnicas / Legales (LPAG)</h3>
+        <button class="modal-close" onclick="cerrarModal('modalObservacion')">&times;</button>
+      </div>
+      <input type="hidden" id="observacionExpedienteId">
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Conforme a la Ley N° 27444 y Ley N° 28976, el administrado dispondrá de un plazo legal para subsanar los requisitos observados sin perder el trámite.
+      </p>
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="txtMotivoObservacion">Detalle Exhaustivo de las Observaciones *</label>
+        <textarea id="txtMotivoObservacion" rows="4" required placeholder="Especifique con precisión los requisitos técnicos, planos o documentos a subsanar..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalObservacion')">Cancelar</button>
+        <button class="btn btn-warning" style="background: #d97706; color: white; border: none;" onclick="confirmarObservacion()">Emitir Observación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Registrar Subsanación -->
+  <div id="modalSubsanacion" class="modal-backdrop" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="card-title" style="color: var(--primary);">📝 Registrar Subsanación de Observaciones</h3>
+        <button class="modal-close" onclick="cerrarModal('modalSubsanacion')">&times;</button>
+      </div>
+      <input type="hidden" id="subsanacionExpedienteId">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="txtDetalleSubsanacion">Detalle de la Subsanación Presentada *</label>
+        <textarea id="txtDetalleSubsanacion" rows="3" required placeholder="Detalle los documentos o rectificaciones ingresadas por el administrado..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalSubsanacion')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarSubsanacion()">Registrar y Continuar Flujo</button>
       </div>
     </div>
   </div>

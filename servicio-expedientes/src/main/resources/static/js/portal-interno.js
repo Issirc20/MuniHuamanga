@@ -245,6 +245,12 @@ function renderAcciones(exp) {
       <button class="btn btn-primary btn-sm" onclick="abrirModalItse('${exp.id}')">
         🛡️ Dictaminar ITSE
       </button>
+      <button class="btn btn-warning btn-sm" onclick="abrirModalObservacion('${exp.id}')" title="Formular observaciones según LPAG">
+        ⚠️ Observar
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')">
+        ❌ Rechazar
+      </button>
     `;
   }
 
@@ -257,6 +263,9 @@ function renderAcciones(exp) {
       <button class="btn btn-success btn-sm" onclick="abrirModalPago('${exp.id}', '${vchId}')">
         💳 Validar Pago
       </button>
+      <button class="btn btn-warning btn-sm" onclick="abrirModalObservacion('${exp.id}')" title="Formular observaciones según LPAG">
+        ⚠️ Observar
+      </button>
       <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')">
         ❌ Rechazar
       </button>
@@ -268,8 +277,22 @@ function renderAcciones(exp) {
       <button class="btn btn-primary btn-sm" onclick="aprobarExpediente('${exp.id}')">
         ✅ Emitir Licencia (QR)
       </button>
+      <button class="btn btn-warning btn-sm" onclick="abrirModalObservacion('${exp.id}')" title="Formular observaciones según LPAG">
+        ⚠️ Observar
+      </button>
       <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')">
         ❌ Rechazar
+      </button>
+    `;
+  }
+
+  if (exp.estado === 'OBSERVADO') {
+    return `
+      <button class="btn btn-primary btn-sm" onclick="abrirModalSubsanacion('${exp.id}')" title="Registrar subsanación presentada por el administrado">
+        📝 Subsanar
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')" title="Desestimar por vencimiento de plazo de subsanación">
+        ❌ Denegar
       </button>
     `;
   }
@@ -296,6 +319,7 @@ function getBadgeClass(estado) {
     case 'FORMATOS_GENERADOS': return 'badge-formatos';
     case 'DOCUMENTOS_VALIDADOS': return 'badge-validados';
     case 'EN_EVALUACION_FINAL': return 'badge-evaluacion';
+    case 'OBSERVADO': return 'badge-observado';
     case 'APROBADO': return 'badge-aprobado';
     case 'RECHAZADO': return 'badge-rechazado';
     default: return 'badge-formatos';
@@ -421,6 +445,66 @@ async function confirmarRechazo() {
     }
     cerrarModal('modalRechazo');
     cargarExpedientes();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function abrirModalObservacion(id) {
+  document.getElementById('observacionExpedienteId').value = id;
+  document.getElementById('txtMotivoObservacion').value = '';
+  document.getElementById('modalObservacion').style.display = 'flex';
+}
+
+async function confirmarObservacion() {
+  const id = document.getElementById('observacionExpedienteId').value;
+  const motivo = document.getElementById('txtMotivoObservacion').value.trim();
+  if (!motivo) return alert('El detalle de las observaciones es obligatorio');
+  const usuario = localStorage.getItem('jwt_usuario') || 'GERENCIA_LICENCIAS';
+
+  try {
+    const res = await fetchConAuth(`${API_BASE}/${id}/observar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aprobado: false, motivo: motivo, funcionarioResponsable: usuario })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al observar expediente');
+    }
+    cerrarModal('modalObservacion');
+    cargarExpedientes();
+    alert('✅ Expediente marcado como OBSERVADO. Se notificó al administrado para su subsanación.');
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function abrirModalSubsanacion(id) {
+  document.getElementById('subsanacionExpedienteId').value = id;
+  document.getElementById('txtDetalleSubsanacion').value = '';
+  document.getElementById('modalSubsanacion').style.display = 'flex';
+}
+
+async function confirmarSubsanacion() {
+  const id = document.getElementById('subsanacionExpedienteId').value;
+  const detalle = document.getElementById('txtDetalleSubsanacion').value.trim();
+  if (!detalle) return alert('El detalle de la subsanación es obligatorio');
+  const usuario = localStorage.getItem('jwt_usuario') || 'MESA_DE_PARTES';
+
+  try {
+    const res = await fetchConAuth(`${API_BASE}/${id}/subsanar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ detalleSubsanacion: detalle, usuario: usuario })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al registrar subsanación');
+    }
+    cerrarModal('modalSubsanacion');
+    cargarExpedientes();
+    alert('✅ Subsanación registrada con éxito. El expediente retorna al flujo de evaluación.');
   } catch (err) {
     alert(err.message);
   }

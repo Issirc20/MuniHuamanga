@@ -7,6 +7,7 @@ public enum EstadoExpediente {
     FORMATOS_GENERADOS,
     DOCUMENTOS_VALIDADOS,
     EN_EVALUACION_FINAL,
+    OBSERVADO,
     APROBADO,
     RECHAZADO
 }

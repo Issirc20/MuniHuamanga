@@ -360,6 +360,80 @@ public class ExpedienteService {
         notificacionEmailService.notificarRechazo(expediente, motivo);
     }
 
+    /**
+     * Dictamen formal de observación técnica o administrativa (Ley N° 27444 LPAG / Ley N° 28976).
+     * Transiciona el expediente a OBSERVADO y notifica al administrado para que proceda a la subsanación.
+     */
+    @Transactional
+    public void observar(UUID id, String motivo) {
+        Expediente expediente = obtenerPorId(id);
+
+        EstadoExpediente actual = expediente.getEstado();
+        EstadoExpediente nuevo = EstadoExpediente.OBSERVADO;
+
+        estadoExpedienteValidator.validarTransicion(actual, nuevo);
+
+        expediente.setMotivoObservacion(motivo);
+        expediente.setFechaObservacion(LocalDateTime.now());
+        expediente.cambiarEstado(nuevo);
+        expedienteRepository.save(expediente);
+
+        auditoriaService.registrarTransicion(
+                id,
+                actual,
+                nuevo,
+                "GERENCIA_LICENCIAS",
+                "Expediente OBSERVADO (Ley N° 27444 LPAG). Motivo: " + (motivo != null ? motivo : "Sin detalle")
+        );
+
+        log.info("Expediente {} puesto en OBSERVADO. Motivo: {}", id, motivo);
+
+        // Notificación asíncrona de observación al administrado
+        notificacionEmailService.notificarObservacion(expediente, motivo);
+    }
+
+    /**
+     * Registro de subsanación de observaciones presentada por el administrado (Ley N° 27444 LPAG).
+     * Retorna el expediente al flujo correspondiente según el grado de avance previo del trámite.
+     */
+    @Transactional
+    public void subsanar(UUID id, String detalleSubsanacion, String usuario) {
+        Expediente expediente = obtenerPorId(id);
+
+        EstadoExpediente actual = expediente.getEstado();
+        if (actual != EstadoExpediente.OBSERVADO) {
+            throw new IllegalStateException("Solo se pueden subsanar expedientes en estado OBSERVADO. Estado actual: " + actual);
+        }
+
+        // Determinar estado objetivo según el avance previo
+        EstadoExpediente nuevo;
+        if (expediente.getFechaPagoSat() != null || (expediente.getVoucherId() != null && expediente.getNivelRiesgo() != null)) {
+            nuevo = EstadoExpediente.EN_EVALUACION_FINAL;
+        } else if (expediente.getNivelRiesgo() != null) {
+            nuevo = EstadoExpediente.DOCUMENTOS_VALIDADOS;
+        } else {
+            nuevo = EstadoExpediente.FORMATOS_GENERADOS;
+        }
+
+        estadoExpedienteValidator.validarTransicion(actual, nuevo);
+
+        expediente.setDetalleSubsanacion(detalleSubsanacion);
+        expediente.setFechaSubsanacion(LocalDateTime.now());
+        expediente.cambiarEstado(nuevo);
+        expedienteRepository.save(expediente);
+
+        String responsable = (usuario != null && !usuario.isBlank()) ? usuario : expediente.getNombreTitular();
+        auditoriaService.registrarTransicion(
+                id,
+                actual,
+                nuevo,
+                responsable,
+                "Subsanación de observaciones presentada (LPAG Art. 136): " + (detalleSubsanacion != null ? detalleSubsanacion : "Documentación adjunta")
+        );
+
+        log.info("Expediente {} subsanado exitosamente. Nuevo estado: {}", id, nuevo);
+    }
+
 
     @Transactional(readOnly = true)
     public Expediente obtenerPorId(UUID id) {

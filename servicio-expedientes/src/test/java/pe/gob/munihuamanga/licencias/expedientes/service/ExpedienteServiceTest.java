@@ -260,4 +260,47 @@ class ExpedienteServiceTest {
         assertEquals("OP-SAT-998877", expedienteBase.getNumeroOperacionSat());
         assertNotNull(expedienteBase.getFechaPagoSat());
     }
+
+    @Test
+    @DisplayName("Fase 3: Debe observar expediente registrando motivo, fecha y auditoría")
+    void testObservarExpediente() {
+        expedienteBase.setEstado(EstadoExpediente.DOCUMENTOS_VALIDADOS);
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expedienteService.observar(expedienteId, "Falta adjuntar plano de distribución actualizado");
+
+        assertEquals(EstadoExpediente.OBSERVADO, expedienteBase.getEstado());
+        assertEquals("Falta adjuntar plano de distribución actualizado", expedienteBase.getMotivoObservacion());
+        assertNotNull(expedienteBase.getFechaObservacion());
+        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.DOCUMENTOS_VALIDADOS), eq(EstadoExpediente.OBSERVADO), any(), any());
+        verify(notificacionEmailService).notificarObservacion(eq(expedienteBase), eq("Falta adjuntar plano de distribución actualizado"));
+    }
+
+    @Test
+    @DisplayName("Fase 3: Debe subsanar expediente observado retornando al flujo")
+    void testSubsanarExpediente() {
+        expedienteBase.setEstado(EstadoExpediente.OBSERVADO);
+        expedienteBase.setNivelRiesgo(NivelRiesgo.MEDIO);
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expedienteService.subsanar(expedienteId, "Se adjunta plano sellado por arquitecto colegiado", "Juan Pérez");
+
+        assertEquals(EstadoExpediente.DOCUMENTOS_VALIDADOS, expedienteBase.getEstado());
+        assertEquals("Se adjunta plano sellado por arquitecto colegiado", expedienteBase.getDetalleSubsanacion());
+        assertNotNull(expedienteBase.getFechaSubsanacion());
+        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.OBSERVADO), eq(EstadoExpediente.DOCUMENTOS_VALIDADOS), eq("Juan Pérez"), any());
+    }
+
+    @Test
+    @DisplayName("Fase 3: Debe fallar al intentar subsanar un expediente que no está en estado OBSERVADO")
+    void testSubsanarExpedienteNoObservadoLanzaExcepcion() {
+        expedienteBase.setEstado(EstadoExpediente.FORMATOS_GENERADOS);
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+
+        assertThrows(IllegalStateException.class, () ->
+                expedienteService.subsanar(expedienteId, "Subsanación prematura", "Juan Pérez")
+        );
+    }
 }

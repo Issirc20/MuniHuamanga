@@ -469,8 +469,22 @@ async function consultarTramite() {
 
     // Licencia aprobada
     const boxLicencia = document.getElementById('boxLicenciaAprobada');
+    const boxObserv   = document.getElementById('boxExpedienteObservado');
     const btnLic      = document.getElementById('btnDescargarLicencia');
     const btnVerif    = document.getElementById('btnVerificarPublico');
+
+    // Guardar referencia del expediente para subsanación
+    window.expedienteObservadoActualId = exp.id;
+
+    if (exp.estado === 'OBSERVADO') {
+      if (boxObserv) {
+        boxObserv.style.display = 'flex';
+        const txtObs = document.getElementById('txtMotivoObservacionCiudadano');
+        if (txtObs) txtObs.innerText = exp.motivoObservacion || 'El expediente presenta requisitos o planos que deben ser regularizados conforme a la Ley N° 27444.';
+      }
+    } else {
+      if (boxObserv) boxObserv.style.display = 'none';
+    }
 
     if (exp.estado === 'APROBADO' && exp.licenciaQrCode) {
       if (boxLicencia) {
@@ -496,6 +510,50 @@ async function consultarTramite() {
 }
 
 // =============================================================================
+// SUBSANACIÓN CIUDADANA (Ley N° 27444 LPAG)
+// =============================================================================
+function abrirModalSubsanacionCiudadana() {
+  document.getElementById('modalSubsanarCiudadano').style.display = 'flex';
+  document.getElementById('txtSubsanacionCiudadana').value = '';
+}
+
+function cerrarModalSubsanarCiudadano() {
+  document.getElementById('modalSubsanarCiudadano').style.display = 'none';
+}
+
+async function enviarSubsanacionCiudadana() {
+  const detalle = document.getElementById('txtSubsanacionCiudadana').value.trim();
+  if (!detalle) {
+    alert('Por favor ingrese el detalle o sustento de la subsanación.');
+    return;
+  }
+  const id = window.expedienteObservadoActualId;
+  if (!id) {
+    alert('Error: No se encontró el identificador del expediente.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/${id}/subsanar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ detalleSubsanacion: detalle, usuario: 'CIUDADANO_PORTAL' })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al enviar subsanación.');
+    }
+
+    cerrarModalSubsanarCiudadano();
+    alert('✅ Su subsanación ha sido ingresada formalmente a Mesa de Partes Virtual. El expediente retorna a evaluación técnica.');
+    buscarExpediente();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// =============================================================================
 // HELPERS
 // =============================================================================
 function actualizarTimeline(estado) {
@@ -516,6 +574,7 @@ function getBadgeClass(estado) {
     case 'FORMATOS_GENERADOS':  return 'badge-formatos';
     case 'DOCUMENTOS_VALIDADOS': return 'badge-validados';
     case 'EN_EVALUACION_FINAL': return 'badge-evaluacion';
+    case 'OBSERVADO':           return 'badge-observado';
     case 'APROBADO':            return 'badge-aprobado';
     case 'RECHAZADO':           return 'badge-rechazado';
     default:                    return 'badge-formatos';

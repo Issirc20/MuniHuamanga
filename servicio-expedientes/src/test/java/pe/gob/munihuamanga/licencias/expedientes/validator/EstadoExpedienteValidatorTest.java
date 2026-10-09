@@ -65,4 +65,37 @@ class EstadoExpedienteValidatorTest {
                 validator.validarTransicion(EstadoExpediente.APROBADO, EstadoExpediente.EN_EVALUACION_FINAL)
         );
     }
+
+    @Test
+    @DisplayName("Fase 3: Debe permitir transición a OBSERVADO desde FORMATOS_GENERADOS, DOCUMENTOS_VALIDADOS y EN_EVALUACION_FINAL")
+    void transicionValidaHaciaObservado() {
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.FORMATOS_GENERADOS, EstadoExpediente.OBSERVADO));
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.DOCUMENTOS_VALIDADOS, EstadoExpediente.OBSERVADO));
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.EN_EVALUACION_FINAL, EstadoExpediente.OBSERVADO));
+    }
+
+    @Test
+    @DisplayName("Fase 3: Debe permitir subsanación desde OBSERVADO hacia los estados del flujo o desestimación")
+    void transicionValidaSubsanacionDesdeObservado() {
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.FORMATOS_GENERADOS));
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.DOCUMENTOS_VALIDADOS));
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.EN_EVALUACION_FINAL));
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.RECHAZADO));
+    }
+
+    @Test
+    @DisplayName("Fase 3: Debe denegar transición directa de OBSERVADO a APROBADO sin pasar por re-evaluación")
+    void transicionInvalidaObservadoDirectoAAprobado() {
+        assertThrows(TransicionInvalidaException.class, () ->
+                validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.APROBADO)
+        );
+    }
+
+    @Test
+    @DisplayName("Fase 3: Debe denegar transición desde estado terminal RECHAZADO hacia OBSERVADO")
+    void transicionInvalidaDesdeRechazadoAObservado() {
+        assertThrows(TransicionInvalidaException.class, () ->
+                validator.validarTransicion(EstadoExpediente.RECHAZADO, EstadoExpediente.OBSERVADO)
+        );
+    }
 }

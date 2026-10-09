@@ -265,6 +265,7 @@ input:focus, select:focus, textarea:focus {
 .badge-validados { background: #fef3c7; color: #b45309; }
 .badge-evaluacion { background: #f3e8ff; color: #7e22ce; }
 .badge-aprobado { background: #dcfce7; color: #15803d; }
+.badge-observado { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .badge-rechazado { background: #fee2e2; color: #b91c1c; }
 
 .badge-alert {

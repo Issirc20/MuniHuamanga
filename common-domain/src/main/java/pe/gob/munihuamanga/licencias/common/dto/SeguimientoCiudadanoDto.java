@@ -49,4 +49,10 @@ public class SeguimientoCiudadanoDto {
     private BigDecimal montoTasa;
     private String voucherId;
     private String licenciaQrCode;
+
+    // Observaciones y Subsanaciones (Ley N° 27444 LPAG)
+    private String motivoObservacion;
+    private LocalDateTime fechaObservacion;
+    private LocalDateTime fechaSubsanacion;
+    private String detalleSubsanacion;
 }

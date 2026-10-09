@@ -163,8 +163,39 @@ public class NotificacionEmailService {
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * Notifica al ciudadano que su expediente fue rechazado, indicando el motivo y la vía
-     * para presentar un nuevo trámite o subsanar las observaciones.
+     * Notifica al ciudadano que su expediente fue observado, indicando el motivo y la vía
+     * para presentar la subsanación (Ley N° 27444 LPAG).
+     *
+     * @param expediente Expediente en estado OBSERVADO.
+     * @param motivo     Motivo u observaciones técnicas registradas por el evaluador.
+     */
+    @Async("emailExecutor")
+    public void notificarObservacion(Expediente expediente, String motivo) {
+        if (!puedeEnviar(expediente)) return;
+
+        try {
+            Context ctx = new Context(Locale.of("es", "PE"));
+            ctx.setVariable("titular",         expediente.getNombreTitular());
+            ctx.setVariable("numeroTramite",   expediente.getNumeroTramite());
+            ctx.setVariable("nombreComercial", expediente.getNombreComercial());
+            ctx.setVariable("motivo",          motivo != null && !motivo.isBlank()
+                    ? motivo : "Se requiere subsanar requisitos técnicos o documentales.");
+            ctx.setVariable("portalCiudadano", portalCiudadano);
+
+            String html = templateEngine.process("email/email-rechazo", ctx);
+            String asunto = "Expediente N° " + expediente.getNumeroTramite()
+                    + " — Notificación de Observaciones y Plazo de Subsanación (Ley N° 27444)";
+
+            enviarHtml(expediente.getCorreoElectronico(), asunto, html);
+
+        } catch (Exception e) {
+            log.error("[EMAIL] Error al enviar notificación de OBSERVACIÓN — expediente: {} — correo: {}",
+                    expediente.getNumeroTramite(), expediente.getCorreoElectronico(), e);
+        }
+    }
+
+    /**
+     * Notifica al ciudadano que su expediente fue rechazado, indicando el motivo de la denegatoria.
      *
      * @param expediente Expediente en estado RECHAZADO.
      * @param motivo     Motivo de rechazo registrado por el funcionario.
@@ -184,7 +215,7 @@ public class NotificacionEmailService {
 
             String html = templateEngine.process("email/email-rechazo", ctx);
             String asunto = "Expediente N° " + expediente.getNumeroTramite()
-                    + " — Resultado de Evaluación: Observado";
+                    + " — Resultado de Evaluación: Denegado / Rechazado";
 
             enviarHtml(expediente.getCorreoElectronico(), asunto, html);
 
@@ -221,14 +252,16 @@ public class NotificacionEmailService {
     }
 
     /**
-     * Envía el correo HTML de forma centralizada usando MimeMessage.
+     * Envía el correo HTML de forma centralizada usando MimeMessage con remitente seguro (H14).
      */
     private void enviarHtml(String destinatario, String asunto, String htmlContent) {
         try {
             MimeMessage msg = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
 
-            helper.setFrom(remitente, nombreRemitente);
+            String rem = (remitente != null && !remitente.isBlank()) ? remitente : "notificaciones@munihuamanga.gob.pe";
+            String nom = (nombreRemitente != null && !nombreRemitente.isBlank()) ? nombreRemitente : "Municipalidad Provincial de Huamanga";
+            helper.setFrom(rem, nom);
             helper.setTo(destinatario);
             helper.setSubject(asunto);
             helper.setText(htmlContent, true);   // true = HTML

@@ -22,6 +22,7 @@ import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.RegistroPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolucionExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.SeguimientoCiudadanoDto;
+import pe.gob.munihuamanga.licencias.common.dto.SubsanacionExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
@@ -238,13 +239,33 @@ public class ExpedienteController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = {"/{id}/rechazar", "/{id}/observar"})
-    @Operation(summary = "Gerencia de Licencias: Dictamen de rechazo u observaciones insubsanables")
+    @PostMapping("/{id}/rechazar")
+    @Operation(summary = "Gerencia de Licencias: Dictamen de rechazo / denegatoria de licencia")
     public ResponseEntity<Void> rechazar(
             @PathVariable UUID id,
             @Valid @RequestBody ResolucionExpedienteDto dto
     ) {
         expedienteService.rechazar(id, dto.getMotivo());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/observar")
+    @Operation(summary = "Gerencia de Licencias / Evaluador: Formular observaciones técnicas o documentales (Ley N° 27444 LPAG)")
+    public ResponseEntity<Void> observar(
+            @PathVariable UUID id,
+            @Valid @RequestBody ResolucionExpedienteDto dto
+    ) {
+        expedienteService.observar(id, dto.getMotivo());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/subsanar")
+    @Operation(summary = "Mesa de Partes / Administrado: Subsanación formal de observaciones (Art. 136 Ley N° 27444)")
+    public ResponseEntity<Void> subsanar(
+            @PathVariable UUID id,
+            @Valid @RequestBody SubsanacionExpedienteDto dto
+    ) {
+        expedienteService.subsanar(id, dto.getDetalleSubsanacion(), dto.getUsuario());
         return ResponseEntity.noContent().build();
     }
 }

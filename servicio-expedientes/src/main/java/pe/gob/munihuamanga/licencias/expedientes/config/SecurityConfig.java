@@ -66,8 +66,9 @@ public class SecurityConfig {
                         // 2. Endpoint público de autenticación
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // 3. Mesa de partes virtual pública (registro) y consulta de seguimiento acotada (H07)
+                        // 3. Mesa de partes virtual pública (registro), consulta y subsanación ciudadana (H07 / LPAG)
                         .requestMatchers(HttpMethod.POST, "/api/expedientes").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/subsanar").permitAll()
                         .requestMatchers("/api/expedientes/tramite/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
 

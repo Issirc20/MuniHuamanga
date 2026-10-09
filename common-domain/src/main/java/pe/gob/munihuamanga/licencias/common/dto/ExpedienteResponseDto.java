@@ -114,6 +114,12 @@ public class ExpedienteResponseDto {
     // Anexo 4
     private Anexo4CondicionesDto anexo4Condiciones;
 
+    // Observaciones y Subsanaciones (Ley N° 27444 LPAG / Ley N° 28976)
+    private String motivoObservacion;
+    private LocalDateTime fechaObservacion;
+    private LocalDateTime fechaSubsanacion;
+    private String detalleSubsanacion;
+
     // Plazos y SLA
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaLimite;

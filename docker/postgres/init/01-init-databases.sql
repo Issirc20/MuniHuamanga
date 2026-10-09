@@ -82,6 +82,12 @@ CREATE TABLE IF NOT EXISTS expedientes (
     numero_operacion_sat VARCHAR(50),
     fecha_pago_sat TIMESTAMP,
 
+    -- Observaciones y Subsanaciones (Ley N° 27444 LPAG / Ley N° 28976)
+    motivo_observacion VARCHAR(500),
+    fecha_observacion TIMESTAMP,
+    fecha_subsanacion TIMESTAMP,
+    detalle_subsanacion VARCHAR(500),
+
     -- Anexo 4: Condiciones de Seguridad (Embebido)
     a4_area_terreno NUMERIC(10, 2),
     a4_area_piso_1 NUMERIC(10, 2),
@@ -163,6 +169,11 @@ ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS numero_informe_itse VARCHAR(50)
 ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_informe_itse TIMESTAMP;
 ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS numero_operacion_sat VARCHAR(50);
 ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_pago_sat TIMESTAMP;
+
+ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS motivo_observacion VARCHAR(500);
+ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_observacion TIMESTAMP;
+ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_subsanacion TIMESTAMP;
+ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS detalle_subsanacion VARCHAR(500);
 
 ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS a4_area_terreno NUMERIC(10, 2);
 ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS a4_area_piso_1 NUMERIC(10, 2);

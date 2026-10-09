@@ -248,6 +248,19 @@ public class Expediente {
     @Column(name = "fecha_pago_sat")
     private LocalDateTime fechaPagoSat;
 
+    // Observaciones y Subsanaciones (Ley N° 27444 LPAG / Ley N° 28976)
+    @Column(name = "motivo_observacion", length = 500)
+    private String motivoObservacion;
+
+    @Column(name = "fecha_observacion")
+    private LocalDateTime fechaObservacion;
+
+    @Column(name = "fecha_subsanacion")
+    private LocalDateTime fechaSubsanacion;
+
+    @Column(name = "detalle_subsanacion", length = 500)
+    private String detalleSubsanacion;
+
     // Anexo 4 Embebido
     @Embedded
     private Anexo4Condiciones anexo4Condiciones;
