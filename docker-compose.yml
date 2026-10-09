@@ -21,6 +21,42 @@ services:
     networks:
       - muni_network
 
+  # Aplicación Backend Spring Boot (Monolito Modular MuniHuamanga)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: munihuamanga/servicio-expedientes:0.9.0-rc1
+    container_name: muni_licencias_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-muni_licencias_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-muni_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-muni_pass123}
+      JWT_SECRET: ${JWT_SECRET:-MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-28800000}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-smtp.munihuamanga.gob.pe}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-notificaciones@munihuamanga.gob.pe}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      PORTAL_URL: ${PORTAL_URL:-http://localhost:8081}
+      PORTAL_VERIFICACION_URL: ${PORTAL_VERIFICACION_URL:-http://localhost:8081/verificar-licencia.html?codigo=}
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 35s
+    networks:
+      - muni_network
+
   # Interfaz de gestión visual de base de datos
   pgadmin:
     image: dpage/pgadmin4:latest

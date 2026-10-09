@@ -1,0 +1,56 @@
+# ==============================================================================
+# Perfil de PRODUCCIÓN ('prod') - Sistema de Licencias MuniHuamanga
+# Configuración blindada para despliegue productivo y alta concurrencia
+# ==============================================================================
+
+server:
+  port: 8081
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      leak-detection-threshold: 30000
+      pool-name: MuniHuamangaHikariPoolProd
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Prohibido 'update' en producción; se valida contra esquema DDL / Flyway
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+
+# Swagger desactivado en producción para evitar exposición innecesaria de APIs
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Métricas restringidas internamente
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ADMIN
+
+logging:
+  level:
+    root: INFO
+    pe.gob.munihuamanga.licencias: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN

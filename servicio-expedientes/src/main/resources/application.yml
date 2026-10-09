@@ -44,14 +44,6 @@ tupa:
     alto: 345.20
     muy-alto: 480.00
 
-# URLs de microservicios e integraciones
-integraciones:
-  servicio-formularios:
-    url: ${URL_SERVICIO_FORMULARIOS:http://localhost:8082}
-  servicio-verificacion:
-    url: ${URL_SERVICIO_VERIFICACION:http://localhost:8083}
-  adaptador-integracion:
-    url: ${URL_ADAPTADOR_INTEGRACION:http://localhost:8084}
 
 # Observabilidad (RNF-21)
 management:
