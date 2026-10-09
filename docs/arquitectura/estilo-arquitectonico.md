@@ -24,7 +24,7 @@ graph TD
         BC1["📦 Bounded Context: Expedientes<br/>(Ciclo de vida, Máquina de Estados, 45 atributos normativos)"]
         BC2["📦 Bounded Context: Documentos Oficiales<br/>(Generador Anexos 1, 3, 4, Licencia Oficial con QR ZXing)"]
         BC3["📦 Bounded Context: Tarifario TUPA Dinámico<br/>(Cálculo automático de tasas, actualización en caliente)"]
-        BC4["📦 Bounded Context: Verificación Pública<br/>(Consulta pública sin auth, escaneo QR < 200ms)"]
+        BC4["📦 Bounded Context: Verificación Pública<br/>(Consulta pública sin auth, escaneo QR ≤ 200ms)"]
         BC5["📦 Bounded Context: Integración & Puertos<br/>(Puertos desacoplados SAT, Defensa Civil, Edificaciones)"]
         BC6["📦 Bounded Context: Seguridad & Auditoría<br/>(Spring Security 6, JWT Stateless, log inmutable)"]
     end

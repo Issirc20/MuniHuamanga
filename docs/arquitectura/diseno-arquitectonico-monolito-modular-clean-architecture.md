@@ -51,7 +51,7 @@ graph TD
     ISO --> US["5. Usabilidad (Usability)"]
     ISO --> OP["6. Simplicidad Operativa (Operability)"]
 
-    PE --> PE1["Latencia < 200ms en verificación QR"]
+    PE --> PE1["Latencia ≤ 200ms en verificación QR"]
     PE --> PE2["Concurrencia: 150+ transacciones simultáneas"]
     SE --> SE1["Autenticación JWT Stateless"]
     SE --> SE2["RBAC estricto en APIs internas"]
@@ -83,23 +83,33 @@ graph TD
 ## 4. Drivers Arquitectónicos
 
 ```mermaid
-mindmap
-  root((Drivers Arquitectónicos))
-    Drivers de Negocio
-      Cumplimiento TUO Ley 28976
-      Cero Papel en Mesa de Partes
-      Transparencia y Celeridad en Huamanga
-      Validez de Licencias con Código QR
-    Drivers Técnicos
-      Java 21 LTS y Spring Boot 3.3
-      Clean Architecture y Hexagonal Ports
-      Generación PDF con OpenPDF y ZXing
-      Persistencia Relacional ACID
-    Restricciones
-      Presupuesto de Infraestructura Limitado
-      Equipo de Desarrollo Reducido
-      Cumplimiento Normativo CENEPRED
-      Firma Presencial de Anexos en Defensa Civil
+graph TD
+    classDef rootNode fill:#1A365D,stroke:#0f233d,color:#ffffff,stroke-width:2px;
+    classDef catNode fill:#2B6CB0,stroke:#1A365D,color:#ffffff,stroke-width:1px;
+    classDef leafNode fill:#EDF2F7,stroke:#CBD5E0,color:#2D3748;
+
+    ROOT["🎯 Drivers Arquitectónicos"]:::rootNode
+
+    BIZ["🏢 Drivers de Negocio"]:::catNode
+    ROOT --> BIZ
+    BIZ --> B1["Cumplimiento TUO Ley 28976"]:::leafNode
+    BIZ --> B2["Cero Papel en Mesa de Partes"]:::leafNode
+    BIZ --> B3["Transparencia y Celeridad en Huamanga"]:::leafNode
+    BIZ --> B4["Validez de Licencias con Código QR"]:::leafNode
+
+    TECH["⚙️ Drivers Técnicos"]:::catNode
+    ROOT --> TECH
+    TECH --> T1["Java 21 LTS y Spring Boot 3.3"]:::leafNode
+    TECH --> T2["Clean Architecture y Hexagonal Ports"]:::leafNode
+    TECH --> T3["Generación PDF con OpenPDF y ZXing"]:::leafNode
+    TECH --> T4["Persistencia Relacional ACID"]:::leafNode
+
+    CONST["🔒 Restricciones"]:::catNode
+    ROOT --> CONST
+    CONST --> C1["Presupuesto de Infraestructura Limitado"]:::leafNode
+    CONST --> C2["Equipo de Desarrollo Reducido"]:::leafNode
+    CONST --> C3["Cumplimiento Normativo CENEPRED"]:::leafNode
+    CONST --> C4["Firma Presencial de Anexos en Defensa Civil"]:::leafNode
 ```
 
 - **Drivers de Negocio:**

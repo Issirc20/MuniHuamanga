@@ -23,7 +23,7 @@ graph TD
         MM --> JAR["📦 Artefacto Único Desplegable (servicio-expedientes.jar)"]
         MM --> BC["🧩 Bounded Contexts Cohesivos y Aislados"]
         MM --> ACID["🔒 Transacciones ACID Locales en PostgreSQL"]
-        MM --> MEM["⚡ Comunicación In-Memory entre Módulos (< 0.1 ms)"]
+        MM --> MEM["⚡ Comunicación In-Memory entre Módulos (≤ 0.1 ms)"]
     end
 
     subgraph Enfoque Arquitectonico ["2. Enfoque Arquitectónico (Estructura Interna)"]
@@ -71,7 +71,7 @@ graph TD
         
         BC3["📦 3. Bounded Context: Tarifario TUPA Dinámico<br/>• Cálculo automatizado según D.S. 163-2020<br/>• Mantenimiento CRUD en caliente<br/>• Mecanismo de fallback a YAML"]
         
-        BC4["📦 4. Bounded Context: Verificación Pública QR<br/>• Endpoint público sin autenticación<br/>• Respuesta ultrarrápida (< 200 ms)<br/>• Validación in situ para fiscalizadores"]
+        BC4["📦 4. Bounded Context: Verificación Pública QR<br/>• Endpoint público sin autenticación<br/>• Respuesta ultrarrápida (≤ 200 ms)<br/>• Validación in situ para fiscalizadores"]
         
         BC5["📦 5. Bounded Context: Integración y Puertos<br/>• SatPort (Recaudación y Vouchers)<br/>• DefensaCivilPort (Inspección ITSE)<br/>• EdificacionesPort (Compatibilidad de Uso)<br/>• FiscalizacionPort (Actas posteriores)"]
         

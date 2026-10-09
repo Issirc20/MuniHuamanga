@@ -24,9 +24,9 @@ graph TD
     ISO --> US["5. Usabilidad (Usability)"]
     ISO --> OP["6. Portabilidad y Operabilidad (Portability)"]
 
-    PE --> PE1["Latencia P95 <= 200 ms (Verificación QR)"]
-    PE --> PE2["Concurrencia >= 150 transacciones simultáneas"]
-    PE --> PE3["Renderizado PDF en memoria < 500 ms"]
+    PE --> PE1["Latencia P95 ≤ 200 ms en Verificación QR"]
+    PE --> PE2["Concurrencia ≥ 150 transacciones simultáneas"]
+    PE --> PE3["Renderizado PDF en memoria ≤ 500 ms"]
 
     SE --> SE1["JWT Stateless HMAC-SHA256"]
     SE --> SE2["RBAC en APIs internas con Spring Security 6"]

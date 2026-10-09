@@ -16,30 +16,42 @@ Un driver arquitectónico no es simplemente un requisito más; es un requisito f
 En el Sistema de Licencias de la Municipalidad Provincial de Huamanga, los drivers arquitectónicos se estructuran en cuatro dimensiones interconectadas:
 
 ```mermaid
-mindmap
-  root((Drivers Arquitectónicos))
-    1. Drivers de Negocio
-      Cumplimiento TUO Ley 28976
-      Cero Papel en Mesa de Partes
-      Celeridad: de 45 días a 1-15 días
-      Erradicación de Licencias Falsas con QR
-      Transparencia Tributaria SAT
-    2. Drivers Técnicos
-      Java 21 LTS y Spring Boot 3.3.4
-      Clean Architecture y Ports & Adapters
-      Renderizado In-Memory OpenPDF y ZXing
-      Persistencia Relacional ACID PostgreSQL
-      Seguridad Stateless JWT RBAC
-      Envío Asíncrono de Correos
-    3. Drivers de Calidad
-      Latencia P95 <= 200 ms en Verificación
-      Alta Concurrencia 150 usuarios
-      Mantenibilidad y TUPA en Caliente
-      Auditabilidad Legal Inmutable
-    4. Restricciones Primarias
-      Infraestructura On-Premise Modesta
-      Equipo de TI Municipal Reducido
-      Firma Presencial de Anexos ITSE
+graph TD
+    classDef rootNode fill:#1A365D,stroke:#0f233d,color:#ffffff,stroke-width:2px;
+    classDef catNode fill:#2B6CB0,stroke:#1A365D,color:#ffffff,stroke-width:1px;
+    classDef leafNode fill:#EDF2F7,stroke:#CBD5E0,color:#2D3748;
+
+    ROOT["🎯 Drivers Arquitectónicos"]:::rootNode
+
+    BIZ["🏢 1. Drivers de Negocio"]:::catNode
+    ROOT --> BIZ
+    BIZ --> B1["Cumplimiento TUO Ley 28976"]:::leafNode
+    BIZ --> B2["Cero Papel en Mesa de Partes"]:::leafNode
+    BIZ --> B3["Celeridad: Reducción de 45 a 1-15 días"]:::leafNode
+    BIZ --> B4["Erradicación de Licencias Falsas con QR"]:::leafNode
+    BIZ --> B5["Transparencia Tributaria SAT"]:::leafNode
+
+    TECH["⚙️ 2. Drivers Técnicos"]:::catNode
+    ROOT --> TECH
+    TECH --> T1["Java 21 LTS y Spring Boot 3.3.4"]:::leafNode
+    TECH --> T2["Clean Architecture y Ports & Adapters"]:::leafNode
+    TECH --> T3["Renderizado In-Memory OpenPDF y ZXing"]:::leafNode
+    TECH --> T4["Persistencia Relacional ACID PostgreSQL"]:::leafNode
+    TECH --> T5["Seguridad Stateless JWT RBAC"]:::leafNode
+    TECH --> T6["Envío Asíncrono de Correos"]:::leafNode
+
+    QUAL["⭐ 3. Drivers de Calidad"]:::catNode
+    ROOT --> QUAL
+    QUAL --> Q1["Latencia P95 ≤ 200 ms en Verificación"]:::leafNode
+    QUAL --> Q2["Alta Concurrencia 150 usuarios"]:::leafNode
+    QUAL --> Q3["Mantenibilidad y TUPA en Caliente"]:::leafNode
+    QUAL --> Q4["Auditabilidad Legal Inmutable"]:::leafNode
+
+    CONST["🔒 4. Restricciones Primarias"]:::catNode
+    ROOT --> CONST
+    CONST --> C1["Infraestructura On-Premise Modesta"]:::leafNode
+    CONST --> C2["Equipo de TI Municipal Reducido"]:::leafNode
+    CONST --> C3["Firma Presencial de Anexos ITSE"]:::leafNode
 ```
 
 ---
