@@ -111,7 +111,7 @@ public class LicenciaEmitida {
     @Column(name = "hash_pdf", nullable = false, length = 64)
     private String hashPdf;
 
-    @Column(name = "archivo_pdf")
+    @Column(name = "archivo_pdf", columnDefinition = "BYTEA")
     private byte[] archivoPdf;
 
     @Enumerated(EnumType.STRING)

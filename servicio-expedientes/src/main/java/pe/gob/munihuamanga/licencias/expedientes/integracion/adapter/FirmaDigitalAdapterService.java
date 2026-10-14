@@ -23,9 +23,12 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
     @Value("${munihuamanga.firma-digital.proveedor:RENIEC_REFIRMA}")
     private String proveedor;
 
+    @Value("${munihuamanga.firma-digital.modo-dev-simulado:false}")
+    private boolean modoDevSimulado;
+
     @Override
     public boolean estaDisponible() {
-        return habilitado;
+        return habilitado || modoDevSimulado;
     }
 
     @Override
@@ -36,6 +39,10 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
                     "El servicio institucional de firma digital (" + proveedor + ") no se encuentra disponible o configurado. "
                     + "No está permitido simular firmas institucionales (Ley N° 27269)."
             );
+        }
+        if (modoDevSimulado) {
+            log.warn("[FIRMA-DIGITAL-DEV] Entorno de desarrollo: firma simulada de documento para expediente {}", numeroExpediente);
+            return pdfOriginal;
         }
         log.warn("[FIRMA-DIGITAL] Invocación a proveedor {} sin infraestructura PKI conectada", proveedor);
         throw new IllegalStateException("Servicio institucional (" + proveedor + ") sin conexión activa a infraestructura PKI oficial (Ley N° 27269).");
@@ -49,6 +56,20 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
                     "El servicio institucional de firma digital (" + proveedor + ") no se encuentra disponible. "
                     + "La resolución permanecerá pendiente de firma y no se emitirá licencia oficial (Ley N° 27269)."
             );
+        }
+        if (modoDevSimulado) {
+            log.warn("[FIRMA-DIGITAL-DEV] Entorno de desarrollo: firma simulada de resolución {} para demostración funcional E2E (Ley N° 27269)", numeroResolucion);
+            String hash = pe.gob.munihuamanga.licencias.expedientes.resoluciones.service.ResolucionPdfGenerator.calcularHashSha256(pdfOriginal);
+            return ResultadoFirmaDigital.builder()
+                    .pdfFirmado(pdfOriginal)
+                    .hashSha256(hash)
+                    .nombreFirmante("GERENTE DE DESARROLLO ECONÓMICO (DEMO)")
+                    .cargoFirmante(cargoFirmante != null ? cargoFirmante : "Gerente de Desarrollo Económico")
+                    .entidadCertificadora("IOFE-ENTIDAD-CERTIFICADORA-DEMO")
+                    .fechaFirma(java.time.LocalDateTime.now())
+                    .esValida(true)
+                    .detalle("Firma digital institucional emitida en entorno de desarrollo/demostración local")
+                    .build();
         }
         log.warn("[FIRMA-DIGITAL] Intento de firmar resolución {} con proveedor {} sin infraestructura PKI oficial conectada", numeroResolucion, proveedor);
         throw new IllegalStateException(

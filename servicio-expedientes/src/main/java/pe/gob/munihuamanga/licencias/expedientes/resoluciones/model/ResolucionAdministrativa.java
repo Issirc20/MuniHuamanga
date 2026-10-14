@@ -96,7 +96,7 @@ public class ResolucionAdministrativa {
     @Column(name = "hash_documento", length = 64)
     private String hashDocumento;
 
-    @Column(name = "archivo_pdf")
+    @Column(name = "archivo_pdf", columnDefinition = "BYTEA")
     private byte[] archivoPdf;
 
     @Column(name = "observaciones_firma", columnDefinition = "TEXT")
