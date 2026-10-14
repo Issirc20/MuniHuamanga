@@ -128,6 +128,9 @@ public class CrearExpedienteDto {
     private String sectorFecha;
     private String sectorNumero;
 
+    // Sección V: Observaciones o comentarios del solicitante
+    private String motivoObservacion;
+
     // Anexo 4 (Condiciones de Seguridad en Edificación para Riesgo Bajo/Medio)
     private Anexo4CondicionesDto anexo4Condiciones;
 }

@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Formato Oficial Anexo N° 1 de Declaración Jurada para Licencia de Funcionamiento (Ley N° 28976 / D.S. N° 046-2017-PCM) — Municipalidad Provincial de Huamanga.">
+  <title>Anexo N° 1: Formato de Declaración Jurada para Licencia de Funcionamiento | MuniHuamanga</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/formato-anexo1.css">
+</head>
+<body class="formato-body">
+
+  <!-- =========================================================================
+       BARRA DE ACCIÓN Y CONTROL SUPERIOR (No se imprime)
+       ========================================================================= -->
+  <header class="formato-toolbar no-print">
+    <div class="toolbar-brand">
+      <img src="img/escudo-huamanga.png" alt="Escudo Huamanga" class="toolbar-logo">
+      <div>
+        <strong>Municipalidad Provincial de Huamanga</strong>
+        <span class="toolbar-sub">Anexo N° 1 — Declaración Jurada Digital (Ley N° 28976)</span>
+      </div>
+    </div>
+
+    <div class="toolbar-status">
+      <span id="badgeEstadoDoc" class="status-pill status-draft">📝 Borrador sin guardar</span>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="btn btn-sm btn-outline-info" onclick="cargarDatosDemo()" title="Cargar datos de ejemplo de un establecimiento en Huamanga">
+        🪄 Datos Demo
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-warning" onclick="limpiarFormato()" title="Limpiar todos los campos del formato">
+        🧹 Limpiar
+      </button>
+      <div class="search-exp-group">
+        <input type="text" id="inputBuscarExpediente" placeholder="EXP-2026-XXXXX" class="input-search-exp" title="Cargar datos de un expediente existente">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="buscarYPrecargarExpediente()">
+          🔍 Cargar
+        </button>
+      </div>
+      <button type="button" class="btn btn-sm btn-print" onclick="imprimirFormato()" title="Imprimir formato oficial llenado">
+        🖨️ Imprimir Formato
+      </button>
+      <button type="button" class="btn btn-sm btn-download-pdf" onclick="descargarPdfOficial()" id="btnDescargarPdf" title="Descargar documento oficial en formato PDF">
+        ⬇️ Descargar PDF Oficial
+      </button>
+      <button type="button" class="btn btn-sm btn-save-db" onclick="guardarEnBaseDeDatos()" id="btnGuardarDb" title="Registrar y almacenar la información en la base de datos municipal">
+        💾 Guardar en Base de Datos
+      </button>
+      <a href="portal-ciudadano.html" class="btn btn-sm btn-secondary" title="Volver al Portal Ciudadano">
+        ← Volver al Portal
+      </a>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       AVISO INFORMATIVO INTERACTIVO (No se imprime)
+       ========================================================================= -->
+  <div class="formato-info-banner no-print">
+    <div class="banner-content">
+      <span class="banner-icon">💡</span>
+      <div>
+        <strong>Formato Normativo Oficial:</strong> Complete los campos en las <strong>celdas amarillas</strong>.
+        Toda la información ingresada se sincroniza en tiempo real para que <em>al momento de imprimir ya esté llenada</em>.
+        Puede <strong>Guardar en Base de Datos</strong> para registrar su expediente oficial o <strong>Descargar en PDF</strong> con la plantilla oficial del Ministerio de la Producción / PCM.
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor central del documento oficial (Hojas A4) -->
+  <main class="formato-container">
+
+    <!-- =======================================================================
+         PÁGINA 1: SECCIONES I, II, III y IV
+         ======================================================================= -->
+    <article class="formato-hoja a4-page" id="pagina1">
+      
+      <!-- Encabezado Oficial -->
+      <table class="tbl-header">
+        <tr>
+          <td class="col-logo">
+            <div class="logo-box">
+              <img src="img/escudo-huamanga.png" alt="Escudo de Huamanga" class="official-logo">
+              <span class="logo-caption">MUNICIPALIDAD PROVINCIAL DE HUAMANGA</span>
+            </div>
+          </td>
+          <td class="col-titulo">
+            <div class="doc-badge">Anexo N° 1</div>
+            <h1 class="doc-title">FORMATO DE DECLARACIÓN JURADA PARA LICENCIA DE FUNCIONAMIENTO</h1>
+            <p class="doc-law">LEY Nº 28976 - Ley Marco de Licencia de Funcionamiento y modificatorias</p>
+            <div class="doc-version">Versión 03</div>
+          </td>
+          <td class="col-meta">
+            <table class="tbl-meta-box">
+              <tr>
+                <td class="meta-label">N° de expediente:</td>
+                <td class="meta-val"><input type="text" id="hdrNumeroExpediente" class="input-plain celda-amarilla text-bold" placeholder="Auto al guardar"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">Página:</td>
+                <td class="meta-val meta-page">1 de 2</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Fecha de recepción:</td>
+                <td class="meta-val"><input type="text" id="hdrFechaRecepcion" class="input-plain celda-amarilla" placeholder="DD/MM/AAAA"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">N° de recibo de pago:</td>
+                <td class="meta-val"><input type="text" id="hdrReciboPago" class="input-plain celda-amarilla" placeholder="N° Recibo / Voucher"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">Fecha de pago:</td>
+                <td class="meta-val"><input type="text" id="hdrFechaPago" class="input-plain celda-amarilla" placeholder="DD/MM/AAAA"></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Sub-aviso normativo -->
+      <div class="sub-aviso-normativo">
+        <span class="yellow-dot">■</span> Celdas amarillas = para completar. Los campos de CIIU, giro y clasificación del nivel de riesgo los llena la municipalidad.
+        <span class="link-instrucciones no-print" onclick="irAInstrucciones()">VER INSTRUCCIONES PARA EL LLENADO (Página 2) ↓</span>
+      </div>
+
+      <!-- =====================================================================
+           SECCIÓN I: MODALIDAD DEL TRÁMITE QUE SOLICITA
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">
+          I MODALIDAD DEL TRÁMITE QUE SOLICITA <span class="sec-header-note">(marcar más de una alternativa si corresponde)</span>
+        </div>
+
+        <table class="tbl-oficial tbl-seccion-1">
+          <thead>
+            <tr>
+              <th style="width: 48%;">Modalidad</th>
+              <th style="width: 10%; text-align: center;">Marcar (X)</th>
+              <th style="width: 42%;">Dato complementario</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Grupo: Licencia de funcionamiento -->
+            <tr class="tr-group-header">
+              <td colspan="3"><strong>Licencia de funcionamiento</strong></td>
+            </tr>
+            <tr>
+              <td>Indeterminada</td>
+              <td class="text-center">
+                <input type="checkbox" id="modIndeterminada" name="modTramite" class="chk-x" checked onchange="alCambiarModalidad('LICENCIA_INDETERMINADA')">
+              </td>
+              <td class="td-muted">—</td>
+            </tr>
+            <tr>
+              <td>Temporal</td>
+              <td class="text-center">
+                <input type="checkbox" id="modTemporal" name="modTramite" class="chk-x" onchange="alCambiarModalidad('LICENCIA_TEMPORAL')">
+              </td>
+              <td>
+                <div class="inline-field">
+                  <label for="txtPlazoTemporal">Indicar el plazo:</label>
+                  <input type="text" id="txtPlazoTemporal" class="input-underline celda-amarilla" placeholder="Ej: 12 meses">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Licencia de funcionamiento más autorización de anuncio publicitario</td>
+              <td class="text-center">
+                <input type="checkbox" id="modConAnuncio" name="modTramite" class="chk-x" onchange="alCambiarModalidad('LICENCIA_CON_ANUNCIO')">
+              </td>
+              <td>
+                <div class="inline-field">
+                  <label for="txtTipoAnuncio">Tipo de anuncio (especificar):</label>
+                  <input type="text" id="txtTipoAnuncio" class="input-underline celda-amarilla" placeholder="Ej: Letrero luminoso adosado a fachada (1.50 x 0.80 m)">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Licencia para cesionario</td>
+              <td class="text-center">
+                <input type="checkbox" id="modCesionario" name="modTramite" class="chk-x" onchange="alCambiarModalidad('LICENCIA_CESIONARIO')">
+              </td>
+              <td>
+                <div class="inline-field">
+                  <label for="txtLicenciaCesionario">N° de licencia de funcionamiento principal:</label>
+                  <input type="text" id="txtLicenciaCesionario" class="input-underline celda-amarilla" placeholder="Ej: LIC-2024-001289">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Licencias para mercados de abastos, galerías comerciales y centros comerciales</td>
+              <td class="text-center">
+                <input type="checkbox" id="modMercados" name="modTramite" class="chk-x" onchange="alCambiarModalidad('LICENCIA_MERCADOS_GALERIAS')">
+              </td>
+              <td class="td-muted">—</td>
+            </tr>
+
+            <!-- Grupo: Cambios o modificaciones -->
+            <tr class="tr-group-header">
+              <td colspan="3"><strong>Cambios o modificaciones</strong></td>
+            </tr>
+            <tr>
+              <td>
+                Cambio de denominación o nombre comercial de la persona jurídica 
+                <span class="hint-paren">(solo completar secciones II, III y V)</span>
+              </td>
+              <td class="text-center">
+                <input type="checkbox" id="modCambioDenom" name="modTramite" class="chk-x" onchange="alCambiarModalidad('CAMBIO_DENOMINACION')">
+              </td>
+              <td>
+                <div class="stacked-fields">
+                  <div class="inline-field">
+                    <label for="txtLicenciaCambio">N° de licencia:</label>
+                    <input type="text" id="txtLicenciaCambio" class="input-underline celda-amarilla" placeholder="N° licencia anterior">
+                  </div>
+                  <div class="inline-field">
+                    <label for="txtNuevaDenominacion">Nueva denominación / nombre comercial:</label>
+                    <input type="text" id="txtNuevaDenominacion" class="input-underline celda-amarilla" placeholder="Nueva denominación">
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Transferencia de Licencia de Funcionamiento 
+                <span class="hint-paren">(solo completar secciones II, III, V y adjuntar copia simple de contrato de transferencia)</span>
+              </td>
+              <td class="text-center">
+                <input type="checkbox" id="modTransferencia" name="modTramite" class="chk-x" onchange="alCambiarModalidad('TRANSFERENCIA_LICENCIA')">
+              </td>
+              <td>
+                <div class="inline-field">
+                  <label for="txtLicenciaTransferencia">N° de licencia de funcionamiento:</label>
+                  <input type="text" id="txtLicenciaTransferencia" class="input-underline celda-amarilla" placeholder="N° licencia a transferir">
+                </div>
+              </td>
+            </tr>
+
+            <!-- Grupo: Otros -->
+            <tr class="tr-group-header">
+              <td colspan="3"><strong>Otros</strong></td>
+            </tr>
+            <tr>
+              <td>
+                Cese de actividades 
+                <span class="hint-paren">(solo completar secciones II, III y V)</span>
+              </td>
+              <td class="text-center">
+                <input type="checkbox" id="modCese" name="modTramite" class="chk-x" onchange="alCambiarModalidad('CESE_ACTIVIDADES')">
+              </td>
+              <td>
+                <div class="inline-field">
+                  <label for="txtLicenciaCese">N° de licencia de funcionamiento:</label>
+                  <input type="text" id="txtLicenciaCese" class="input-underline celda-amarilla" placeholder="N° licencia a cesar">
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Otros (especificar)</td>
+              <td class="text-center">
+                <input type="checkbox" id="modOtros" name="modTramite" class="chk-x" onchange="alCambiarModalidad('OTROS')">
+              </td>
+              <td>
+                <input type="text" id="txtOtrosEspecificar" class="input-underline celda-amarilla" placeholder="Especifique el trámite solicitado">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- =====================================================================
+           SECCIÓN II: DATOS DEL SOLICITANTE
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">II DATOS DEL SOLICITANTE</div>
+        <table class="tbl-oficial tbl-seccion-2">
+          <tr>
+            <td colspan="4" class="cell-with-label">
+              <span class="lbl-top">Apellidos y Nombres / Razón social: *</span>
+              <input type="text" id="txtTitularNombre" class="input-box celda-amarilla" placeholder="Ingrese Apellidos y Nombres completos o Razón Social (ej: PEREZ QUISPE JUAN / INVERSIONES SAC)" oninput="sincronizarFirmante()">
+            </td>
+          </tr>
+          <tr>
+            <td style="width: 25%;" class="cell-with-label">
+              <span class="lbl-top">N° DNI / N° C.E.: *</span>
+              <input type="text" id="txtDocumentoIdentidad" class="input-box celda-amarilla" maxlength="12" placeholder="8 dígitos DNI o C.E." oninput="sincronizarFirmante()">
+            </td>
+            <td style="width: 25%;" class="cell-with-label">
+              <span class="lbl-top">N° RUC:</span>
+              <input type="text" id="txtRuc" class="input-box celda-amarilla" maxlength="11" placeholder="11 dígitos (10 o 20)">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">N° Teléfono: *</span>
+              <input type="tel" id="txtTelefono" class="input-box celda-amarilla" maxlength="9" placeholder="9XXXXXXXX">
+            </td>
+            <td style="width: 30%;" class="cell-with-label">
+              <span class="lbl-top">Correo electrónico: *</span>
+              <input type="email" id="txtCorreoElectronico" class="input-box celda-amarilla" placeholder="correo@ejemplo.com">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4" class="td-sub-header">Dirección del Solicitante</td>
+          </tr>
+          <tr>
+            <td style="width: 35%;" class="cell-with-label">
+              <span class="lbl-top">Av./Jr./Ca./Pje./Otros: *</span>
+              <input type="text" id="txtSolVia" class="input-box celda-amarilla" placeholder="Ej: Jr. 28 de Julio / Av. Mariscal Cáceres">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">N°/Int. /Mz/Lt./Otros:</span>
+              <input type="text" id="txtSolNroInt" class="input-box celda-amarilla" placeholder="N° 340 / Int. 2B">
+            </td>
+            <td style="width: 25%;" class="cell-with-label">
+              <span class="lbl-top">Urb./ AA.HH./Otros:</span>
+              <input type="text" id="txtSolUrb" class="input-box celda-amarilla" placeholder="Ej: Centro Histórico / San Juan">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">Distrito y Provincia:</span>
+              <input type="text" id="txtSolDistProv" class="input-box celda-amarilla" value="Ayacucho - Huamanga">
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- =====================================================================
+           SECCIÓN III: DATOS DEL REPRESENTANTE LEGAL O APODERADO
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">III DATOS DEL REPRESENTANTE LEGAL O APODERADO</div>
+        <table class="tbl-oficial tbl-seccion-3">
+          <tr>
+            <td style="width: 45%;" class="cell-with-label">
+              <span class="lbl-top">Apellidos y Nombres:</span>
+              <input type="text" id="txtRepNombre" class="input-box celda-amarilla" placeholder="Solo en caso de contar con apoderado o persona jurídica" oninput="sincronizarFirmante()">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">N° DNI / N° C.E.:</span>
+              <input type="text" id="txtRepDni" class="input-box celda-amarilla" maxlength="12" placeholder="DNI del representante" oninput="sincronizarFirmante()">
+            </td>
+            <td style="width: 35%;" class="cell-with-label">
+              <span class="lbl-top">N° de partida electrónica y asiento SUNARP (de corresponder):</span>
+              <input type="text" id="txtRepSunarp" class="input-box celda-amarilla" placeholder="Partida N° 11045892 - Asiento A0001">
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- =====================================================================
+           SECCIÓN IV: DATOS DEL ESTABLECIMIENTO
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">IV DATOS DEL ESTABLECIMIENTO</div>
+        <table class="tbl-oficial tbl-seccion-4">
+          <tr>
+            <td colspan="4" class="cell-with-label">
+              <span class="lbl-top">Nombre comercial: *</span>
+              <input type="text" id="txtNombreComercial" class="input-box celda-amarilla" placeholder="Ej: CAFETERÍA Y ARTESANÍAS EL HUAMANGUINO">
+            </td>
+          </tr>
+          <tr>
+            <td style="width: 18%;" class="cell-with-label cell-municipal">
+              <span class="lbl-top">Código CIIU *:</span>
+              <input type="text" id="txtCiiuCodigo" class="input-box celda-amarilla text-center text-bold" placeholder="I5630" title="Campo asignado o validado por la municipalidad">
+            </td>
+            <td style="width: 32%;" class="cell-with-label cell-municipal">
+              <span class="lbl-top">Giro/s *:</span>
+              <input type="text" id="txtGiroNegocio" class="input-box celda-amarilla" placeholder="Venta de café, bebidas calientes y souvenirs" title="Campo clasificado según el TUPA municipal">
+            </td>
+            <td style="width: 30%;" class="cell-with-label">
+              <span class="lbl-top">Actividad detallada:</span>
+              <input type="text" id="txtActividadDetallada" class="input-box celda-amarilla" placeholder="Preparación y expendio de bebidas y pasteles">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">Zonificación:</span>
+              <input type="text" id="txtZonificacion" class="input-box celda-amarilla" placeholder="ZRE-CH / C-3">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4" class="td-sub-header">Dirección del Establecimiento</td>
+          </tr>
+          <tr>
+            <td style="width: 35%;" class="cell-with-label">
+              <span class="lbl-top">Av./Jr./Ca./Pje./Otros: *</span>
+              <input type="text" id="txtEstVia" class="input-box celda-amarilla" placeholder="Ej: Jr. 28 de Julio">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">N°/Int. /Mz/Lt./Otros:</span>
+              <input type="text" id="txtEstNroInt" class="input-box celda-amarilla" placeholder="N° 245 Int. A">
+            </td>
+            <td style="width: 25%;" class="cell-with-label">
+              <span class="lbl-top">Urb./ AA.HH./Otros:</span>
+              <input type="text" id="txtEstUrb" class="input-box celda-amarilla" placeholder="Centro Histórico">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">Provincia:</span>
+              <input type="text" id="txtEstProvincia" class="input-box celda-amarilla" value="Huamanga">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4" class="td-sub-header">
+              Autorización Sectorial (de corresponder)
+              <label class="chk-inline no-print" style="margin-left: 1rem; font-weight: normal; font-size: 0.78rem;">
+                <input type="checkbox" id="chkRequiereSectorial" onchange="toggleAutorizacionSectorial()"> ¿Requiere autorización sectorial previa (D.S. N° 006-2013-PCM)?
+              </label>
+            </td>
+          </tr>
+          <tr id="rowSectorial">
+            <td style="width: 25%;" class="cell-with-label">
+              <span class="lbl-top">Entidad que otorga autorización:</span>
+              <input type="text" id="txtSectorEntidad" class="input-box celda-amarilla" placeholder="Ej: MINCETUR / DIRESA / MINEDU">
+            </td>
+            <td style="width: 35%;" class="cell-with-label">
+              <span class="lbl-top">Denominación de la autorización:</span>
+              <input type="text" id="txtSectorDenominacion" class="input-box celda-amarilla" placeholder="Ej: Registro Nacional de Prestadores Turísticos">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">Fecha de autorización:</span>
+              <input type="text" id="txtSectorFecha" class="input-box celda-amarilla" placeholder="DD/MM/AAAA">
+            </td>
+            <td style="width: 20%;" class="cell-with-label">
+              <span class="lbl-top">Número de autorización:</span>
+              <input type="text" id="txtSectorNumero" class="input-box celda-amarilla" placeholder="Ej: AUT-2024-589">
+            </td>
+          </tr>
+          <tr>
+            <td class="cell-with-label" style="vertical-align: top;">
+              <span class="lbl-top">Área total solicitada (m²): *</span>
+              <input type="number" step="0.01" min="1" id="txtAreaMetros" class="input-box celda-amarilla text-bold text-center" placeholder="Ej: 45.00" oninput="alCambiarArea()" style="font-size: 1.1rem; height: 42px;">
+              <div class="area-hint" id="txtAreaHint">Clasificación ITSE estimada: <strong>Bajo/Medio</strong></div>
+            </td>
+            <td colspan="3" class="cell-with-label">
+              <div class="croquis-header">
+                <span class="lbl-top">Croquis de ubicación (adjuntar / dibuje):</span>
+                <div class="croquis-tools no-print">
+                  <button type="button" class="btn-micro" onclick="cargarCroquisEjemplo()" title="Cargar croquis esquemático municipal">📐 Croquis Típico</button>
+                  <button type="button" class="btn-micro" onclick="limpiarCanvasCroquis()" title="Limpiar dibujo">🧹 Borrar</button>
+                  <label class="btn-micro btn-file-label" title="Subir imagen de croquis">
+                    📷 Subir Imagen <input type="file" id="fileCroquis" accept="image/*" onchange="subirImagenCroquis(event)" style="display: none;">
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Recuadro Croquis Fiel a la Norma con soporte Canvas interactivo -->
+              <div class="croquis-wrapper">
+                <canvas id="canvasCroquis" width="560" height="150" class="canvas-croquis" title="Haga clic y arrastre para dibujar el croquis de ubicación"></canvas>
+                <div id="croquisOverlayText" class="croquis-overlay-guide no-print">
+                  <span>✏️ Puede trazar la ubicación o calles aquí, o usar "📐 Croquis Típico"</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- Pie de Página 1 -->
+      <footer class="hoja-footer">
+        <span class="footer-note">* Esta información es llenada por el representante de la municipalidad.</span>
+        <span class="footer-pager">Página 1 de 2</span>
+      </footer>
+    </article>
+
+    <!-- =======================================================================
+         PÁGINA 2: SECCIONES V, VI e INSTRUCCIONES
+         ======================================================================= -->
+    <article class="formato-hoja a4-page" id="pagina2">
+      
+      <!-- Encabezado Página 2 -->
+      <table class="tbl-header">
+        <tr>
+          <td class="col-logo">
+            <div class="logo-box">
+              <img src="img/escudo-huamanga.png" alt="Escudo de Huamanga" class="official-logo">
+              <span class="logo-caption">MUNICIPALIDAD PROVINCIAL DE HUAMANGA</span>
+            </div>
+          </td>
+          <td class="col-titulo">
+            <div class="doc-badge">Anexo N° 1</div>
+            <h2 class="doc-title">FORMATO DE DECLARACIÓN JURADA PARA LICENCIA DE FUNCIONAMIENTO</h2>
+            <p class="doc-law">LEY Nº 28976 - Ley Marco de Licencia de Funcionamiento y modificatorias</p>
+            <div class="doc-version">Versión 03</div>
+          </td>
+          <td class="col-meta">
+            <table class="tbl-meta-box">
+              <tr>
+                <td class="meta-label">N° de expediente:</td>
+                <td class="meta-val"><input type="text" id="hdrNumeroExpediente2" class="input-plain text-bold" readonly placeholder="Auto al guardar"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">Página:</td>
+                <td class="meta-val meta-page">2 de 2</td>
+              </tr>
+              <tr>
+                <td class="meta-label">Fecha de recepción:</td>
+                <td class="meta-val"><input type="text" id="hdrFechaRecepcion2" class="input-plain" readonly placeholder="DD/MM/AAAA"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">N° de recibo de pago:</td>
+                <td class="meta-val"><input type="text" id="hdrReciboPago2" class="input-plain" readonly placeholder="N° Recibo"></td>
+              </tr>
+              <tr>
+                <td class="meta-label">Fecha de pago:</td>
+                <td class="meta-val"><input type="text" id="hdrFechaPago2" class="input-plain" readonly placeholder="DD/MM/AAAA"></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      <!-- =====================================================================
+           SECCIÓN V: DECLARACIÓN JURADA
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">
+          V DECLARACIÓN JURADA <span class="sec-header-note">— Declaro (DE CORRESPONDER MARCAR CON X)</span>
+        </div>
+
+        <table class="tbl-oficial tbl-seccion-5">
+          <tr>
+            <td style="width: 90%;">
+              Cuento con poder suficiente vigente para actuar como representante legal de la persona jurídica conductora 
+              (alternativamente, de la persona natural que represento).
+            </td>
+            <td style="width: 10%; text-align: center;">
+              <input type="checkbox" id="chkJuradaPoder" class="chk-x">
+            </td>
+          </tr>
+          <tr>
+            <td>
+              El establecimiento cumple con las condiciones de seguridad en edificaciones y me someto a la inspección técnica 
+              que corresponda en función al nivel de riesgo, de conformidad con la legislación aplicable.
+            </td>
+            <td style="text-align: center;">
+              <input type="checkbox" id="chkJuradaSeguridad" class="chk-x" checked>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Cuento con título profesional vigente y estoy habilitado por el colegio profesional correspondiente 
+              (en el caso de servicios relacionados con la salud).
+            </td>
+            <td style="text-align: center;">
+              <input type="checkbox" id="chkJuradaTituloSalud" class="chk-x">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" class="td-legal-disclaimer">
+              Tengo conocimiento de que la presente Declaración Jurada y documentación está sujeta a la fiscalización posterior. 
+              En caso de haber proporcionado información, documentos, formatos o declaraciones que no corresponden a la verdad, 
+              se me aplicarán las sanciones administrativas y penales correspondientes, declarándose la nulidad o revocatoria de 
+              la licencia o autorización otorgada. Asimismo, brindaré las facilidades necesarias para las acciones de control de 
+              la autoridad municipal competente.
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" class="cell-with-label">
+              <span class="lbl-top">Observaciones o comentarios del solicitante:</span>
+              <textarea id="txtObservaciones" class="textarea-box celda-amarilla" rows="3" placeholder="Indique observaciones adicionales, detalles de subsanación o precisiones sobre el establecimiento..."></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <div class="firma-row">
+                <div class="firma-fecha-box">
+                  <span class="lbl-top">Fecha:</span>
+                  <input type="text" id="txtFechaFirma" class="input-underline celda-amarilla text-center text-bold" placeholder="DD/MM/AAAA" style="width: 140px;">
+                </div>
+                
+                <div class="firma-box">
+                  <div class="firma-linea">
+                    <span class="firma-line-text">Firma del solicitante / Representante legal / Apoderado</span>
+                  </div>
+                  <div class="firma-meta-item">
+                    <label>DNI:</label>
+                    <input type="text" id="txtFirmaDni" class="input-plain text-bold" readonly placeholder="DNI del firmante">
+                  </div>
+                  <div class="firma-meta-item">
+                    <label>Nombres y Apellidos:</label>
+                    <input type="text" id="txtFirmaNombres" class="input-plain text-bold" readonly placeholder="Nombres del firmante">
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </section>
+
+      <!-- =====================================================================
+           SECCIÓN VI: CLASIFICACIÓN DEL NIVEL DE RIESGO
+           ===================================================================== -->
+      <section class="formato-seccion">
+        <div class="sec-header">
+          VI CLASIFICACIÓN DEL NIVEL DE RIESGO 
+          <span class="sec-header-note">(Para ser llenado por el calificador designado de la municipalidad) *</span>
+        </div>
+
+        <table class="tbl-oficial tbl-seccion-6">
+          <tr>
+            <td style="width: 25%; text-align: center;">
+              <label class="lbl-riesgo">
+                <input type="checkbox" id="chkRiesgoBajo" class="chk-x" onclick="seleccionarNivelRiesgo('BAJO')">
+                <span>ITSE Riesgo bajo</span>
+              </label>
+            </td>
+            <td style="width: 25%; text-align: center;">
+              <label class="lbl-riesgo">
+                <input type="checkbox" id="chkRiesgoMedio" class="chk-x" onclick="seleccionarNivelRiesgo('MEDIO')">
+                <span>ITSE Riesgo medio</span>
+              </label>
+            </td>
+            <td style="width: 25%; text-align: center;">
+              <label class="lbl-riesgo">
+                <input type="checkbox" id="chkRiesgoAlto" class="chk-x" onclick="seleccionarNivelRiesgo('ALTO')">
+                <span>ITSE Riesgo alto</span>
+              </label>
+            </td>
+            <td style="width: 25%; text-align: center;">
+              <label class="lbl-riesgo">
+                <input type="checkbox" id="chkRiesgoMuyAlto" class="chk-x" onclick="seleccionarNivelRiesgo('MUY_ALTO')">
+                <span>ITSE Riesgo muy alto</span>
+              </label>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="4">
+              <div class="calificador-signature-row">
+                <div class="sello-calificador-box">
+                  <div class="sello-placeholder">
+                    <span class="sello-circle">MUNICIPALIDAD DE HUAMANGA<br>SUBGERENCIA DE DEF. CIVIL<br>INSPECCIÓN ITSE</span>
+                  </div>
+                </div>
+                <div class="firma-calificador-linea">
+                  <div class="firma-linea-calificador"></div>
+                  <div class="calificador-label">Firma y sello del calificador municipal</div>
+                  <div class="calificador-name">
+                    <input type="text" id="txtCalificadorNombre" class="input-plain text-center" value="Ing. Calificador ITSE — Reg. CENEPRED N° 04821" readonly>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div class="nota-itse-footer">
+          * Esta información debe ser llenada por el calificador designado por la municipalidad, de acuerdo con los anexos 2 y 3 del Manual de Ejecución de Inspección Técnica de Seguridad en Edificaciones.
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           INSTRUCCIONES PARA EL LLENADO (Oficiales de la Norma)
+           ===================================================================== -->
+      <section class="formato-seccion sec-instrucciones" id="seccionInstrucciones">
+        <div class="sec-header-instrucciones">INSTRUCCIONES PARA EL LLENADO</div>
+        <div class="instrucciones-content">
+          <p><strong>Sección I:</strong> Marcar con una "X" en la casilla según la modalidad del trámite que solicita; en caso de corresponder puede marcar más de una alternativa. De haber marcado "Cambio de denominación o nombre comercial de la persona jurídica" o "Cese de actividades", solo debe completar las secciones II, III y V. De haber marcado "Transferencia de Licencia de Funcionamiento", debe adjuntar una copia simple del contrato de transferencia y solo debe completar las secciones II, III y V.</p>
+          <p><strong>Nota:</strong> Si el establecimiento ya cuenta con una licencia de funcionamiento y el titular o un tercero va a realizar alguna de las actividades simultáneas y adicionales establecidas por el Ministerio de la Producción en el Numeral II denominado "Listado de actividades simultáneas y adicionales que pueden desarrollarse con la presentación de una declaración jurada ante las municipalidades" de los Lineamientos para determinar los giros afines o complementarios entre sí para el otorgamiento de licencias de funcionamiento y listado de actividades simultáneas y adicionales que pueden desarrollarse con la presentación de una declaración jurada ante las municipalidades, aprobados por el artículo 1 del Decreto Supremo Nº 011-2017-PRODUCE y sus modificatorias, no corresponde utilizar este Formato sino el "Formato de Declaración Jurada para informar el desarrollo de actividades simultáneas y adicionales a la licencia de funcionamiento". Si el establecimiento ya cuenta con una licencia de funcionamiento, el titular puede realizar actividades de cajero corresponsal sin necesidad de solicitar una modificación, ampliación o nueva licencia de funcionamiento ni realizar ningún trámite adicional.</p>
+          <p><strong>Sección II:</strong> En caso de persona natural, consignar los datos personales del solicitante. En caso de persona jurídica, consignar la razón social y el número de RUC.</p>
+          <p><strong>Sección III:</strong> En caso de representación de personas naturales, adjuntar carta poder simple firmada por el poderdante indicando de manera obligatoria su número de documento de identidad. En caso de representación de personas jurídicas consignar los datos del representante legal, número de partida electrónica y asiento de inscripción en la Superintendencia Nacional de los Registros Públicos (SUNARP).</p>
+          <p><strong>Sección IV:</strong> Consignar los datos del establecimiento, el tipo de actividad a desarrollar y la zonificación. Los campos correspondientes al "Código CIIU" y "Giro/s" son completados por el representante de la municipalidad. Para aquellas actividades que, conforme al D.S. N° 006-2013-PCM, requieran autorización sectorial previa al otorgamiento de la licencia de funcionamiento, consignar los datos de la autorización sectorial. Consignar el área total del establecimiento para el que se solicita la licencia de funcionamiento. Consignar en el croquis la ubicación exacta del establecimiento.</p>
+          <p><strong>Sección V:</strong> De corresponder, marcar con una X.</p>
+          <p><strong>Sección VI:</strong> Sección llenada por el calificador designado de la municipalidad, de acuerdo con los anexos 2 y 3 del Manual de Ejecución de Inspección Técnica de Seguridad en Edificaciones.</p>
+        </div>
+      </section>
+
+      <!-- Pie de Página 2 -->
+      <footer class="hoja-footer">
+        <span class="footer-note">Municipalidad Provincial de Huamanga — Portal de Licencias Digitales</span>
+        <span class="footer-pager">Página 2 de 2</span>
+      </footer>
+    </article>
+
+  </main>
+
+  <!-- Modal / Toast de Notificación -->
+  <div id="toastNotification" class="toast-box no-print">
+    <div class="toast-icon" id="toastIcon">ℹ️</div>
+    <div class="toast-message" id="toastMessage">Operación realizada con éxito</div>
+  </div>
+
+  <script src="js/formato-anexo1.js"></script>
+</body>
+</html>

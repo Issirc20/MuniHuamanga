@@ -1,15 +1,13 @@
 package pe.gob.munihuamanga.licencias.common.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class LoginRequestDto {
 
     @NotBlank(message = "El nombre de usuario es obligatorio")
@@ -17,4 +15,12 @@ public class LoginRequestDto {
 
     @NotBlank(message = "La contraseña es obligatoria")
     private String password;
+
+    public LoginRequestDto() {
+    }
+
+    public LoginRequestDto(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
 }

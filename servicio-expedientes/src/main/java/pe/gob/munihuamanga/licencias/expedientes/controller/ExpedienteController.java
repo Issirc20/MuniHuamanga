@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,7 +44,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/expedientes")
-@RequiredArgsConstructor
 @Tag(name = "Expedientes", description = "Endpoints para la gestión, seguimiento, formatos PDF y transiciones del trámite")
 public class ExpedienteController {
 
@@ -53,6 +53,18 @@ public class ExpedienteController {
     private final CalculadoraDeTasa calculadoraDeTasa;
     private final DocumentoPdfService documentoPdfService;
 
+    public ExpedienteController(ExpedienteService expedienteService,
+                                ExpedienteMapper expedienteMapper,
+                                AuditoriaService auditoriaService,
+                                CalculadoraDeTasa calculadoraDeTasa,
+                                DocumentoPdfService documentoPdfService) {
+        this.expedienteService = expedienteService;
+        this.expedienteMapper = expedienteMapper;
+        this.auditoriaService = auditoriaService;
+        this.calculadoraDeTasa = calculadoraDeTasa;
+        this.documentoPdfService = documentoPdfService;
+    }
+
     @PostMapping
     @Operation(summary = "Mesa de Partes Virtual: Registrar nueva solicitud de licencia")
     public ResponseEntity<ExpedienteResponseDto> crearExpediente(@Valid @RequestBody CrearExpedienteDto dto) {
@@ -61,6 +73,7 @@ public class ExpedienteController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpediente(authentication, #id)")
     @Operation(summary = "Consultar expediente por identificador UUID")
     public ResponseEntity<ExpedienteResponseDto> obtenerPorId(@PathVariable UUID id) {
         Expediente expediente = expedienteService.obtenerPorId(id);
@@ -74,7 +87,16 @@ public class ExpedienteController {
         return ResponseEntity.ok(expedienteMapper.toSeguimientoDto(expediente));
     }
 
+    @GetMapping("/detalle/{numeroTramite}")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpedientePorTramite(authentication, #numeroTramite)")
+    @Operation(summary = "Consultar detalle completo de expediente por número de trámite para formatos oficiales")
+    public ResponseEntity<ExpedienteResponseDto> obtenerDetallePorNumeroTramite(@PathVariable String numeroTramite) {
+        Expediente expediente = expedienteService.obtenerPorNumeroTramite(numeroTramite);
+        return ResponseEntity.ok(expedienteMapper.toDto(expediente));
+    }
+
     @GetMapping
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN', 'CAJERO')")
     @Operation(summary = "Listar expedientes con filtros opcionales de estado y alertas de vencimiento")
     public ResponseEntity<List<ExpedienteResponseDto>> listarExpedientes(
             @RequestParam(required = false) UUID solicitanteId,
@@ -93,12 +115,14 @@ public class ExpedienteController {
     }
 
     @GetMapping("/{id}/historial")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpediente(authentication, #id)")
     @Operation(summary = "Auditoría: Consultar historial cronológico de estados y motivos")
     public ResponseEntity<List<HistorialEstadoDto>> obtenerHistorial(@PathVariable UUID id) {
         return ResponseEntity.ok(expedienteMapper.toHistorialDtoList(auditoriaService.obtenerHistorial(id)));
     }
 
     @GetMapping("/{id}/desglose-tasa")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpediente(authentication, #id)")
     @Operation(summary = "US-06: Consultar desglose de conceptos tributarios TUPA según nivel de riesgo")
     public ResponseEntity<Map<String, BigDecimal>> obtenerDesgloseTasa(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -106,8 +130,9 @@ public class ExpedienteController {
         return ResponseEntity.ok(calculadoraDeTasa.calcularDesglose(riesgo));
     }
 
-    @GetMapping("/{id}/documentos/anexo1-declaracion-jurada")
-    @Operation(summary = "Fase 2: Descargar en PDF el Anexo 1 oficial de 2 páginas (Ley N° 28976 / D.S. N° 046-2017-PCM)")
+    @GetMapping({ "/{id}/documentos/anexo1", "/{id}/documentos/anexo1-declaracion-jurada", "/{id}/documentos/declaracion-jurada" })
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
+    @Operation(summary = "Descargar en PDF el Anexo 1 oficial de 2 páginas: Declaración Jurada para Licencia (Ley N° 28976 / D.S. N° 046-2017-PCM)")
     public ResponseEntity<byte[]> descargarAnexo1DeclaracionJurada(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
         ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
@@ -120,6 +145,7 @@ public class ExpedienteController {
     }
 
     @GetMapping("/{id}/documentos/anexo3-matriz-riesgo-itse")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Fase 2: Descargar en PDF el Anexo 3 oficial (Matriz de Riesgo ITSE de 2 páginas según D.S. N° 002-2018-PCM)")
     public ResponseEntity<byte[]> descargarAnexo3MatrizRiesgoItse(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -133,6 +159,7 @@ public class ExpedienteController {
     }
 
     @GetMapping("/{id}/documentos/anexo4-condiciones-seguridad")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Fase 2: Descargar en PDF el Anexo 4 oficial (Declaración Jurada de Condiciones de Seguridad de 4 páginas)")
     public ResponseEntity<byte[]> descargarAnexo4CondicionesSeguridad(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -145,20 +172,8 @@ public class ExpedienteController {
                 .body(pdf);
     }
 
-    @GetMapping("/{id}/documentos/declaracion-jurada")
-    @Operation(summary = "US-05: Descargar en PDF el Anexo 1 oficial: Declaración Jurada para Licencia")
-    public ResponseEntity<byte[]> descargarDeclaracionJurada(@PathVariable UUID id) {
-        Expediente exp = expedienteService.obtenerPorId(id);
-        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
-        byte[] pdf = documentoPdfService.generarDeclaracionJurada(dto);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=DeclaracionJurada-" + exp.getNumeroTramite() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
     @GetMapping("/{id}/documentos/voucher-sat")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "US-07: Descargar en PDF la Orden de Pago SAT con código de barras")
     public ResponseEntity<byte[]> descargarVoucherSat(@PathVariable UUID id) {
         VoucherDto voucher = expedienteService.generarVoucher(id);
@@ -171,6 +186,7 @@ public class ExpedienteController {
     }
 
     @GetMapping("/{id}/documentos/licencia")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "US-09: Descargar en PDF el Certificado Oficial de Licencia de Funcionamiento con QR y Sello Digital")
     public ResponseEntity<byte[]> descargarLicencia(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -188,6 +204,7 @@ public class ExpedienteController {
     }
 
     @GetMapping(value = {"/{id}/qr", "/{id}/documentos/licencia-qr", "/{id}/documentos/qr"}, produces = MediaType.IMAGE_PNG_VALUE)
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "US-10: Obtener la imagen PNG del código QR único de la licencia emitida")
     public ResponseEntity<byte[]> obtenerImagenQrExpediente(
             @PathVariable UUID id,
@@ -203,6 +220,7 @@ public class ExpedienteController {
             value = {"/{id}/clasificar-riesgo", "/{id}/clasificacion-riesgo"},
             method = {org.springframework.web.bind.annotation.RequestMethod.PATCH, org.springframework.web.bind.annotation.RequestMethod.POST}
     )
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
     @Operation(summary = "Defensa Civil: Registrar clasificación de riesgo ITSE y calcular tasa")
     public ResponseEntity<Void> registrarClasificacionRiesgo(
             @PathVariable UUID id,
@@ -216,6 +234,7 @@ public class ExpedienteController {
             value = {"/{id}/voucher", "/{id}/generar-voucher"},
             method = {org.springframework.web.bind.annotation.RequestMethod.POST, org.springframework.web.bind.annotation.RequestMethod.GET}
     )
+    @PreAuthorize("hasAnyRole('CAJERO', 'EVALUADOR', 'ADMIN')")
     @Operation(summary = "SAT: Generar voucher / orden de pago de la tasa administrativa")
     public ResponseEntity<VoucherDto> generarVoucher(@PathVariable UUID id) {
         VoucherDto voucher = expedienteService.generarVoucher(id);
@@ -223,6 +242,7 @@ public class ExpedienteController {
     }
 
     @PostMapping(value = {"/{id}/pago", "/{id}/registrar-pago"})
+    @PreAuthorize("hasAnyRole('CAJERO', 'ADMIN')")
     @Operation(summary = "SAT / Tesorería: Registrar constancia de pago de la tasa")
     public ResponseEntity<Void> registrarPago(
             @PathVariable UUID id,
@@ -233,6 +253,7 @@ public class ExpedienteController {
     }
 
     @PostMapping(value = {"/{id}/aprobar", "/{id}/emision-licencia"})
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
     @Operation(summary = "Gerencia de Licencias: Dictamen final favorable y emisión de licencia con QR")
     public ResponseEntity<Void> aprobar(@PathVariable UUID id) {
         expedienteService.aprobar(id);
@@ -240,6 +261,7 @@ public class ExpedienteController {
     }
 
     @PostMapping("/{id}/rechazar")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
     @Operation(summary = "Gerencia de Licencias: Dictamen de rechazo / denegatoria de licencia")
     public ResponseEntity<Void> rechazar(
             @PathVariable UUID id,
@@ -250,6 +272,7 @@ public class ExpedienteController {
     }
 
     @PostMapping("/{id}/observar")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
     @Operation(summary = "Gerencia de Licencias / Evaluador: Formular observaciones técnicas o documentales (Ley N° 27444 LPAG)")
     public ResponseEntity<Void> observar(
             @PathVariable UUID id,
@@ -260,6 +283,7 @@ public class ExpedienteController {
     }
 
     @PostMapping("/{id}/subsanar")
+    @PreAuthorize("@expedienteSecurity.puedeSubsanar(authentication, #id)")
     @Operation(summary = "Mesa de Partes / Administrado: Subsanación formal de observaciones (Art. 136 Ley N° 27444)")
     public ResponseEntity<Void> subsanar(
             @PathVariable UUID id,

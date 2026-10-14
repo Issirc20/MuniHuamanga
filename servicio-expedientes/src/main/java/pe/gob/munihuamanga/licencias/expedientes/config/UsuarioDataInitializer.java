@@ -51,6 +51,30 @@ public class UsuarioDataInitializer implements CommandLineRunner {
                 "rosa.flores@sat-huamanga.gob.pe",
                 RolUsuario.ROLE_CAJERO
         );
+
+        crearUsuarioSiNoExiste(
+                "inspector",
+                "insp123",
+                "Téc. Raúl Cárdenas - Inspector Municipal",
+                "raul.cardenas@munihuamanga.gob.pe",
+                RolUsuario.ROLE_INSPECTOR
+        );
+
+        crearUsuarioSiNoExiste(
+                "42567891",
+                "ciud123",
+                "María Quispe Huamán - Administrada Titular",
+                "maria.quispe@gmail.com",
+                RolUsuario.ROLE_CIUDADANO
+        );
+
+        crearUsuarioSiNoExiste(
+                "78999999",
+                "ciud123",
+                "Juan Pérez Otro - Administrado No Propietario",
+                "juan.perez@gmail.com",
+                RolUsuario.ROLE_CIUDADANO
+        );
     }
 
     private void crearUsuarioSiNoExiste(

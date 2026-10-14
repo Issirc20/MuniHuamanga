@@ -59,59 +59,62 @@ public class SecurityConfig {
                         // 1. Archivos estáticos y páginas web públicas
                         .requestMatchers(
                                 "/", "/index.html", "/portal-ciudadano.html",
-                                "/portal-interno.html", "/verificar-licencia.html",
+                                "/formato-anexo1.html", "/portal-interno.html", "/verificar-licencia.html",
                                 "/favicon.ico", "/css/**", "/js/**", "/img/**"
                         ).permitAll()
 
                         // 2. Endpoint público de autenticación
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // 3. Mesa de partes virtual pública (registro), consulta y subsanación ciudadana (H07 / LPAG)
-                        .requestMatchers(HttpMethod.POST, "/api/expedientes").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/expedientes/*/subsanar").permitAll()
-                        .requestMatchers("/api/expedientes/tramite/**").permitAll()
+                        // 3. Verificación pública QR con minimización de datos (RNF-SEG-007 / CA-09)
+                        // La vista ampliada requiere rol de INSPECTOR, EVALUADOR o ADMIN (CA-10)
+                        .requestMatchers("/api/public/licencias/*/ampliada", "/api/public/verificar/*/ampliada")
+                                .hasAnyRole("INSPECTOR", "EVALUADOR", "ADMIN")
                         .requestMatchers("/api/public/**").permitAll()
 
-                        // 4. Documentación Swagger / OpenAPI y Health Check
+                        // 4. Seguimiento ciudadano público acotado (H07 / Ley N° 29733 - Datos ofuscados)
+                        .requestMatchers("/api/expedientes/tramite/**").permitAll()
+
+                        // 5. Mesa de partes virtual pública (registro de nueva solicitud)
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes").permitAll()
+
+                        // 6. Formularios PDF bajo demanda en memoria sin ID (plantillas de preview)
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/formularios/declaracion-jurada",
+                                "/api/formularios/anexo1-declaracion-jurada",
+                                "/api/formularios/anexo3-matriz-riesgo",
+                                "/api/formularios/anexo3-matriz-riesgo-itse",
+                                "/api/formularios/anexo4-condiciones",
+                                "/api/formularios/anexo4-condiciones-seguridad",
+                                "/api/formularios/voucher-sat").permitAll()
+
+                        // 7. Tarifario TUPA: Consulta pública, Mantenimiento exclusivo ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
+                        .requestMatchers("/api/tupa/**").hasRole("ADMIN")
+
+                        // 8. Documentación Swagger / OpenAPI y Health Check
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers("/h2-console/**").permitAll()
 
-                        // 5. Descargas de documentos ciudadanos
-                        .requestMatchers("/api/expedientes/*/documentos/declaracion-jurada",
-                                         "/api/expedientes/*/documentos/voucher-sat",
-                                         "/api/expedientes/*/documentos/licencia",
-                                         "/api/expedientes/*/qr").permitAll()
-
-                        // 6. Formularios PDF generales (Anexos 1, 3, 4) y Licencia oficial (H08)
-                        .requestMatchers("/api/formularios/declaracion-jurada",
-                                         "/api/formularios/anexo3-matriz-riesgo",
-                                         "/api/formularios/anexo4-condiciones",
-                                         "/api/formularios/voucher-sat").permitAll()
-                        .requestMatchers("/api/formularios/licencia/**").hasAnyRole("EVALUADOR", "ADMIN")
-
-                        // 7. Tarifario TUPA: Consulta pública / funcionarios, Mantenimiento exclusivo ADMIN
-                        .requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll()
-                        .requestMatchers("/api/tupa/**").hasRole("ADMIN")
-
-                        // 8. Integraciones y Adaptadores (H10): Solo funcionarios autorizados
+                        // 9. Integraciones y Adaptadores: Solo funcionarios autorizados
                         .requestMatchers("/api/integraciones/**").hasAnyRole("EVALUADOR", "ADMIN", "CAJERO")
 
-                        // 9. Operaciones restringidas por rol funcional municipal (RBAC - H01)
+                        // 10. Operaciones restringidas por rol funcional municipal (RBAC - H01)
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/pago", "/api/expedientes/*/registrar-pago").hasAnyRole("CAJERO", "ADMIN")
                         .requestMatchers("/api/expedientes/*/clasificar-riesgo", "/api/expedientes/*/clasificacion-riesgo").hasAnyRole("EVALUADOR", "ADMIN")
                         .requestMatchers("/api/expedientes/*/voucher", "/api/expedientes/*/generar-voucher").hasAnyRole("EVALUADOR", "CAJERO", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/aprobar", "/api/expedientes/*/emision-licencia").hasAnyRole("EVALUADOR", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/expedientes/*/rechazar", "/api/expedientes/*/observar").hasAnyRole("EVALUADOR", "ADMIN")
+                        .requestMatchers("/api/formularios/licencia/**").hasAnyRole("EVALUADOR", "ADMIN")
 
-                        // 10. Consultas de expedientes internas protegidas por rol (H01)
-                        .requestMatchers(HttpMethod.GET, "/api/expedientes/**").hasAnyRole("EVALUADOR", "ADMIN", "CAJERO")
-
-                        // 11. Cualquier otra mutación de expedientes requiere autenticación
+                        // 11. Consultas y descargas de expedientes: Requieren autenticación y verificación a nivel de objeto (@PreAuthorize)
+                        .requestMatchers(HttpMethod.GET, "/api/expedientes/**").authenticated()
                         .requestMatchers("/api/expedientes/**").authenticated()
+                        .requestMatchers("/api/formularios/**").authenticated()
 
-                        // 12. Regla Default-Deny: cualquier otra petición exige autenticación (H05)
+                        // 12. Regla Default-Deny: cualquier otra petición exige autenticación estricta (H05)
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

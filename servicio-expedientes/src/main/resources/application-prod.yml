@@ -13,6 +13,9 @@ server:
 
 spring:
   datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
       maximum-pool-size: 25
       minimum-idle: 10
@@ -54,3 +57,8 @@ logging:
     pe.gob.munihuamanga.licencias: INFO
     org.springframework.security: WARN
     org.hibernate: WARN
+
+# Seguridad JWT: En producción es obligatorio definir la variable de entorno JWT_SECRET
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: ${JWT_EXPIRATION_MS:28800000}
