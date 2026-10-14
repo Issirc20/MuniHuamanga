@@ -150,7 +150,7 @@ class DocumentoPdfServiceCompletoTest {
                 .fechaLimite(LocalDateTime.now().plusDays(21))
                 .build();
 
-        byte[] pdfBytes = documentoPdfService.generarDeclaracionJurada(exp);
+        byte[] pdfBytes = documentoPdfService.generarAnexo1DeclaracionJurada(exp);
 
         assertNotNull(pdfBytes);
         assertTrue(pdfBytes.length > 1000, "El PDF debe tener contenido estructurado");

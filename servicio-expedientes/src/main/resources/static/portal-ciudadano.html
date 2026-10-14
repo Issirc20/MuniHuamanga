@@ -20,6 +20,7 @@
     </div>
     <nav class="app-nav">
       <a href="portal-ciudadano.html" class="active">Portal Ciudadano</a>
+      <a href="formato-anexo1.html">📋 Anexo 1 (Formato DJ)</a>
       <a href="portal-interno.html">Gestión Interna</a>
       <a href="/swagger-ui.html" target="_blank">Swagger API</a>
     </nav>
@@ -28,13 +29,16 @@
   <main class="container">
 
     <!-- Navegación por pestañas principales -->
-    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
       <button id="tabBtnRegistro" class="btn btn-primary" onclick="mostrarPestana('registro')">
         📝 Mesa de Partes Virtual (Nueva Solicitud)
       </button>
       <button id="tabBtnSeguimiento" class="btn btn-secondary" onclick="mostrarPestana('seguimiento')">
         🔍 Seguimiento en Línea de Expediente
       </button>
+      <a href="formato-anexo1.html" class="btn btn-secondary" style="background: #fffde7; color: #854d0e; border: 1.5px solid #fde047; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+        📋 Abrir Formato Oficial Anexo 1 (Imprimir / Descargar PDF) →
+      </a>
     </div>
 
     <!-- ======================================================
@@ -216,9 +220,14 @@
               <div class="doc-card-desc">
                 Formulario de 2 páginas. Declaración jurada del solicitante conforme al D.S. N° 046-2017-PCM para el trámite de licencia de funcionamiento.
               </div>
-              <button class="btn btn-primary" id="btnAnexo1" onclick="descargarAnexo('declaracion-jurada')">
-                ⬇ Descargar Anexo 1 (PDF)
-              </button>
+              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+                <button class="btn btn-primary" id="btnAnexo1" onclick="descargarAnexo('declaracion-jurada')">
+                  ⬇ Descargar Anexo 1 (PDF)
+                </button>
+                <a href="#" id="linkVerAnexo1" class="btn btn-secondary btn-sm" onclick="verAnexo1Interactivo(event)" style="text-align: center; text-decoration: none; background: #fffde7; border-color: #fde047; color: #854d0e; font-weight: 700;">
+                  📄 Ver / Imprimir Formato Llenado →
+                </a>
+              </div>
             </div>
 
             <!-- Anexo 3 -->

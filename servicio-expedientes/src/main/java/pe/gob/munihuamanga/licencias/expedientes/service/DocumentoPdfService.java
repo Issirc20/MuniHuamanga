@@ -36,13 +36,22 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DocumentoPdfService {
 
     private final Anexo1PdfGenerator anexo1PdfGenerator;
     private final Anexo3PdfGenerator anexo3PdfGenerator;
     private final Anexo4PdfGenerator anexo4PdfGenerator;
     private final LicenciaPdfGenerator licenciaPdfGenerator;
+
+    public DocumentoPdfService(Anexo1PdfGenerator anexo1PdfGenerator,
+                               Anexo3PdfGenerator anexo3PdfGenerator,
+                               Anexo4PdfGenerator anexo4PdfGenerator,
+                               LicenciaPdfGenerator licenciaPdfGenerator) {
+        this.anexo1PdfGenerator = anexo1PdfGenerator;
+        this.anexo3PdfGenerator = anexo3PdfGenerator;
+        this.anexo4PdfGenerator = anexo4PdfGenerator;
+        this.licenciaPdfGenerator = licenciaPdfGenerator;
+    }
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")
     private String portalVerificacionUrl;
@@ -51,10 +60,6 @@ public class DocumentoPdfService {
     private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public byte[] generarAnexo1DeclaracionJurada(ExpedienteResponseDto expediente) {
-        return anexo1PdfGenerator.generarPdf(expediente);
-    }
-
-    public byte[] generarDeclaracionJurada(ExpedienteResponseDto expediente) {
         return anexo1PdfGenerator.generarPdf(expediente);
     }
 

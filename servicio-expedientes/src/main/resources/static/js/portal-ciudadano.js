@@ -311,6 +311,16 @@ async function descargarAnexo(tipoFormato) {
   }
 }
 
+function verAnexo1Interactivo(event) {
+  if (event) event.preventDefault();
+  const exp = wizardState.expedienteRegistrado;
+  if (exp && exp.numeroTramite) {
+    window.location.href = `formato-anexo1.html?tramite=${encodeURIComponent(exp.numeroTramite)}`;
+  } else {
+    window.location.href = 'formato-anexo1.html';
+  }
+}
+
 // =============================================================================
 // MESA DE AYUDA / GUÍA DE LLENADO DE ANEXOS 3 Y 4 (FASE PREPARATORIA)
 // =============================================================================
