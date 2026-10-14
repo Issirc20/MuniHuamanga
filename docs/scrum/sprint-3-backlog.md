@@ -1,6 +1,6 @@
 # Sprint 3 Backlog — Evaluación Técnica, Licencia Oficial con QR y Verificación Pública
 
-**Objetivo del Sprint:**  
+**Objetivo del Sprint:**
 Completar el flujo de resolución de licencias de funcionamiento por parte de la Gerencia de Licencias, emisión del Certificado Oficial de Licencia de Funcionamiento en formato PDF con firma digital simulada y código QR estampado (ZXing), e implementación del Portal Público de Verificación de Licencias en Tiempo Real (RNF-20 / RNF-02).
 
 ---
@@ -12,7 +12,7 @@ Completar el flujo de resolución de licencias de funcionamiento por parte de la
 - **US-11:** Portal Público de Verificación de Licencia RNF-20 (5 SP) — **Completada**
 - **US-12:** Seguimiento Ciudadano en Línea Enriquecido (5 SP) — **Completada**
 
-**Total Story Points del Sprint 3:** 23 SP  
+**Total Story Points del Sprint 3:** 23 SP
 **Story Points Acumulados del Proyecto:** 60 SP
 
 ---

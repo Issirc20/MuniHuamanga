@@ -1,8 +1,8 @@
 # Informe de Auditoría de Código y Resolución de Problemas de Calidad
 
-**Proyecto:** MuniHuamanga — Sistema de Gestión Digital de Licencias de Funcionamiento  
-**Fecha:** Octubre 2026  
-**Entorno de Ejecución:** Java 21 LTS | Spring Boot 3.3.4 | Multi-Módulo Maven  
+**Proyecto:** MuniHuamanga — Sistema de Gestión Digital de Licencias de Funcionamiento
+**Fecha:** Octubre 2026
+**Entorno de Ejecución:** Java 21 LTS | Spring Boot 3.3.4 | Multi-Módulo Maven
 **Estado:** 100% de advertencias y problemas resueltos (0 problemas, 80/80 tests passing)
 
 ---

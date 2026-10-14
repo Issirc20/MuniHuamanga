@@ -1,7 +1,7 @@
 # INFORME DE AUDITORÍA INTEGRAL DE SOFTWARE Y SEGURIDAD
 ## Sistema de Gestión Digital de Licencias de Funcionamiento — MuniHuamanga
-**Versión del Proyecto:** `v0.8.0` → Certificado en `v0.9.0-rc1`  
-**Fecha de Auditoría:** 09 de Octubre de 2026  
+**Versión del Proyecto:** `v0.8.0` → Certificado en `v0.9.0-rc1`
+**Fecha de Auditoría:** 09 de Octubre de 2026
 **Equipo Auditor:** Arquitectura de Software, Ciberseguridad & OWASP, Backend Java/Spring Boot, Frontend, DBA PostgreSQL, QA Automatización, DevOps y Especialista en Sistemas Municipales del Perú.
 
 ---
@@ -136,6 +136,6 @@ A lo largo del plan de 5 fases de estabilización, se mitigaron y cerraron **el 
 
 Habiéndose ejecutado satisfactoriamente las **5 Fases del Plan de Auditoría Integral** y subsanado el **100% de los 16 hallazgos técnicos**, el equipo auditor dictamina:
 
-> **DICTAMEN TÉCNICO:**  
-> El sistema de **Gestión Digital de Licencias de Funcionamiento de la Municipalidad Provincial de Huamanga** queda formalmente **CERTIFICADO Y HOMOLOGADO** para su versión **`v0.9.0-rc1`**.  
+> **DICTAMEN TÉCNICO:**
+> El sistema de **Gestión Digital de Licencias de Funcionamiento de la Municipalidad Provincial de Huamanga** queda formalmente **CERTIFICADO Y HOMOLOGADO** para su versión **`v0.9.0-rc1`**.
 > El aplicativo cumple con las directrices de seguridad OWASP ASVS, los estándares de la Ley N° 28976 / D.S. N° 002-2018-PCM / Ley N° 27444 LPAG, y la capacidad de concurrencia y disponibilidad requerida para el servicio a la ciudadanía de Huamanga.

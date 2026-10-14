@@ -1,9 +1,9 @@
 # Auditoría Inicial del Repositorio — MuniHuamanga V2
 
-Municipalidad Provincial de Huamanga — Gerencia de Licencias  
-**Fecha de Auditoría:** 13 de octubre de 2026  
-**Rama:** `develop/munihuamanga-v2`  
-**Auditor:** Arquitecto de Software Senior & Ingeniero Full Stack  
+Municipalidad Provincial de Huamanga — Gerencia de Licencias
+**Fecha de Auditoría:** 13 de octubre de 2026
+**Rama:** `develop/munihuamanga-v2`
+**Auditor:** Arquitecto de Software Senior & Ingeniero Full Stack
 **Documentos Rectores:** [ERS-MH-V2-001 v1.0] y [DAS-MH-V2-001 v1.0]
 
 ---
@@ -129,7 +129,7 @@ En `pe.gob.munihuamanga.licencias.expedientes.integracion`:
 - `SatAdapterService` simula conciliación automática, contraviniendo la regla de que el registro de comprobantes es manual y la validación es potestad del cajero/funcionario de Licencias.
 
 ### 6.2 Firma Digital
-Actualmente la emisión de licencia en `LicenciaPdfGenerator` estampa un texto visual de "Sello Digital MPH".  
+Actualmente la emisión de licencia en `LicenciaPdfGenerator` estampa un texto visual de "Sello Digital MPH".
 Conforme al DAS V2 (**DA-04** y **RF-LIC-003**), la firma digital debe realizarse a través de un adaptador hacia el servicio institucional de firma digital. Si el servicio aún no está disponible, se debe mantener una interfaz desacoplada y bloquear la emisión oficial en lugar de generar firmas digitales falsas.
 
 ---
@@ -148,5 +148,5 @@ La suite actual en `servicio-expedientes/src/test` cuenta con:
 - `EstadoExpedienteValidatorTest`: 10 pruebas (máquina de estados).
 - `MesaPartesValidationTest`: 6 pruebas (validaciones de entrada DTO).
 
-**Total de Pruebas:** 104 pruebas exitosas.  
+**Total de Pruebas:** 104 pruebas exitosas.
 **Brecha de Pruebas para V2:** Se requiere incorporar pruebas de seguridad BOLA/IDOR (intentos de acceso cruzado entre ciudadanos), pruebas de idempotencia en presentación, pruebas de minimización de datos en QR y pruebas de validación manual de pagos.

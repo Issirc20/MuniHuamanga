@@ -1,273 +1,154 @@
 # 02. Historias de Usuario (User Stories)
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
-### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
+### Municipalidad Provincial de Huamanga (Ayacucho, Perú) — Versión 2.0
 
-> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM  
+> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / Ley N° 27444 / Ley N° 27269 / Ley N° 29733
+> **Plataforma:** Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 16, Spring Security 6 (RBAC)
 > **Ubicación:** `docs/analisis-de-sistema/02-historias-del-usuario.md`
+> **Estado:** Documento Canónico Vigente V2
 
 ---
 
 ## 1. Introducción y Convención de Estructura
 
-Las historias de usuario capturan las necesidades funcionales desde la perspectiva de los diferentes roles y actores del sistema. Cada historia sigue el formato estándar ágil:
+Las historias de usuario capturan las necesidades funcionales desde la perspectiva de los diferentes roles y actores de MuniHuamanga V2. Cada historia sigue el formato estándar ágil:
 - **Narrativa:** *Como [Actor], quiero [Acción / Funcionalidad], para [Beneficio / Valor de Negocio].*
 - **Criterios de Aceptación:** Especificados con el formato *Dado que... Cuando... Entonces...* (BDD / Gherkin).
 - **Prioridad MoSCoW:** Must Have (Debe tener), Should Have (Debería tener), Could Have (Podría tener), Won't Have (No tendrá en esta fase).
-- **Contexto Delimitado (Bounded Context):** Módulo de la arquitectura responsable de su implementación.
+- **Bounded Context / Módulo V2:** Módulo responsable en la arquitectura de monolito modular (M01–M12).
 
 ---
 
-## 2. Matriz Resumen de Historias de Usuario
+## 2. Matriz Consolidada de Historias de Usuario V2
 
-| ID | Título de la Historia de Usuario | Actor Principal | Prioridad | Bounded Context | Puntos (SP) |
-|---|---|---|:---:|---|:---:|
-| **US-01** | Registro de Solicitud en Wizard 3 Pasos | Administrado | **MUST** | `expedientes` | 8 |
-| **US-02** | Determinación Objetiva de Nivel de Riesgo ITSE | Sistema / Inspector | **MUST** | `expedientes` | 5 |
-| **US-03** | Cálculo Automatizado de Tasas TUPA | Sistema / Administrado | **MUST** | `tupa` | 5 |
-| **US-04** | Liquidación y Generación de Voucher SAT | Administrado / SAT | **MUST** | `expedientes` | 3 |
-| **US-05** | Renderizado en Memoria de Anexos 1, 3 y 4 en PDF | Administrado | **MUST** | `documentos` | 8 |
-| **US-06** | Conciliación y Registro de Pago de Tasa | Cajero SAT | **MUST** | `expedientes` | 5 |
-| **US-07** | Evaluación Técnica y Zonificación Comercial | Evaluador Técnico | **MUST** | `expedientes` | 5 |
-| **US-08** | Registro de Dictamen Técnico de Inspección ITSE | Inspector CENEPRED | **MUST** | `integracion` | 5 |
-| **US-09** | Emisión y Generación del Certificado Oficial PDF | Gerente de Licencias | **MUST** | `documentos` | 8 |
-| **US-10** | Generación de Código QR de Verificación | Sistema / ZXing | **MUST** | `verificacion` | 3 |
-| **US-11** | Consulta Pública de Autenticidad QR (RNF-20) | Fiscalizador / Público | **MUST** | `verificacion` | 5 |
-| **US-12** | Notificaciones Asíncronas por Correo Electrónico | Sistema / Administrado | **SHOULD** | `expedientes` | 5 |
-| **US-13** | Mantenimiento en Caliente del Tarifario TUPA | Administrador TI | **SHOULD** | `tupa` | 5 |
-| **US-14** | Autenticación Segura y Control de Acceso RBAC | Funcionario Municipal | **MUST** | `seguridad` | 5 |
-| **US-15** | Asistente Guiado y Mesa de Ayuda para Anexos Físicos | Administrado | **COULD** | `documentos` | 3 |
+| ID | Título de la Historia de Usuario | Actor Principal | Prioridad | Módulo V2 | Estado |
+|---|---|---|:---:|:---:|:---:|
+| **US-01** | Registro de Solicitud en Wizard 3 Pasos (Anexo 1) | Administrado | **MUST** | M03 | Implementado |
+| **US-02** | Determinación Objetiva de Nivel de Riesgo ITSE | Sistema / Evaluador | **MUST** | M03 / M07 | Implementado |
+| **US-03** | Cálculo Automatizado de Tasas TUPA | Sistema / Administrado | **MUST** | M05 | Implementado |
+| **US-04** | Liquidación y Generación de Voucher SAT | Administrado / SAT | **MUST** | M04 | Implementado |
+| **US-05** | Renderizado en Memoria de Anexos 1, 3 y 4 en PDF | Administrado | **MUST** | M03 | Implementado |
+| **US-06** | Conciliación y Registro Manual de Pago de Tasa | Cajero SAT | **MUST** | M04 | Implementado |
+| **US-07** | Evaluación Técnica y Zonificación Comercial PDU | Evaluador Técnico | **MUST** | M06 | Implementado |
+| **US-08** | Registro de Dictamen Técnico de Inspección ITSE | Evaluador / Inspector | **MUST** | M07 | Implementado |
+| **US-09** | Emisión Atómica de Licencia Oficial con Correlativo Anual | Gerente / Evaluador | **MUST** | M09 | Implementado |
+| **US-10** | Generación de Código QR Dinámico No Enumerable | Sistema / ZXing | **MUST** | M10 | Implementado |
+| **US-11** | Consulta Pública de Autenticidad QR Minimizada (Ley 29733) | Ciudadano / General | **MUST** | M10 | Implementado |
+| **US-12** | Notificaciones Asíncronas por Correo Electrónico | Sistema / Administrado | **SHOULD** | M07 | Implementado |
+| **US-13** | Mantenimiento en Caliente del Tarifario TUPA | Administrador TI | **SHOULD** | M05 | Implementado |
+| **US-14** | Autenticación Segura y Control de Acceso RBAC | Funcionario Municipal | **MUST** | M01 | Implementado |
+| **US-15** | Asistente Guiado y Mesa de Ayuda para Anexos Físicos | Administrado | **COULD** | M03 | Implementado |
+| **US-16** | Gestión de Cuentas Ciudadanas y Múltiples Establecimientos | Administrado | **MUST** | M01 | Implementado |
+| **US-17** | Solicitud Borrador Autoguardada y Presentación Formal | Administrado | **MUST** | M02 | Implementado |
+| **US-18** | Subsanación con Documentos Versionados y Hash SHA-256 | Administrado | **MUST** | M03 | Implementado |
+| **US-19** | Validación Manual de Pagos con Estados Diferenciados | Cajero SAT | **MUST** | M04 | Implementado |
+| **US-20** | Rectificación de Ubicación Georreferenciada de Locales | Administrado / Evaluador | **SHOULD** | M06 | Implementado |
+| **US-21** | Resolución Administrativa y Firma Digital Fail-Closed | Autoridad Resolutiva | **MUST** | M08 | Implementado |
+| **US-22** | Verificación Móvil con Mapa Interactivo para Inspectores | Inspector Municipal | **MUST** | M10 | Implementado |
+| **US-23** | Presentación y Resolución de Reclamaciones Administrativas | Administrado / Evaluador | **SHOULD** | M11 | Backend Implementado |
 
 ---
 
-## 3. Especificación Detallada de Historias de Usuario
+## 3. Especificación Detallada de Historias de Usuario V2
 
 ### US-01: Registro de Solicitud en Mesa de Partes Virtual (Wizard 3 Pasos)
 * **Narrativa:**
-  > **Como** ciudadano o representante legal de un negocio en Huamanga,  
-  > **quiero** registrar mi solicitud de licencia completando un formulario interactivo por pasos (Wizard),  
-  > **para** formalizar mi petición administrativa de forma digital y sin trasladarme innecesariamente al palacio municipal.
+  > **Como** ciudadano o representante legal de un negocio en Huamanga,
+  > **quiero** registrar mi solicitud de licencia completando un formulario interactivo por pasos (Wizard),
+  > **para** formalizar mi petición administrativa con los 45 campos normativos exigidos por el D.S. N° 046-2017-PCM.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Validación de identidad):**
-    - *Dado* que el solicitante ingresa al Wizard Paso 1,
-    - *Cuando* selecciona Persona Natural debe ingresar un DNI válido de 8 dígitos; si selecciona Persona Jurídica debe ingresar un RUC de 11 dígitos que comience con 20 y partida registral SUNARP.
-    - *Entonces* el sistema valida la estructura sintáctica antes de permitir avanzar al Paso 2.
-  - **Escenario 2 (Datos del establecimiento y giro):**
-    - *Dado* que el solicitante está en el Paso 2,
-    - *Cuando* ingresa la dirección, giro comercial, código CIIU, área ocupada ($m^2$) y aforo,
-    - *Entonces* el sistema registra los 45 campos normativos requeridos por el Anexo 1.
-  - **Escenario 3 (Confirmación y emisión de identificadores):**
-    - *Dado* que el usuario confirma su solicitud en el Paso 3,
-    - *Cuando* envía el formulario al endpoint `POST /api/expedientes`,
-    - *Entonces* el sistema genera el código único `EXP-2026-XXXXX`, número de trámite, voucher `VCH-2026-XXXXXX` y asigna el estado `FORMATOS_GENERADOS`.
+  - *Dado* que el solicitante ingresa al Wizard,
+  - *Cuando* completa los datos de titular, establecimiento, giro y Anexo 4,
+  - *Entonces* el sistema valida la coherencia sintáctica, genera el código de expediente único (`EXP-YYYY-XXXXX`) y registra la solicitud en estado `REGISTRADO`.
 
----
-
-### US-02: Determinación Automática del Nivel de Riesgo ITSE
+### US-16: Gestión de Cuentas Ciudadanas y Establecimientos Desacoplados (M01)
 * **Narrativa:**
-  > **Como** analista técnico municipal,  
-  > **quiero** que el sistema clasifique automáticamente el nivel de riesgo del local comercial,  
-  > **para** aplicar con objetividad matemática los criterios de la Matriz de Riesgo ITSE del D.S. N° 002-2018-PCM sin discrecionalidad humana.
+  > **Como** administrado titular con RUC o DNI,
+  > **quiero** registrar una cuenta de usuario y vincular uno o varios establecimientos comerciales independientes,
+  > **para** gestionar múltiples locales o sucursales comerciales sin reingresar datos maestros en cada trámite.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Riesgo Bajo / Medio):**
-    - *Dado* un establecimiento con área $< 100\,m^2$, aforo $< 20$ personas y sin almacenamiento de materiales inflamables,
-    - *Cuando* se evalúa su giro en la Matriz ITSE,
-    - *Entonces* el sistema asigna nivel `BAJO` o `MEDIO`, habilitando la inspección ITSE Posterior y la emisión del Anexo 4.
-  - **Escenario 2 (Riesgo Alto / Muy Alto):**
-    - *Dado* un local con aforo $> 100$ personas, almacenamiento de GLP $> 0.45\,m^3$ o uso de calderas,
-    - *Cuando* se procesa la solicitud,
-    - *Entonces* el sistema asigna nivel `ALTO` o `MUY_ALTO`, marcando obligatoriedad de Inspección Previa antes de emitir la licencia.
+  - *Dado* un ciudadano que envía `POST /api/cuentas/registro`,
+  - *Cuando* los datos de identificación son válidos y la contraseña cumple requisitos de seguridad,
+  - *Entonces* se crea la cuenta en estado `ACTIVA` y se habilita la creación de establecimientos vinculados (`POST /api/cuentas/{id}/establecimientos`).
+  - *Seguridad (ADR-02):* Solo el titular autenticado o un administrador con `ROLE_ADMIN` puede consultar o asociar locales a su cuenta.
 
----
-
-### US-03: Cálculo Automatizado de Tasas Administrativas TUPA
+### US-17: Solicitud Borrador Autoguardada y Presentación Formal (M02)
 * **Narrativa:**
-  > **Como** administrado,  
-  > **quiero** conocer inmediatamente el monto exacto de la tasa municipal a pagar,  
-  > **para** tener certidumbre económica y liquidar mis derechos en base al TUPA institucional de Huamanga.
+  > **Como** solicitante,
+  > **quiero** guardar avances de mi trámite en estado borrador,
+  > **para** completar los requisitos paulatinamente antes de formalizar la presentación oficial ante la municipalidad.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Tarifa por Riesgo):**
-    - *Dado* que el sistema determinó el nivel de riesgo del expediente,
-    - *Cuando* se invoca la `CalculadoraDeTasa`,
-    - *Entonces* retorna el valor configurado en el catálogo oficial (e.g., S/. 154.50 para Bajo, S/. 218.00 para Medio, S/. 345.20 para Alto, S/. 480.00 para Muy Alto).
-  - **Escenario 2 (Resiliencia por Fallback):**
-    - *Dado* que la tabla de base de datos de tarifas no responde o está vacía,
-    - *Cuando* se ejecuta el cálculo,
-    - *Entonces* el sistema utiliza los valores por defecto estipulados en `application.yml` sin interrumpir el registro.
+  - *Dado* un borrador en estado `BORRADOR`,
+  - *Cuando* el usuario actualiza secciones mediante `PUT /api/borradores/{id}`,
+  - *Entonces* el sistema persiste los cambios sin generar expediente administrativo formal.
+  - *Cuando* el usuario invoca `POST /api/borradores/{id}/presentar`,
+  - *Entonces* el sistema valida que el checklist esté completo, realiza la transición a `PRESENTADO` y genera el expediente formal asociado.
 
----
-
-### US-04: Liquidación y Generación de Orden de Pago SAT
+### US-18: Subsanación con Documentos Versionados y Hash SHA-256 (M03)
 * **Narrativa:**
-  > **Como** administrado,  
-  > **quiero** obtener un voucher oficial de liquidación con código de barras,  
-  > **para** efectuar el pago de mi trámite en las ventanillas del SAT Huamanga o banca asociada.
+  > **Como** administrado con un expediente observado,
+  > **quiero** cargar documentos corregidos manteniendo el historial de versiones previas,
+  > **para** subsanar observaciones legales o técnicas garantizando la inmutabilidad y valor probatorio de los recaudos.
 * **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* que el expediente se encuentra registrado en estado `FORMATOS_GENERADOS`,
-    - *Cuando* el usuario solicita su orden de pago,
-    - *Entonces* el sistema emite el voucher en PDF con correlativo `VCH-2026-XXXXXX`, desglose de tasa, fecha de vencimiento y código de barras Code 128 legible por escáner óptico.
+  - *Dado* un expediente en estado `OBSERVADO`,
+  - *Cuando* el administrado envía `POST /api/expedientes/{id}/subsanar` con nuevos documentos adjuntos,
+  - *Entonces* cada documento se registra con un nuevo número correlativo de versión (`version = version_previa + 1`), estado `SUBSANADO`, cálculo de hash criptográfico SHA-256, y el expediente transiciona a `EN_EVALUACION`.
 
----
-
-### US-05: Emisión de Formatos Oficiales en PDF (Anexos 1, 3 y 4)
+### US-19: Validación Manual de Pagos SAT con Estados Diferenciados (M04)
 * **Narrativa:**
-  > **Como** administrado,  
-  > **quiero** descargar de inmediato los PDFs oficiales de mi trámite con todos mis datos prellenados,  
-  > **para** imprimirlos, suscribirlos y presentarlos ante Defensa Civil conforme a la normativa.
+  > **Como** cajero municipal con `ROLE_CAJERO`,
+  > **quiero** registrar y calificar los comprobantes de pago de los administrados con estados controlados,
+  > **para** evitar fraudes de recaudación y asegurar que solo expedientes con abonos reales pasen a evaluación.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Anexo 1):**
-    - *Dado* un expediente registrado,
-    - *Cuando* se solicita el Anexo 1 (`/documentos/anexo1-declaracion-jurada`),
-    - *Entonces* se retorna un PDF de exactamente 2 páginas cumpliendo el diseño del D.S. N° 163-2020-PCM con todas las 6 secciones completas.
-  - **Escenario 2 (Anexo 3 y Anexo 4):**
-    - *Dado* que el local requiere inspección y condiciones de seguridad,
-    - *Cuando* se solicitan el Anexo 3 y Anexo 4,
-    - *Entonces* se descargan los PDFs (Anexo 3 en 2 páginas y Anexo 4 en 4 páginas con la matriz de 23 ítems de seguridad técnica).
+  - *Dado* un pago registrado en estado `EN_REVISION`,
+  - *Cuando* el cajero valida el abono en `PUT /api/pagos/{id}/validar-manual`,
+  - *Entonces* el pago transiciona a `VALIDADO_MANUALMENTE` y el expediente avanza a `EN_EVALUACION`.
+  - *Si* el comprobante es ilegible o inconsistente, el cajero puede marcar `OBSERVADO` o `RECHAZADO` con justificación obligatoria.
 
----
-
-### US-06: Conciliación de Pago de Tasa en Caja SAT
+### US-20: Rectificación de Ubicación Georreferenciada de Locales (M06)
 * **Narrativa:**
-  > **Como** cajero del SAT Huamanga,  
-  > **quiero** registrar el pago de la orden tributaria ingresando el número de operación,  
-  > **para** que el expediente avance automáticamente en el flujo sin demoras administrativas.
+  > **Como** titular de un establecimiento comercial,
+  > **quiero** solicitar la rectificación de la dirección física o coordenadas geográficas de mi local,
+  > **para** corregir inconsistencias cartográficas detectadas durante la zonificación o inspección.
 * **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* que un usuario con rol `ROLE_CAJERO` ingresa el código de voucher y monto abonado en `PUT /api/expedientes/{id}/pago`,
-    - *Cuando* el monto coincide con la tasa liquidada,
-    - *Entonces* el expediente cambia automáticamente a `DOCUMENTOS_VALIDADOS` y se registra en la auditoría inmutable.
+  - *Dado* un establecimiento con coordenadas declaradas,
+  - *Cuando* el titular envía `POST /api/establecimientos/{id}/rectificacion-ubicacion`,
+  - *Entonces* se genera una solicitud en estado `PENDIENTE`.
+  - *Cuando* el evaluador técnico (`ROLE_EVALUADOR`) revisa y resuelve la rectificación (`PUT /api/rectificaciones-ubicacion/{id}/resolver`), las coordenadas maestras del establecimiento se actualizan atómicamente si el dictamen es favorable.
 
----
-
-### US-07: Evaluación Técnica y Legal de Zonificación
+### US-21: Resolución Administrativa y Firma Digital Fail-Closed (M08)
 * **Narrativa:**
-  > **Como** evaluador técnico de la Subgerencia de Licencias,  
-  > **quiero** revisar la procedencia urbanística y de zonificación del expediente desde el Portal Interno,  
-  > **para** determinar si el giro comercial es compatible con el Plano de Desarrollo Urbano (PDU).
+  > **Como** autoridad resolutiva municipal (`ROLE_ADMIN`),
+  > **quiero** emitir la resolución administrativa aprobatoria o denegatoria y firmarla digitalmente con certificación institucional,
+  > **para** otorgar validez jurídica conforme al TUO de la Ley N° 27444 y Ley N° 27269.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Aprobación preliminar):**
-    - *Dado* un expediente en estado `DOCUMENTOS_VALIDADOS`,
-    - *Cuando* el evaluador valida la zonificación y requisitos sectoriales,
-    - *Entonces* el expediente pasa al estado `EN_EVALUACION_FINAL`.
-  - **Escenario 2 (Observación del trámite):**
-    - *Dado* que faltan requisitos o existe inconsistencia en el giro,
-    - *Cuando* el evaluador registra observaciones técnicas,
-    - *Entonces* el sistema otorga un plazo legal de 5 días hábiles para subsanación.
+  - *Dado* un expediente con informe técnico favorable,
+  - *Cuando* la autoridad crea la resolución (`POST /api/resoluciones`),
+  - *Entonces* se genera un correlativo anual atómico pesimista (`RES-YYYY-XXXXX`) en estado `APROBADA_PENDIENTE_FIRMA`.
+  - *Cuando* se invoca `POST /api/resoluciones/{id}/firmar`, el sistema contacta `FirmaDigitalPort`:
+    - *Si* la firma es válida, pasa a `FIRMADA` y se habilita la emisión oficial de la licencia (`POST /api/licencias/emitir`).
+    - *Si* la firma falla o el proveedor no está disponible, pasa a `ERROR_FIRMA` y el sistema **bloquea la emisión oficial de la licencia y la activación del QR público** (política *fail-closed*, ADR-04/ADR-07).
 
----
-
-### US-08: Inspección Técnica de Seguridad en Edificaciones (ITSE)
+### US-22: Verificación Móvil con Mapa Interactivo para Inspectores (M10)
 * **Narrativa:**
-  > **Como** inspector acreditado CENEPRED de Defensa Civil,  
-  > **quiero** registrar el informe técnico resultante de la inspección del local,  
-  > **para** emitir el dictamen vinculante favorable o desfavorable para la licencia.
+  > **Como** inspector municipal en campo (`ROLE_INSPECTOR`),
+  > **quiero** autenticarme en el portal de verificación móvil al escanear el QR de una licencia,
+  > **para** visualizar la georreferenciación en mapa interactivo (Leaflet), coordenadas exactas y datos de control sin vulnerar la privacidad pública.
 * **Criterios de Aceptación:**
-  - **Escenario 1 (Dictamen Favorable):**
-    - *Dado* que el establecimiento cumple las condiciones de seguridad en tableros eléctricos, extintores y rutas de evacuación,
-    - *Cuando* el inspector ingresa el N° de Informe ITSE y dictamen favorable,
-    - *Entonces* el sistema habilita el expediente para aprobación final del Gerente.
+  - *Dado* el escaneo del QR de una licencia vigente (`GET /api/public/licencias/{codigoQr}`),
+  - *Cuando* el usuario consulta sin autenticación, recibe únicamente la **Vista Ciudadana Minimizada** (Ley N° 29733: razón social, nombre comercial, giro, vigencia, sin DNI ni geolocalización).
+  - *Cuando* el inspector inicia sesión con credenciales institucionales e invoca `GET /api/licencias/inspeccion/{codigoQr}`,
+  - *Entonces* recibe la **Vista de Inspector Ampliada** con latitud, longitud, dirección desglosada, titular y renderizado automático en mapa interactivo Leaflet.
 
 ---
 
-### US-09: Emisión y Generación del Certificado Oficial de Licencia
-* **Narrativa:**
-  > **Como** Gerente de Licencias,  
-  > **quiero** aprobar y emitir la Licencia de Funcionamiento con su certificado oficial en PDF,  
-  > **para** otorgar al administrado su título habilitante con valor legal y vigencia indeterminada.
-* **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* un expediente en `EN_EVALUACION_FINAL` con dictamen favorable,
-    - *Cuando* el funcionario emite la aprobación (`PUT /api/expedientes/{id}/aprobar`),
-    - *Entonces* el expediente pasa a estado `APROBADO`, se genera el número oficial `LIC-2026-XXXXX` y se renderiza el Certificado PDF con doble marco perimetral, escudo provincial, código QR y 6 notas legales.
+## 4. Trazabilidad con Requisitos y Atributos de Calidad
 
----
-
-### US-10: Incorporación de Mecanismo de Seguridad y Código QR
-* **Narrativa:**
-  > **Como** autoridad municipal,  
-  > **quiero** que cada certificado de licencia cuente con un código QR de alta definición generado con ZXing,  
-  > **para** imposibilitar la falsificación material de licencias y permitir su validación instantánea.
-* **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* que se genera la licencia,
-    - *Cuando* el motor de PDF dibuja el documento,
-    - *Entonces* incrusta una imagen QR de $250 \times 250$ píxeles que contiene la URL directa hacia la verificación institucional pública: `https://munihuamanga.gob.pe/verificar-licencia?codigo=LIC-2026-XXXXX`.
-
----
-
-### US-11: Verificación Pública de Autenticidad en Línea (RNF-20)
-* **Narrativa:**
-  > **Como** fiscalizador municipal o ciudadano general,  
-  > **quiero** consultar la validez de una licencia escaneando su QR desde un teléfono móvil,  
-  > **para** constatar en tiempo real si el establecimiento cuenta con autorización legítima vigente.
-* **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* que se realiza una petición a `GET /api/public/licencias/{codigoQr}`,
-    - *Cuando* el endpoint recibe la consulta pública (sin requerir token ni login),
-    - *Entonces* responde en un percentil $P_{95} \le 200\text{ ms}$ retornando el JSON con razón social, RUC, dirección, giro comercial, estado y fecha de expedición.
-
----
-
-### US-12: Notificaciones Automatizadas por Correo Electrónico
-* **Narrativa:**
-  > **Como** administrado,  
-  > **quiero** recibir correos electrónicos automáticos informándome sobre cada avance de mi trámite,  
-  > **para** estar informado en tiempo real sin tener que consultar repetidamente el portal.
-* **Criterios de Aceptación:**
-  - **Escenario 1 (Registro):**
-    - *Dado* el registro exitoso del trámite,
-    - *Cuando* se crea el expediente,
-    - *Entonces* el sistema despacha asíncronamente un correo HTML con su número de expediente y códigos de pago.
-  - **Escenario 2 (Aprobación con PDF adjunto):**
-    - *Dado* que el expediente es aprobado,
-    - *Cuando* se emite la licencia,
-    - *Entonces* el sistema envía un correo de felicitación con el **Certificado Oficial de Licencia adjunto en PDF**.
-
----
-
-### US-13: Mantenimiento en Caliente del Tarifario TUPA Dinámico
-* **Narrativa:**
-  > **Como** Administrador del Sistema TI,  
-  > **quiero** actualizar los montos de las tasas TUPA desde el portal interno,  
-  > **para** reflejar cambios derivados de nuevas ordenanzas municipales sin reiniciar los servidores ni modificar código fuente.
-* **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* un usuario autenticado con `ROLE_ADMIN`,
-    - *Cuando* envía una petición `PUT /api/tupa/tarifas/{id}` con el nuevo monto y base legal,
-    - *Entonces* la base de datos se actualiza inmediatamente y las nuevas solicitudes liquidan el monto modificado en tiempo real.
-
----
-
-### US-14: Autenticación Segura y Control de Acceso RBAC
-* **Narrativa:**
-  > **Como** funcionario municipal,  
-  > **quiero** iniciar sesión con mis credenciales institucionales y recibir un token JWT,  
-  > **para** acceder únicamente a las funciones y bandejas autorizadas según mi cargo y rol.
-* **Criterios de Aceptación:**
-  - **Escenario 1 (Login exitoso):**
-    - *Dado* que el usuario envía usuario y contraseña en `POST /api/auth/login`,
-    - *Cuando* las credenciales son válidas,
-    - *Entonces* se retorna un Bearer Token JWT firmado con HMAC-SHA256 con vigencia de 24 horas y los roles asignados.
-  - **Escenario 2 (Bloqueo no autorizado):**
-    - *Dado* un cajero con `ROLE_CAJERO`,
-    - *Cuando* intenta invocar el endpoint de aprobación (`PUT /api/expedientes/{id}/aprobar`),
-    - *Entonces* Spring Security intercepta la petición y retorna `403 Forbidden`.
-
----
-
-### US-15: Mesa de Ayuda y Orientación para Anexos Físicos
-* **Narrativa:**
-  > **Como** administrado que tramita por primera vez,  
-  > **quiero** contar con explicaciones claras sobre qué hacer con los Anexos 3 y 4 una vez impresos,  
-  > **para** no cometer errores en la presentación presencial ante la Subgerencia de Defensa Civil.
-* **Criterios de Aceptación:**
-  - **Escenario 1:**
-    - *Dado* que el ciudadano está en la pantalla de descarga de documentos,
-    - *Cuando* hace clic en los botones contextuales `💡 Mesa de Ayuda / ¿Cómo se tramita?`,
-    - *Entonces* se despliega un modal interactivo con la guía paso a paso: número de copias requeridas, lugar de ventanilla física, profesional que debe visar el plano y recomendaciones de seguridad técnica.
-
----
-
-## 4. Conclusión
-
-El conjunto de 15 Historias de Usuario cubre de punta a punta el ciclo de vida del trámite de Licencias de Funcionamiento en la Municipalidad Provincial de Huamanga, garantizando plena trazabilidad, cumplimiento de plazos legales y una experiencia de usuario transparente.
+| Historia | Requisito Funcional | Atributo de Calidad / Driver | Decisión Arquitectónica |
+|---|---|---|---|
+| **US-01 / US-17** | RF-01, RF-02 | Usabilidad (AC-01) | ADR-01, ADR-03 |
+| **US-16** | RF-14, RF-15 | Escalabilidad (AC-03) | ADR-03 |
+| **US-18** | RF-05, RF-16 | Inmutabilidad e Integridad (AC-02) | ADR-03 |
+| **US-19** | RF-04, RF-17 | Fiabilidad y Trazabilidad (AC-04) | ADR-06 |
+| **US-21** | RF-08, RF-18 | Seguridad Criptográfica y Legalidad (AC-02) | ADR-04, ADR-07 |
+| **US-22** | RF-10, RF-19 | Protección de Datos y Rendimiento (AC-02, AC-03) | ADR-02, ADR-05 |

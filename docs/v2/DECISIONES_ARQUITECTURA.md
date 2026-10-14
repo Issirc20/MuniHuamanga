@@ -1,8 +1,8 @@
 # Decisiones de Arquitectura de Software (ADR) — MuniHuamanga V2
 
-Municipalidad Provincial de Huamanga — Gerencia de Licencias  
-**Código del Documento:** DAS-MH-V2-001 • ADR-Consolidado  
-**Fecha:** 13 de octubre de 2026  
+Municipalidad Provincial de Huamanga — Gerencia de Licencias
+**Código del Documento:** DAS-MH-V2-001 • ADR-Consolidado
+**Fecha:** 13 de octubre de 2026
 **Documentos Rectores:** [ERS-MH-V2-001 v1.0] y [DAS-MH-V2-001 v1.0]
 
 ---
@@ -17,6 +17,7 @@ Municipalidad Provincial de Huamanga — Gerencia de Licencias
 | **ADR-04** | Integración de Firma Digital Institucional Mediante Puerto y Bloqueo de Emisión Falsa | Aceptado | Desacoplamiento de proveedor de firma; no almacenamiento de claves privadas; prohibición de firmas simuladas. |
 | **ADR-05** | Verificación Pública QR con Enlace Dinámico y Minimización de Datos | Aceptado | Cumplimiento Ley N° 29733; token no enumerable; vista básica pública y vista ampliada para inspectores. |
 | **ADR-06** | Procesos Externos Manuales para SAT, Defensa Civil y Edificaciones (Sin Acoplamiento) | Aceptado | Delimitación del alcance en V2; registro manual de pagos y zonificación; exclusión de actas y sanciones. |
+| **ADR-07** | Acto Administrativo Resolutivo, Correlativo Atómico y Bloqueo de Emisión sin Firma Digital | Aceptado | Separación de informe y resolución; secuencias atómicas pesimistas; bloqueo de licencias oficiales sin PKI institucional. |
 
 ---
 
@@ -77,3 +78,15 @@ Municipalidad Provincial de Huamanga — Gerencia de Licencias
   4. *Inspección:* La Gerencia de Inspección utilizará el sistema únicamente como herramienta de consulta de autenticidad y ubicación en campo. Queda terminantemente prohibido incorporar módulos de fiscalización, actas de control, imposición de sanciones o trámites sancionadores.
 - **Consecuencias:**
   - *Positivas:* Acotamiento estricto de responsabilidades; alineación con los acuerdos institucionales vigentes; reducción de riesgos por dependencias de sistemas externos no controlados.
+
+---
+
+### ADR-07: Acto Administrativo Resolutivo, Correlativo Atómico y Bloqueo de Emisión sin Firma Digital
+- **Contexto:** En el procedimiento administrativo municipal (TUO Ley N° 27444 y Ley N° 28976), el informe administrativo técnico elaborado por el evaluador es un acto de instrucción interna que no produce efectos jurídicos directos frente al administrado. El acto administrativo habilitante o denegatorio es la Resolución de Subgerencia o Gerencia. Asimismo, emitir una licencia de funcionamiento física o digital sin contar con firma digital institucional acreditada ante la IOFE vulnera la Ley N° 27269 y genera documentos apócrifos.
+- **Decisión:**
+  1. *Separación de Entidades y Estados:* Implementar `ResolucionAdministrativa` con estados propios (`BORRADOR`, `APROBADA_PENDIENTE_FIRMA`, `EN_PROCESO_FIRMA`, `FIRMADA`, `ERROR_FIRMA`, `ANULADA`), separada de `InformeAdministrativo` e independiente del expediente.
+  2. *Correlativos Atómicos Pesimistas:* Implementar secuencias anuales atómicas (`RES-YYYY-XXXXX` y `LIC-YYYY-XXXXX`) basadas en tablas dedicadas y bloqueo pesimista en base de datos (`PESSIMISTIC_WRITE`), evitando colisiones o duplicados concurrentes.
+  3. *Bloqueo Técnico de Emisión:* No emitir licencia oficial ni activar códigos QR públicos mientras la resolución no cuente con firma digital institucional verificada (`FIRMADA`). Si la infraestructura de firma no está configurada, el expediente permanece en espera sin expedir certificados oficiales.
+  4. *Inmutabilidad y Documentos Vectoriales:* Los borradores y vistas previas de resoluciones deben generarse en OpenPDF vectorial con la marca de agua explícita "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL", sustituida por el bloque de verificación criptográfica únicamente al completarse la firma institucional válida.
+- **Consecuencias:**
+  - *Positivas:* Validez jurídica indubitable; segregación estricta de funciones entre evaluador y autoridad emisora; protección criptográfica total contra licencias fraudulentas; trazabilidad inmutable mediante tablas de historial *append-only*.
