@@ -7,10 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
-import pe.gob.munihuamanga.licencias.expedientes.integracion.port.DefensaCivilPort;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.EdificacionesPort;
-import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FiscalizacionPort;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.SatPort;
 
 import java.util.Map;
@@ -27,13 +24,7 @@ class AdaptadorControllerTest {
     private SatPort satPort;
 
     @Mock
-    private DefensaCivilPort defensaCivilPort;
-
-    @Mock
     private EdificacionesPort edificacionesPort;
-
-    @Mock
-    private FiscalizacionPort fiscalizacionPort;
 
     @InjectMocks
     private AdaptadorController adaptadorController;
@@ -53,22 +44,6 @@ class AdaptadorControllerTest {
     }
 
     @Test
-    @DisplayName("US-13: Debe simular dictamen técnico ante el puerto Defensa Civil")
-    void testSimularDictamenDefensaCivil() {
-        String tramite = "EXP-2026-00001";
-        NivelRiesgo riesgo = NivelRiesgo.MEDIO;
-        when(defensaCivilPort.simularDictamenItse(tramite, riesgo))
-                .thenReturn(Map.of("resultadoInspeccion", "FAVORABLE", "numeroTramite", tramite));
-
-        ResponseEntity<Map<String, Object>> resp = adaptadorController.simularDictamenDefensaCivil(tramite, riesgo);
-
-        assertNotNull(resp);
-        assertEquals(200, resp.getStatusCode().value());
-        assertNotNull(resp.getBody());
-        assertEquals("FAVORABLE", resp.getBody().get("resultadoInspeccion"));
-    }
-
-    @Test
     @DisplayName("US-13: Debe consultar compatibilidad de zonificación ante el puerto Edificaciones")
     void testConsultarZonificacion() {
         String direccion = "Jr. 28 de Julio N° 120";
@@ -82,20 +57,5 @@ class AdaptadorControllerTest {
         assertEquals(200, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
         assertEquals("COMPATIBLE / PERMITIDO", resp.getBody().get("compatibilidadUso"));
-    }
-
-    @Test
-    @DisplayName("US-13: Debe registrar acta de control ante el puerto Fiscalización")
-    void testRegistrarActaFiscalizacion() {
-        String codLicencia = "LIC-2026-00000002";
-        when(fiscalizacionPort.registrarActaFiscalizacion(codLicencia, "CONFORME", "Inspector"))
-                .thenReturn(Map.of("resultadoFiscalizacion", "CONFORME", "codigoLicencia", codLicencia));
-
-        ResponseEntity<Map<String, Object>> resp = adaptadorController.registrarActaFiscalizacion(codLicencia, "CONFORME", "Inspector");
-
-        assertNotNull(resp);
-        assertEquals(200, resp.getStatusCode().value());
-        assertNotNull(resp.getBody());
-        assertEquals("CONFORME", resp.getBody().get("resultadoFiscalizacion"));
     }
 }

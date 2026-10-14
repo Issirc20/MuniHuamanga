@@ -96,9 +96,11 @@ class SeguridadEndToEndTest {
     @DisplayName("H08: Descarga de Licencia PDF para expediente NO aprobado debe ser rechazada con 400 Bad Request")
     void testDescargarLicenciaNoAprobado_Retorna400BadRequest() throws Exception {
         // EXP-2026-00001 está en FORMATOS_GENERADOS (no APROBADO)
+        String tokenEvaluador = obtenerToken("evaluador", "eval123");
         Expediente exp = expedienteRepository.findByNumeroTramite("EXP-2026-00001").orElseThrow();
 
-        mockMvc.perform(get("/api/expedientes/" + exp.getId() + "/documentos/licencia"))
+        mockMvc.perform(get("/api/expedientes/" + exp.getId() + "/documentos/licencia")
+                        .header("Authorization", "Bearer " + tokenEvaluador))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Petición Inválida o Regla de Negocio Incumplida"))
                 .andExpect(jsonPath("$.message").value(containsString("APROBADO")));
@@ -108,11 +110,22 @@ class SeguridadEndToEndTest {
     @DisplayName("H08: Descarga de Licencia PDF para expediente APROBADO se emite correctamente (200 OK)")
     void testDescargarLicenciaAprobado_Retorna200Pdf() throws Exception {
         // EXP-2026-00002 está APROBADO
+        String tokenEvaluador = obtenerToken("evaluador", "eval123");
         Expediente exp = expedienteRepository.findByNumeroTramite("EXP-2026-00002").orElseThrow();
 
-        mockMvc.perform(get("/api/expedientes/" + exp.getId() + "/documentos/licencia"))
+        mockMvc.perform(get("/api/expedientes/" + exp.getId() + "/documentos/licencia")
+                        .header("Authorization", "Bearer " + tokenEvaluador))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", MediaType.APPLICATION_PDF_VALUE));
+    }
+
+    @Test
+    @DisplayName("I02/H08: Descarga de documentos sin autenticación es rechazada con 401 Unauthorized")
+    void testDescargarDocumentoAnonimo_Retorna401() throws Exception {
+        Expediente exp = expedienteRepository.findByNumeroTramite("EXP-2026-00001").orElseThrow();
+
+        mockMvc.perform(get("/api/expedientes/" + exp.getId() + "/documentos/anexo1"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto;
 import pe.gob.munihuamanga.licencias.common.dto.CrearExpedienteDto;
+import pe.gob.munihuamanga.licencias.common.dto.VerificacionAmpliadaDto;
 import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
@@ -145,6 +146,8 @@ public class ExpedienteService {
                 .sectorDenominacion(dto.getSectorDenominacion())
                 .sectorFecha(dto.getSectorFecha())
                 .sectorNumero(dto.getSectorNumero())
+                // Sección V: Observaciones
+                .motivoObservacion(dto.getMotivoObservacion() != null ? dto.getMotivoObservacion().trim() : null)
                 // Anexo 4 embebido
                 .anexo4Condiciones(anexo4)
                 // Flujo y fechas
@@ -508,7 +511,8 @@ public class ExpedienteService {
     }
 
     /**
-     * US-11 / RNF-20: Consulta pública de autenticidad y estado de licencia para ciudadanos y fiscalizadores.
+     * US-11 / RNF-20 / RNF-SEG-007 / CA-09: Consulta pública de autenticidad y estado de licencia.
+     * Aplica minimización de datos protegiendo el documento de identidad completo según la Ley N° 29733.
      */
     @Transactional(readOnly = true)
     public VerificacionLicenciaDto verificarLicencia(String codigoLicencia) {
@@ -528,7 +532,7 @@ public class ExpedienteService {
                             .numeroLicencia(exp.getLicenciaQrCode())
                             .numeroTramite(exp.getNumeroTramite())
                             .titular(exp.getNombreTitular())
-                            .documentoIdentidad(exp.getDocumentoIdentidad())
+                            .documentoIdentidad(ofuscarDocumento(exp.getDocumentoIdentidad()))
                             .razonSocial(exp.getRazonSocial())
                             .nombreComercial(exp.getNombreComercial())
                             .giro(exp.getGiroNegocio())
@@ -548,5 +552,73 @@ public class ExpedienteService {
                         .estado("NO ENCONTRADA")
                         .mensajeVerificacion("El código de licencia consultado no se encuentra registrado en el padrón municipal de Huamanga.")
                         .build());
+    }
+
+    /**
+     * RF-VER-007 / DAS DA-05 / CA-10: Consulta ampliada de licencia para inspectores municipales
+     * y evaluadores autorizados. Incluye geolocalización para cotejo en campo sin facultades sancionadoras.
+     */
+    @Transactional(readOnly = true)
+    public VerificacionAmpliadaDto verificarLicenciaAmpliada(String codigoLicencia) {
+        metricasExpedienteService.registrarConsultaPublica();
+        if (codigoLicencia == null || codigoLicencia.trim().isEmpty()) {
+            return VerificacionAmpliadaDto.builder()
+                    .valida(false)
+                    .estado("CÓDIGO INVÁLIDO")
+                    .mensajeVerificacion("Debe proporcionar un código de licencia válido.")
+                    .build();
+        }
+
+        return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
+                .map(exp -> {
+                    boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
+                    String horario = (exp.getHoraInicio() != null && exp.getHoraFin() != null)
+                            ? exp.getHoraInicio() + " - " + exp.getHoraFin()
+                            : "08:00 - 20:00 (Estándar)";
+
+                    return VerificacionAmpliadaDto.builder()
+                            .numeroLicencia(exp.getLicenciaQrCode())
+                            .numeroTramite(exp.getNumeroTramite())
+                            .titular(exp.getNombreTitular())
+                            .documentoIdentidad(exp.getDocumentoIdentidad())
+                            .razonSocial(exp.getRazonSocial())
+                            .nombreComercial(exp.getNombreComercial())
+                            .giro(exp.getGiroNegocio())
+                            .ciiuCodigo(exp.getCiiuCodigo())
+                            .direccion(exp.getDireccionEstablecimiento())
+                            .zonificacion(exp.getZonificacion())
+                            .distrito(exp.getDistrito())
+                            .provincia(exp.getProvincia())
+                            .departamento(exp.getDepartamento())
+                            .referenciaUbicacion(exp.getReferenciaUbicacion())
+                            .areaMetrosCuadrados(exp.getAreaMetrosCuadrados())
+                            .aforoPersonas(exp.getAforoPersonas())
+                            .nivelRiesgo(exp.getNivelRiesgo())
+                            .estado(esAprobado ? "VIGENTE / AUTORIZADA" : "NO VIGENTE (" + exp.getEstado() + ")")
+                            .fechaEmision(exp.getFechaCreacion())
+                            .fechaAprobacion(exp.getFechaAprobacion())
+                            .categoriaEstablecimiento(exp.getCategoriaEstablecimiento())
+                            .horarioFuncionamiento(horario)
+                            .valida(esAprobado)
+                            .mensajeVerificacion(esAprobado
+                                    ? "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga."
+                                    : "El trámite asociado a este código no se encuentra en estado APROBADO.")
+                            .latitud(-13.1631)
+                            .longitud(-74.2236)
+                            .build();
+                })
+                .orElseGet(() -> VerificacionAmpliadaDto.builder()
+                        .numeroLicencia(codigoLicencia)
+                        .valida(false)
+                        .estado("NO ENCONTRADA")
+                        .mensajeVerificacion("El código de licencia consultado no se encuentra registrado en el padrón municipal de Huamanga.")
+                        .build());
+    }
+
+    private String ofuscarDocumento(String doc) {
+        if (doc == null || doc.isBlank()) return null;
+        String limpio = doc.trim();
+        if (limpio.length() <= 4) return "****";
+        return limpio.substring(0, 2) + "****" + limpio.substring(limpio.length() - 2);
     }
 }

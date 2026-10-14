@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,7 +28,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/formularios")
-@RequiredArgsConstructor
 @Tag(name = "Formularios y Documentos Oficiales", description = "Generación y descarga de formatos oficiales en PDF según la Ley N° 28976 y D.S. N° 002-2018-PCM")
 public class DocumentosFormulariosController {
 
@@ -35,7 +35,15 @@ public class DocumentosFormulariosController {
     private final ExpedienteService expedienteService;
     private final ExpedienteMapper expedienteMapper;
 
-    @PostMapping("/anexo1-declaracion-jurada")
+    public DocumentosFormulariosController(DocumentoPdfService documentoPdfService,
+                                           ExpedienteService expedienteService,
+                                           ExpedienteMapper expedienteMapper) {
+        this.documentoPdfService = documentoPdfService;
+        this.expedienteService = expedienteService;
+        this.expedienteMapper = expedienteMapper;
+    }
+
+    @PostMapping({"/anexo1-declaracion-jurada", "/declaracion-jurada"})
     @Operation(summary = "Generar PDF oficial del Anexo 1 de 2 páginas (Ley N° 28976 / D.S. N° 046-2017-PCM)")
     public ResponseEntity<byte[]> generarAnexo1DeclaracionJurada(@RequestBody ExpedienteResponseDto expediente) {
         byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(expediente);
@@ -45,17 +53,8 @@ public class DocumentosFormulariosController {
                 .body(pdf);
     }
 
-    @PostMapping("/declaracion-jurada")
-    @Operation(summary = "Generar PDF oficial de Declaración Jurada (Anexo 1)")
-    public ResponseEntity<byte[]> generarDeclaracionJurada(@RequestBody ExpedienteResponseDto expediente) {
-        byte[] pdf = documentoPdfService.generarDeclaracionJurada(expediente);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=DeclaracionJurada-" + expediente.getNumeroTramite() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
     @GetMapping("/anexo-1/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Descargar PDF oficial de Anexo 1 por ID de expediente")
     public ResponseEntity<byte[]> descargarAnexo1PorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -78,6 +77,7 @@ public class DocumentosFormulariosController {
     }
 
     @GetMapping("/anexo-3/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Descargar PDF oficial de Anexo 3 por ID de expediente")
     public ResponseEntity<byte[]> descargarAnexo3PorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -100,6 +100,7 @@ public class DocumentosFormulariosController {
     }
 
     @GetMapping("/anexo-4/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Descargar PDF oficial de Anexo 4 por ID de expediente")
     public ResponseEntity<byte[]> descargarAnexo4PorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
@@ -107,16 +108,6 @@ public class DocumentosFormulariosController {
         byte[] pdf = documentoPdfService.generarAnexo4CondicionesSeguridad(dto);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo4-CondicionesSeguridad-" + exp.getNumeroTramite() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
-    @PostMapping("/defensa-civil")
-    @Operation(summary = "Generar PDF de Solicitud de Inspección Técnica ITSE")
-    public ResponseEntity<byte[]> generarSolicitudItse(@RequestBody ExpedienteResponseDto expediente) {
-        byte[] pdf = documentoPdfService.generarAnexo3MatrizRiesgoItse(expediente);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=SolicitudITSE-" + expediente.getNumeroTramite() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
@@ -132,6 +123,7 @@ public class DocumentosFormulariosController {
     }
 
     @PostMapping("/licencia")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
     @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR (Requiere estado APROBADO)")
     public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
         if (expediente.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
@@ -146,6 +138,7 @@ public class DocumentosFormulariosController {
     }
 
     @GetMapping("/licencia/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
     @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente (Requiere estado APROBADO)")
     public ResponseEntity<byte[]> descargarLicenciaPorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
