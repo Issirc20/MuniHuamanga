@@ -1,58 +1,54 @@
 # Enfoque Arquitectónico: Clean Architecture y Ports & Adapters
-## Sistema de Gestión Documentaria de Licencia de Funcionamiento
+## MuniHuamanga V2 — Sistema de Licencias de Funcionamiento
 ### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
 
-> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM  
-> **Patrones Clave:** Clean Architecture (Robert C. Martin), Ports & Adapters / Hexagonal (Alistair Cockburn), DDD Táctico  
+> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM / Ley N° 27269
+> **Patrones Clave:** Clean Architecture (Robert C. Martin), Ports & Adapters / Hexagonal (Alistair Cockburn), Principios SOLID, DDD Táctico
+> **Estado:** Documento Canónico Vigente
 > **Ubicación:** `docs/arquitectura/enfoque-arquitectonico.md`
 
 ---
 
 ## 1. Definición del Enfoque Arquitectónico
 
-Mientras que el estilo arquitectónico (Monolito Modular) define la estructura global y el modo de despliegue físico de la aplicación, el **Enfoque Arquitectónico** determina la estructura interna, las reglas de dependencia y la organización del código fuente dentro de cada módulo.
+Mientras que el **Estilo Arquitectónico** (Monolito Modular) define la topología global y el empaquetamiento del sistema, el **Enfoque Arquitectónico** determina la estructura interna de las clases, la separación de responsabilidades y la dirección de las dependencias en el código fuente.
 
-El sistema implementa **Clean Architecture (Arquitectura Limpia)** complementada con el patrón **Ports & Adapters (Arquitectura Hexagonal)**.
+En **MuniHuamanga V2**, la organización interna se fundamenta en los principios de **Clean Architecture** complementados con el patrón **Ports & Adapters (Arquitectura Hexagonal)**.
 
-El objetivo central de este enfoque es construir un sistema de software que sea:
-1. **Independiente de Frameworks:** La lógica de negocio y las normas municipales no dependen de la existencia de Spring Boot, Hibernate ni librerías externas.
-2. **Altamente Testeable:** Las reglas de negocio pueden probarse sin necesidad de levantar bases de datos, servidores web ni redes.
-3. **Independiente de la Interfaz de Usuario:** Las interfaces gráficas (Portal Ciudadano, Portal Interno) pueden modificarse o sustituirse sin alterar los casos de uso.
-4. **Independiente de la Base de Datos:** Los repositorios y bases de datos son detalles de implementación intercambiables.
-5. **Independiente de Entidades Externas:** Las comunicaciones con el SAT, Defensa Civil o RENIEC están aisladas mediante abstracciones (puertos).
+El propósito central es garantizar que la lógica de negocio y los procedimientos administrativos de la Municipalidad Provincial de Huamanga permanezcan **independientes de agentes externos, librerías gráficas, frameworks web y proveedores tecnológicos**, facilitando el mantenimiento y las pruebas automatizadas.
 
 ---
 
 ## 2. La Regla de Dependencia (The Dependency Rule)
 
-> **Regla de Oro de Clean Architecture:**  
-> *Las dependencias del código fuente solo pueden apuntar hacia adentro, hacia las abstracciones de más alto nivel de negocio.*  
-> Ningún elemento de una capa interna puede tener conocimiento o referencia alguna de elementos pertenecientes a una capa más externa.
+> **Regla de Oro:**
+> *Las dependencias en el código fuente solo pueden apuntar hacia adentro, hacia las capas de más alto nivel de abstracción de negocio.*
+> El núcleo del dominio nunca debe conocer ni depender de controladores web, bases de datos relacionales ni servicios externos.
 
 ```mermaid
 graph TD
     subgraph Capa4 ["Capa 4: Frameworks, Drivers & UI (Externa)"]
-        FW_WEB["Controladores REST Spring MVC<br/>ExpedienteController, TarifaTupaController, AuthController"]
-        FW_SEC["Spring Security 6 & Filtro JJWT Stateless"]
-        FW_DB["PostgreSQL 15 / Driver JDBC / H2 Database"]
-        FW_UI["Portal Ciudadano & Portal Interno (HTML5/CSS/Vanilla JS)"]
+        FW_WEB["Controladores REST Spring MVC<br/>ExpedienteController, LicenciaController, CuentaController"]
+        FW_SEC["Spring Security 6 & Filtros JWT Stateless"]
+        FW_DB["PostgreSQL 16 / Hibernate ORM / H2 en memoria"]
+        FW_UI["Portales Web (HTML5 / CSS / Vanilla JS)"]
     end
 
     subgraph Capa3 ["Capa 3: Interface Adapters (Adaptadores)"]
-        AD_REPO["Spring Data JPA Repositories<br/>ExpedienteRepository, TarifaTupaRepository"]
-        AD_EXT["Adaptadores de Integración Externa<br/>SatAdapterService, DefensaCivilAdapterService"]
-        AD_PDF["Adaptadores de Generación PDF y QR<br/>LicenciaPdfGenerator, ZXing QRCodeWriter"]
+        AD_REPO["Spring Data JPA Repositories<br/>ExpedienteRepository, LicenciaEmitidaRepository"]
+        AD_EXT["Adaptadores de Integración Externa<br/>SatAdapterService, FirmaDigitalAdapterService"]
+        AD_PDF["Generadores Documentales OpenPDF & ZXing<br/>LicenciaPdfGenerator, Anexo1PdfGenerator"]
     end
 
     subgraph Capa2 ["Capa 2: Application / Use Cases (Casos de Uso)"]
-        UC_SRV["Servicios de Aplicación<br/>ExpedienteService, TarifaTupaService, AuditoriaService"]
-        UC_PORTS["Puertos de Integración (Interfaces Java Puras)<br/>SatPort, DefensaCivilPort, EdificacionesPort, FiscalizacionPort"]
+        UC_SRV["Servicios de Aplicación<br/>ExpedienteService, LicenciaService, ResolucionAdministrativaService"]
+        UC_PORTS["Puertos de Integración (Interfaces Java)<br/>FirmaDigitalPort, SatPort, EdificacionesPort"]
     end
 
     subgraph Capa1 ["Capa 1: Enterprise Domain (Núcleo)"]
-        DOM_ENT["Entidades de Dominio<br/>Expediente, TarifaTupa, AuditoriaExpediente"]
-        DOM_ENUM["Enums & Value Objects<br/>EstadoExpediente, NivelRiesgo, ModalidadTramite"]
-        DOM_RULES["Reglas de Negocio Puras<br/>Validación de Transiciones de Estado y Requisitos"]
+        DOM_ENT["Entidades de Dominio<br/>Expediente, ResolucionAdministrativa, LicenciaEmitida, Cuenta"]
+        DOM_ENUM["Enums & Value Objects<br/>EstadoExpediente, EstadoResolucion, TipoVigenciaLicencia"]
+        DOM_RULES["Invariantes y Reglas Normativas<br/>Validación de Transiciones, Plazos LPAG, Criterios Checklist"]
     end
 
     Capa4 --> Capa3
@@ -62,116 +58,139 @@ graph TD
 
 ---
 
-## 3. Desglose Concéntrico de las Cuatro Capas
+## 3. Desglose Concéntrico de Capas
 
-### 3.1. Capa 1: Dominio Empresarial (Enterprise Business Rules)
-Es el núcleo central e inmutable del sistema. Modela los conceptos y reglas de negocio del trámite de Licencias de Funcionamiento conforme a la Ley N° 28976 y el TUO D.S. N° 046-2017-PCM:
-- **Entidades de Dominio:** 
-  - `Expediente`: Modela los 45 atributos normativos (titular, local, zonificación, aforo, matriz de riesgo ITSE, licencia emitida y estado del ciclo de vida).
-  - `TarifaTupa`: Modela la tasa tributaria municipal aplicable por nivel de riesgo.
-  - `AuditoriaExpediente`: Entidad inmutable que registra la trazabilidad del trámite.
-- **Enums y Value Objects:**
-  - `EstadoExpediente`: Define los estados legales (`FORMATOS_GENERADOS`, `DOCUMENTOS_VALIDADOS`, `EN_EVALUACION_FINAL`, `APROBADO`, `RECHAZADO`).
-  - `NivelRiesgo`: Clasificación objetiva CENEPRED (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`).
-  - `RolUsuario`: Roles RBAC (`ROLE_ADMIN`, `ROLE_EVALUADOR`, `ROLE_CAJERO`).
-- **Reglas e Invariantes:** Lógica pura de validación que impide transiciones de estado ilegales o emisión de licencias sin validación de requisitos.
+### 3.1. Capa 1: Dominio Empresarial (Enterprise Domain)
+Es el núcleo del sistema, libre de lógica de infraestructura. Modela las reglas fundamentales de la Ley N° 28976 y el TUO Ley N° 27444:
+- **Entidades de Dominio:** `Expediente`, `Cuenta`, `Establecimiento`, `SolicitudBorrador`, `ResolucionAdministrativa`, `LicenciaEmitida`, `InformeAdministrativo`.
+- **Enumeraciones y Tipos de Valor:** `EstadoExpediente` (10 estados oficiales), `NivelRiesgo` (BAJO, MEDIO, ALTO, MUY_ALTO), `EstadoResolucion`, `TipoVigenciaLicencia`, `ConclusionInforme`.
+- **Invariantes de Negocio:** Lógica pura de validación que impide transiciones ilegales (e.g. no emitir licencia sin resolución en estado `FIRMADA`).
 
-### 3.2. Capa 2: Casos de Uso / Aplicación (Application Business Rules)
-Contiene la orquestación y flujo del software para cumplir las peticiones de los usuarios:
+### 3.2. Capa 2: Aplicación y Casos de Uso (Application Business Rules)
+Contiene la orquestación de flujos de trabajo específicos:
 - **Servicios de Aplicación:**
-  - `ExpedienteService`: Orquesta el registro del trámite, validación de documentos, cálculo de tasa y transición de estados.
-  - `CalculadoraDeTasa`: Aplica la regla de negocio para computar la tasa municipal exacta con base en el nivel de riesgo ITSE.
-  - `TarifaTupaService`: Administra el catálogo de tarifas TUPA y su actualización dinámica.
-  - `NotificacionEmailService`: Coordina el envío de alertas asíncronas con plantillas HTML y adjuntos PDF.
-  - `AuditoriaService`: Registra cada transición de estado con marca de tiempo, usuario y dirección IP.
-- **Puertos de Salida (Driven Ports):** Interfaces puras en Java (`SatPort`, `DefensaCivilPort`, `EdificacionesPort`, `FiscalizacionPort`) que definen lo que la aplicación necesita de agentes externos.
+  - `ExpedienteService`: Orquesta el ciclo de vida del trámite, evaluación y transiciones formales.
+  - `ResolucionAdministrativaService`: Prepara resoluciones, gestiona la aprobación y coordina el ciclo de firma.
+  - `LicenciaService`: Gestiona la emisión atómica de licencias oficiales, generación de token QR criptográfico y verificación pública.
+  - `CalculadoraDeTasa`: Computa tasas exactas TUPA según riesgo ITSE.
+  - `AuditoriaService`: Registra eventos inmutables de auditoría administrativa.
+- **Puertos de Integración (Driven Ports):** Interfaces que definen los requerimientos de la aplicación hacia entidades externas (e.g. `FirmaDigitalPort`).
 
 ### 3.3. Capa 3: Adaptadores de Interfaz (Interface Adapters)
-Convierte la información entre el formato requerido por la capa de aplicación y el formato requerido por el mundo exterior:
+Traduce datos entre las capas de dominio/aplicación y la infraestructura tecnológica:
 - **Adaptadores de Salida (Driven Adapters):**
-  - `SatAdapterService`: Implementa `SatPort` para interactuar con la recaudación del SAT Huamanga.
-  - `DefensaCivilAdapterService`: Implementa `DefensaCivilPort` para registrar y consultar dictámenes ITSE.
-  - `EdificacionesAdapterService`: Implementa `EdificacionesPort` para la compatibilidad de uso del suelo.
-  - `FiscalizacionAdapterService`: Implementa `FiscalizacionPort` para actas de control posterior.
-  - `LicenciaPdfGenerator`, `Anexo1PdfGenerator`, `Anexo3PdfGenerator`, `Anexo4PdfGenerator`: Adaptadores que traducen entidades a documentos binarios PDF mediante OpenPDF.
-- **Adaptadores de Persistencia:** Implementaciones de Spring Data JPA (`ExpedienteRepository`, `TarifaTupaRepository`) que convierten entidades a sentencias SQL relacionales.
+  - `FirmaDigitalAdapterService`: Implementa `FirmaDigitalPort` para interactuar con proveedores IOFE de firma remota.
+  - `SatAdapterService` y `EdificacionesAdapterService`: Adaptadores desacoplados para pagos y zonificación.
+  - `LicenciaPdfGenerator`, `Anexo1PdfGenerator`: Adaptadores que renderizan entidades de dominio a binarios PDF vectoriales con OpenPDF.
+- **Adaptadores de Persistencia:** Interfaces Spring Data JPA (`ExpedienteRepository`, `ResolucionAdministrativaRepository`) que traducen entidades a sentencias SQL sobre PostgreSQL 16.
 
-### 3.4. Capa 4: Frameworks, Drivers y Mecanismos de Entrega (Delivery Layer)
-Es la capa más externa, encargada de conectar la aplicación con la infraestructura y los usuarios:
-- **Controladores REST (Driving Adapters):** `ExpedienteController`, `PublicLicenciasController`, `TarifaTupaController`, `AuthController`, `DocumentosFormulariosController`.
-- **Seguridad:** Spring Security 6, `JwtAuthenticationFilter`, `JwtTokenProvider` para autenticación stateless mediante JWT.
-- **Base de Datos:** PostgreSQL 15 en contenedor Docker y base de datos H2 para suites de prueba automatizada.
-- **Frontend Web:** Interfaces de usuario ligeras desarrolladas con HTML5 semántico, CSS moderno y JavaScript Vanilla (`portal-ciudadano.html`, `portal-interno.html`, `portal-verificacion.html`).
+### 3.4. Capa 4: Frameworks, Drivers y Presentación (Delivery Layer)
+Es la capa periférica que conecta el sistema con usuarios y protocolos externos:
+- **Controladores REST (Driving Adapters):** `ExpedienteController`, `ResolucionAdministrativaController`, `LicenciaController`, `InspectorLicenciasController`.
+- **Seguridad:** Spring Security 6, filtros stateless JWT (`JwtAuthenticationFilter`), evaluadores BOLA/IDOR contextuales (`@expedienteSecurity`, `@licenciaSecurity`).
+- **Interfaces Web:** Portales ligeros HTML5/CSS3/JavaScript (`portal-ciudadano.html`, `portal-interno.html`, `verificar-licencia.html`).
 
 ---
 
 ## 4. Patrón Ports & Adapters (Arquitectura Hexagonal)
 
-La interacción entre el núcleo de la aplicación y el exterior se estructura mediante puertos y adaptadores:
+La integración con entidades e infraestructuras externas se estructura mediante puertos y adaptadores:
 
 ```mermaid
 graph LR
-    subgraph Driving Side [Lado de Entrada / Driving]
-        HTTP["🌐 Solicitud HTTP REST / Web Browser"]
-        CTRL["ExpedienteController<br/>(Driving Adapter)"]
+    subgraph Driving Side [Lado de Entrada / Driving Adapters]
+        HTTP["🌐 Petición HTTP REST / Web Client"]
+        CTRL["LicenciaController / InspectorController<br/>(Driving Adapter)"]
         HTTP --> CTRL
     end
 
     subgraph Core Application [Hexágono: Aplicación & Dominio]
-        SERVICE["ExpedienteService<br/>(Caso de Uso)"]
+        SVC["LicenciaService / ResolucionService<br/>(Caso de Uso)"]
         PORT_IN["API del Servicio<br/>(Driving Port)"]
-        PORT_OUT1["SatPort<br/>(Driven Port)"]
-        PORT_OUT2["DefensaCivilPort<br/>(Driven Port)"]
+        PORT_OUT["FirmaDigitalPort<br/>(Driven Port - Interfaz Pura)"]
     end
 
-    subgraph Driven Side [Lado de Salida / Driven]
-        AD_SAT["SatAdapterService<br/>(Driven Adapter)"]
-        AD_DC["DefensaCivilAdapterService<br/>(Driven Adapter)"]
-        SAT_SYS["🏛️ Sistema SAT Huamanga"]
-        DC_SYS["🚒 Subgerencia Defensa Civil"]
+    subgraph Driven Side [Lado de Salida / Driven Adapters]
+        AD_FIRMA["FirmaDigitalAdapterService<br/>(Driven Adapter)"]
+        AD_PDF["LicenciaPdfGenerator<br/>(Driven Adapter OpenPDF)"]
+        IOFE["🏛️ Plataforma IOFE / Proveedor de Firma"]
     end
 
     CTRL --> PORT_IN
-    PORT_IN --> SERVICE
-    SERVICE --> PORT_OUT1
-    SERVICE --> PORT_OUT2
-    PORT_OUT1 --> AD_SAT
-    PORT_OUT2 --> AD_DC
-    AD_SAT --> SAT_SYS
-    AD_DC --> DC_SYS
+    PORT_IN --> SVC
+    SVC --> PORT_OUT
+    SVC --> AD_PDF
+    PORT_OUT --> AD_FIRMA
+    AD_FIRMA -.->|Llamada Remota| IOFE
 ```
 
-### Beneficios Concretos del Patrón Hexagonal en MuniHuamanga:
-1. **Desacoplamiento Absoluto de Dependencias Externas:** Si la Subgerencia de Defensa Civil moderniza su sistema interno o el SAT cambia su formato de intercambio de datos, **únicamente se modifica el adaptador correspondiente**, dejando intacto el código de expedientes y el dominio.
-2. **Pruebas Automatizadas Rápidas y Confiables:** Se pueden ejecutar pruebas unitarias simulando los puertos mediante Mocks sin necesidad de contar con conexión a las bases de datos del SAT o de Defensa Civil.
-3. **Modo Autónomo (Self-Contained):** En caso de caída de conectividad de la red municipal, los adaptadores pueden operar en modo de simulación o contingencia sin detener la mesa de partes virtual.
+### Ejemplo Real del Código: `FirmaDigitalPort`
+El núcleo de la aplicación define el contrato de firma sin conocer detalles del proveedor de firma digital:
+
+```java
+// Puerto (Capa 2: Aplicación)
+public interface FirmaDigitalPort {
+    ResultadoFirmaDigital firmarDocumento(
+        byte[] documentoPdf,
+        String firmanteDni,
+        String firmanteNombre,
+        String firmanteCargo
+    );
+}
+
+// Adaptador (Capa 3: Infraestructura/Integración)
+@Service
+@RequiredArgsConstructor
+public class FirmaDigitalAdapterService implements FirmaDigitalPort {
+    @Value("${munihuamanga.firma-digital.enabled:false}")
+    private boolean firmaDigitalHabilitada;
+
+    @Override
+    public ResultadoFirmaDigital firmarDocumento(...) {
+        if (!firmaDigitalHabilitada) {
+            // Comportamiento fail-closed estricto
+            return ResultadoFirmaDigital.error(
+                "Servicio de firma digital institucional no configurado. Bloqueo fail-closed."
+            );
+        }
+        // Integración con servicio oficial IOFE
+        ...
+    }
+}
+```
 
 ---
 
-## 5. Matriz de Componentes del Proyecto por Capa
+## 5. Aplicación Práctica de los Principios SOLID
 
-| Capa Clean Architecture | Componente en el Proyecto | Tipo de Componente | Rol en el Sistema |
-|---|---|---|---|
-| **Dominio (Capa 1)** | `Expediente.java` | Entidad JPA / Negocio | Representa el expediente con sus 45 atributos normativos. |
-| **Dominio (Capa 1)** | `EstadoExpediente.java` | Enum del Dominio | Define los estados válidos de la máquina de estados. |
-| **Dominio (Capa 1)** | `NivelRiesgo.java` | Enum del Dominio | Clasificación objetiva del riesgo ITSE según CENEPRED. |
-| **Dominio (Capa 1)** | `TarifaTupa.java` | Entidad JPA / Negocio | Modela el tarifario administrativo municipal vigente. |
-| **Aplicación (Capa 2)** | `ExpedienteService.java` | Servicio de Casos de Uso | Coordina el registro, transiciones y aprobaciones. |
-| **Aplicación (Capa 2)** | `CalculadoraDeTasa.java` | Lógica de Negocio | Computa montos de pago según riesgo y TUPA. |
-| **Aplicación (Capa 2)** | `SatPort.java` | Puerto Secundario (Interface) | Contrato para conciliación y validación de vouchers SAT. |
-| **Aplicación (Capa 2)** | `DefensaCivilPort.java` | Puerto Secundario (Interface) | Contrato para la calificación e inspección técnica ITSE. |
-| **Adaptadores (Capa 3)** | `SatAdapterService.java` | Adaptador Secundario | Implementación del puerto para validar pagos tributarios. |
-| **Adaptadores (Capa 3)** | `LicenciaPdfGenerator.java` | Adaptador Tecnológico | Renderiza el PDF de licencia con OpenPDF y QR ZXing. |
-| **Adaptadores (Capa 3)** | `ExpedienteRepository.java` | Adaptador de Persistencia | Repositorio Spring Data JPA para PostgreSQL. |
-| **Frameworks (Capa 4)** | `ExpedienteController.java` | Adaptador Primario (REST) | Expone la API REST del expediente al portal web. |
-| **Frameworks (Capa 4)** | `JwtAuthenticationFilter.java`| Filtro de Seguridad | Valida el token JWT en las solicitudes internas. |
-| **Frameworks (Capa 4)** | `portal-ciudadano.js` | Frontend Cliente | Orquesta la interacción del usuario en el navegador web. |
+1. **Single Responsibility Principle (SRP):**
+   - `CalculadoraDeTasa` calcula exclusivamente tasas TUPA.
+   - `AuditoriaService` gestiona únicamente la trazabilidad inmutable de eventos.
+   - `RateLimiterService` se encarga exclusivamente de regular la frecuencia de consultas públicas.
+2. **Open/Closed Principle (OCP):**
+   - El puerto `FirmaDigitalPort` permite incorporar nuevos proveedores de firma digital (e.g. RENIEC, ONPE, certificados locales) implementando nuevos adaptadores sin alterar los servicios de resoluciones ni de licencias.
+3. **Liskov Substitution Principle (LSP):**
+   - Cualquier implementación de `FirmaDigitalPort` respeta las precondiciones y postcondiciones del contrato devolviendo un `ResultadoFirmaDigital` consistente.
+4. **Interface Segregation Principle (ISP):**
+   - Las interfaces de repositorios y servicios están segregadas por entidad y responsabilidad (`CuentaRepository`, `EstablecimientoRepository`, `LicenciaEmitidaRepository`), evitando interfaces monolíticas con métodos innecesarios.
+5. **Dependency Inversion Principle (DIP):**
+   - Los servicios de aplicación dependen de interfaces y abstracciones (`FirmaDigitalPort`, `ExpedienteRepository`), mientras que las implementaciones concretas residen en adaptadores inyectados por Spring.
 
 ---
 
-## 6. Conclusiones
+## 6. Desviaciones Reales y Pragmatismo Técnico
 
-El **Enfoque Arquitectónico** basado en **Clean Architecture + Hexagonal** garantiza que el Sistema de Licencias de Funcionamiento de la Municipalidad Provincial de Huamanga:
-- Mantenga su lógica normativa estrictamente protegida de cambios en librerías o tecnologías de persistencia.
-- Permita la máxima cobertura de pruebas unitarias e integración (80 tests automatizados con 100% de éxito).
-- Facilite el mantenimiento evolutivo ante futuras normativas o directivas de la Presidencia del Consejo de Ministros (PCM).
+En un análisis riguroso de arquitectura de software, es imprescindible documentar con total transparencia las **desviaciones existentes respecto del modelo canónico ideal de Clean Architecture**:
+
+### 6.1. Entidades de Dominio Anotadas con JPA/Hibernate
+- **Desviación:** En Clean Architecture pura, las entidades de dominio son clases Java POJO absolutamente libres de anotaciones de frameworks. En MuniHuamanga V2, entidades como `Expediente`, `ResolucionAdministrativa` y `LicenciaEmitida` contienen anotaciones `@Entity`, `@Table`, `@Column`, `@Id` y `@ManyToOne`.
+- **Justificación Pragmática:** Mantener entidades de dominio separadas de entidades JPA duplicaría todas las clases del modelo, exigiendo capas redundantes de mapeadores objeto-objeto en un sistema mantenido por un equipo municipal compacto.
+- **Riesgo y Control:** Se mitiga evitando que la lógica de negocio dependa de características específicas del proveedor ORM y asegurando que las reglas del dominio se validen antes de invocar la persistencia.
+
+### 6.2. Uso de `@Transactional` de Spring en Servicios de Aplicación
+- **Desviación:** Los servicios de casos de uso utilizan la anotación `@Transactional` de Spring Framework en lugar de implementar un control de transacciones puramente desacoplado mediante patrones Unit of Work abstractos.
+- **Justificación Pragmática:** Aprovecha la robustez y optimización del gestor de transacciones de Spring y el pool HikariCP en PostgreSQL 16 sin reinventar la rueda.
+
+### 6.3. Coexistencia de Servicios Consolidados en Lugar de Use Cases Atómicos
+- **Desviación:** En lugar de crear una clase por cada caso de uso individual (e.g., `CrearExpedienteUseCase`, `AprobarExpedienteUseCase`), clases como `ExpedienteService` y `LicenciaService` agrupan varios casos de uso fuertemente relacionados con el ciclo de vida de la entidad.
+- **Justificación Pragmática:** Mejora la cohesión y navegabilidad del código en un proyecto municipal sin dispersar la lógica en cientos de clases unitarias artificiales.
