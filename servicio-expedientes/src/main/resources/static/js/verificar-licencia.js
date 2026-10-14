@@ -3,20 +3,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConsultar = document.getElementById('btnConsultar');
   const loadingBox = document.getElementById('loadingBox');
   const resultadoBox = document.getElementById('resultadoBox');
+  const tabPublico = document.getElementById('tabPublico');
+  const tabInspector = document.getElementById('tabInspector');
+  const inspectorAuthAlert = document.getElementById('inspectorAuthAlert');
 
-  // Leer parámetro ?codigo= de la URL
+  let modoActual = 'PUBLICO'; // 'PUBLICO' o 'INSPECTOR'
+  let leafletMap = null;
+  let inspectorMarker = null;
+
+  // Leer parámetros de la URL (?token= o ?codigo=)
   const urlParams = new URLSearchParams(window.location.search);
-  const codigoFromUrl = urlParams.get('codigo');
+  const tokenFromUrl = urlParams.get('token') || urlParams.get('codigo');
+  const modoFromUrl = urlParams.get('modo');
 
-  if (codigoFromUrl) {
-    inputCodigo.value = codigoFromUrl.trim();
-    consultarLicencia(codigoFromUrl.trim());
+  if (modoFromUrl && modoFromUrl.toUpperCase() === 'INSPECTOR') {
+    activarModoInspector();
+  }
+
+  if (tokenFromUrl) {
+    inputCodigo.value = tokenFromUrl.trim();
+    consultarLicencia(tokenFromUrl.trim());
+  }
+
+  tabPublico.addEventListener('click', () => {
+    modoActual = 'PUBLICO';
+    tabPublico.classList.add('active');
+    tabInspector.classList.remove('active');
+    inspectorAuthAlert.style.display = 'none';
+    if (inputCodigo.value.trim()) {
+      consultarLicencia(inputCodigo.value.trim());
+    }
+  });
+
+  tabInspector.addEventListener('click', () => {
+    activarModoInspector();
+  });
+
+  function activarModoInspector() {
+    modoActual = 'INSPECTOR';
+    tabInspector.classList.add('active');
+    tabPublico.classList.remove('active');
+
+    const tokenJwt = obtenerTokenJwt();
+    if (!tokenJwt) {
+      inspectorAuthAlert.style.display = 'flex';
+    } else {
+      inspectorAuthAlert.style.display = 'none';
+    }
+
+    if (inputCodigo.value.trim()) {
+      consultarLicencia(inputCodigo.value.trim());
+    }
+  }
+
+  function obtenerTokenJwt() {
+    return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   }
 
   btnConsultar.addEventListener('click', () => {
     const val = inputCodigo.value.trim();
     if (!val) {
-      alert('Por favor ingrese un código de licencia (ej: LIC-2026-XXXXXXXX).');
+      alert('Por favor ingrese o escanee el token QR de la licencia.');
       return;
     }
     consultarLicencia(val);
@@ -28,159 +75,441 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  async function consultarLicencia(codigo) {
+  async function consultarLicencia(token) {
     loadingBox.style.display = 'block';
     resultadoBox.style.display = 'none';
 
     try {
-      const resp = await fetch(`/api/public/licencias/${encodeURIComponent(codigo)}`);
-      if (!resp.ok) {
-        throw new Error(`Error en el servidor al consultar la licencia: ${resp.status}`);
+      if (modoActual === 'INSPECTOR') {
+        const tokenJwt = obtenerTokenJwt();
+        if (!tokenJwt) {
+          inspectorAuthAlert.style.display = 'flex';
+          throw new Error('Debe iniciar sesión como INSPECTOR o ADMINISTRADOR para consultar este módulo.');
+        }
+
+        const resp = await fetch(`/api/inspector/licencias/verificar/${encodeURIComponent(token)}`, {
+          headers: {
+            'Authorization': `Bearer ${tokenJwt}`
+          }
+        });
+
+        if (resp.status === 401 || resp.status === 403) {
+          inspectorAuthAlert.style.display = 'flex';
+          throw new Error('Credenciales insuficientes: se requiere perfil ROLE_INSPECTOR o ROLE_ADMIN.');
+        }
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.mensaje || `Error en el servidor al consultar (${resp.status})`);
+        }
+
+        const data = await resp.json();
+        renderResultadoInspector(data);
+      } else {
+        const resp = await fetch(`/api/licencias/verificar/${encodeURIComponent(token)}`);
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.mensaje || `Código QR no encontrado en el padrón municipal (${resp.status})`);
+        }
+        const data = await resp.json();
+        renderResultadoPublico(data);
       }
-      const data = await resp.json();
-      renderResultado(data);
     } catch (err) {
       console.error(err);
-      renderError(codigo, err.message);
+      renderError(token, err.message);
     } finally {
       loadingBox.style.display = 'none';
       resultadoBox.style.display = 'block';
     }
   }
 
-  function renderResultado(lic) {
-    if (lic.valida) {
-      resultadoBox.innerHTML = `
-        <div class="verify-card">
-          <div class="verify-header">
-            <span style="font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9;">
-              Constatación de Autenticidad en Tiempo Real
-            </span>
-            <h2 style="font-size: 1.5rem; margin: 0.5rem 0; font-weight: 800;">
-              MUNICIPALIDAD PROVINCIAL DE HUAMANGA
-            </h2>
-            <div class="verify-badge-valid">
-              ✓ LICENCIA OFICIAL Y VIGENTE
-            </div>
-          </div>
+  function renderResultadoPublico(lic) {
+    const badgeClass = obtenerBadgeClass(lic.estadoLicencia, lic.valida);
+    const badgeTexto = obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
 
-          <div class="verify-body">
-            <div style="background: #ecfdf5; border-left: 4px solid var(--success); padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
-              <p style="color: #065f46; font-size: 0.95rem; font-weight: 500;">
-                ${lic.mensajeVerificacion || 'Licencia expedida conforme a la Ley N° 28976 y TUO D.S. N° 046-2017-PCM.'}
-              </p>
-            </div>
-
-            <h3 style="color: var(--primary); font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem;">
-              Datos del Establecimiento Autorizado
-            </h3>
-
-            <div class="data-grid">
-              <div class="data-item">
-                <div class="data-label">Código de Licencia</div>
-                <div class="data-val" style="color: var(--primary);">${lic.numeroLicencia || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Número de Expediente</div>
-                <div class="data-val">${lic.numeroTramite || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Titular o Solicitante</div>
-                <div class="data-val">${lic.titular || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Documento de Identidad</div>
-                <div class="data-val">${lic.documentoIdentidad || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Razón Social</div>
-                <div class="data-val">${lic.razonSocial || '(Persona Natural)'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Nombre Comercial</div>
-                <div class="data-val">${lic.nombreComercial || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Giro o Actividad Autorizada</div>
-                <div class="data-val">${lic.giro || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Dirección en Huamanga</div>
-                <div class="data-val">${lic.direccion || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Nivel de Riesgo ITSE</div>
-                <div class="data-val">${lic.nivelRiesgo || '-'}</div>
-              </div>
-              <div class="data-item">
-                <div class="data-label">Vigencia Legal</div>
-                <div class="data-val" style="color: var(--success);">INDETERMINADA (Art. 11 Ley 28976)</div>
-              </div>
-            </div>
-
-            <div class="qr-security-box">
-              <img class="qr-preview-img" src="/api/public/licencias/${encodeURIComponent(lic.numeroLicencia)}/qr?size=160" alt="Código QR Licencia" width="160" height="160" />
-              <div>
-                <p style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">Código QR Criptográfico Certificado</p>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
-                  Firma Electrónica Avanzada: Abog. Carlos Mendoza Palomino (Gerente de Licencias)
-                </p>
-              </div>
-            </div>
-
-            <p class="legal-notice">
-              Este registro digital es público y de libre consulta en cumplimiento del Principio de Publicidad y Transparencia Administrativa (Ley N° 27444).
-            </p>
+    resultadoBox.innerHTML = `
+      <div class="verify-card">
+        <div class="verify-header">
+          <img class="escudo-muni" src="img/escudo-huamanga.png" alt="Escudo de Huamanga" onerror="this.style.display='none'">
+          <h1>Municipalidad Provincial de Huamanga</h1>
+          <p>Constatación Oficial de Autenticidad en Tiempo Real (M10)</p>
+          <div class="status-badge ${badgeClass}">
+            ${badgeTexto}
           </div>
         </div>
-      `;
-    } else {
-      resultadoBox.innerHTML = `
-        <div class="verify-card">
-          <div class="verify-header" style="background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);">
-            <span style="font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9;">
-              Constatación de Autenticidad
-            </span>
-            <h2 style="font-size: 1.5rem; margin: 0.5rem 0; font-weight: 800;">
-              MUNICIPALIDAD PROVINCIAL DE HUAMANGA
-            </h2>
-            <div class="verify-badge-invalid">
-              ✕ LICENCIA NO REGISTRADA O NO VÁLIDA
+
+        <div class="verify-body">
+          <div class="alert-banner ${lic.valida ? 'alert-success' : 'alert-danger'}">
+            <span>${lic.mensajeVerificacion || 'Verificación procesada con el registro oficial de licencias.'}</span>
+          </div>
+
+          <h3 style="color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+            Datos de la Licencia y Establecimiento
+          </h3>
+
+          <div class="data-grid">
+            <div class="data-item">
+              <div class="data-label">Número de Licencia</div>
+              <div class="data-val" style="color: #1e3a8a;">${lic.numeroLicencia || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Resolución Gerencial</div>
+              <div class="data-val">${lic.numeroResolucion || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Nombre Comercial</div>
+              <div class="data-val">${lic.nombreComercial || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Titular / Razón Social</div>
+              <div class="data-val">${lic.titularNombreORazonSocial || '-'}</div>
+            </div>
+            <div class="data-item" style="grid-column: 1 / -1;">
+              <div class="data-label">Dirección Autorizada</div>
+              <div class="data-val">${lic.direccionEstablecimiento || '-'}</div>
+            </div>
+            <div class="data-item" style="grid-column: 1 / -1;">
+              <div class="data-label">Giro o Actividad Económica</div>
+              <div class="data-val">${lic.giroActividad || '-'} ${lic.ciiuCodigo ? `(CIIU: ${lic.ciiuCodigo})` : ''}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Tipo de Vigencia</div>
+              <div class="data-val">${lic.tipoVigencia || 'INDETERMINADA'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Fecha de Emisión</div>
+              <div class="data-val">${lic.fechaEmision || '-'}</div>
+            </div>
+            ${lic.fechaCaducidad ? `
+            <div class="data-item">
+              <div class="data-label">Fecha de Caducidad</div>
+              <div class="data-val" style="color: #dc2626;">${lic.fechaCaducidad}</div>
+            </div>` : ''}
+            <div class="data-item">
+              <div class="data-label">Autoridad Emisora</div>
+              <div class="data-val">${lic.autoridadEmisora || 'Subgerencia de Comercio y Licencias'}</div>
             </div>
           </div>
 
-          <div class="verify-body">
-            <div style="background: #fef2f2; border-left: 4px solid var(--danger); padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
-              <p style="color: #991b1b; font-size: 0.95rem; font-weight: 500;">
-                ${lic.mensajeVerificacion || 'El código de licencia ingresado no corresponde a una licencia vigente en el padrón municipal.'}
-              </p>
-            </div>
+          <p class="legal-notice">
+            Registro público oficial conforme a la Ley Marco de Licencias de Funcionamiento (Ley N° 28976) y Ley de Protección de Datos Personales (Ley N° 29733).
+            <br>Consulta realizada el: <strong>${formatearFechaHora(lic.fechaConsulta)}</strong>.
+            <br>La verificación corresponde al estado registrado al momento exacto de la consulta.
+          </p>
+        </div>
+      </div>
+    `;
+  }
 
-            <div class="data-item" style="border-left-color: var(--danger); margin-bottom: 1.5rem;">
-              <div class="data-label">Código Consultado</div>
-              <div class="data-val" style="color: var(--danger);">${lic.numeroLicencia || inputCodigo.value}</div>
-            </div>
+  function renderResultadoInspector(lic) {
+    const badgeClass = obtenerBadgeClass(lic.estadoLicencia, lic.valida);
+    const badgeTexto = obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
 
-            <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
-              Si usted es el titular y considera que esto es un error, por favor verifique que el número de trámite haya completado la fase de evaluación final y cuente con resolución aprobatoria de la Gerencia de Licencias.
-            </p>
+    resultadoBox.innerHTML = `
+      <div class="verify-card">
+        <div class="verify-header" style="background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);">
+          <img class="escudo-muni" src="img/escudo-huamanga.png" alt="Escudo de Huamanga" onerror="this.style.display='none'">
+          <h1>Panel de Fiscalización en Campo</h1>
+          <p>Módulo de Consulta Móvil para Inspectores Municipales (CA-10 / I09)</p>
+          <div class="status-badge ${badgeClass}">
+            ${badgeTexto}
           </div>
         </div>
-      `;
+
+        <div class="verify-body">
+          <div class="alert-banner ${lic.valida ? 'alert-success' : 'alert-danger'}">
+            <span>${lic.mensajeVerificacion || 'Licencia verificada para función inspectiva.'}</span>
+          </div>
+
+          <h3 style="color: #065f46; font-size: 1.1rem; border-bottom: 2px solid #bbf7d0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+            Identificación Oficial del Establecimiento
+          </h3>
+
+          <div class="data-grid">
+            <div class="data-item">
+              <div class="data-label">Número de Licencia</div>
+              <div class="data-val" style="color: #065f46;">${lic.numeroLicencia || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Expediente de Trámite</div>
+              <div class="data-val">${lic.numeroExpediente || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Resolución de Emisión</div>
+              <div class="data-val">${lic.numeroResolucion || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Nombre Comercial</div>
+              <div class="data-val">${lic.nombreComercial || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Titular / Representante Legal</div>
+              <div class="data-val">${lic.titularNombreORazonSocial || '-'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Doc. Identidad Titular</div>
+              <div class="data-val">${lic.titularTipoDocumento || 'DNI/RUC'}: ${lic.titularNumeroDocumento || '-'}</div>
+            </div>
+            <div class="data-item" style="grid-column: 1 / -1;">
+              <div class="data-label">Dirección Autorizada</div>
+              <div class="data-val">${lic.direccionAutorizada || '-'}</div>
+            </div>
+            ${lic.referenciaUbicacion ? `
+            <div class="data-item" style="grid-column: 1 / -1;">
+              <div class="data-label">Referencia Municipal</div>
+              <div class="data-val">${lic.referenciaUbicacion}</div>
+            </div>` : ''}
+            <div class="data-item" style="grid-column: 1 / -1;">
+              <div class="data-label">Giro Autorizado</div>
+              <div class="data-val">${lic.giroActividad || '-'} ${lic.ciiuCodigo ? `(CIIU: ${lic.ciiuCodigo})` : ''}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Aforo Permitido</div>
+              <div class="data-val">${lic.aforoPersonas != null ? lic.aforoPersonas + ' personas' : 'No especificado'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Área del Local</div>
+              <div class="data-val">${lic.areaMetrosCuadrados != null ? lic.areaMetrosCuadrados + ' m²' : 'No especificada'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Zonificación PDU</div>
+              <div class="data-val">${lic.zonificacion || 'Comercial'}</div>
+            </div>
+            <div class="data-item">
+              <div class="data-label">Riesgo ITSE</div>
+              <div class="data-val">${lic.nivelRiesgoItse || 'MEDIO'}</div>
+            </div>
+          </div>
+
+          <!-- Sección de Geolocalización y Mapa -->
+          <div class="inspector-panel">
+            <div class="inspector-header">
+              <h3>📍 Georreferenciación Oficial del Establecimiento</h3>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #166534; background: #dcfce7; padding: 4px 8px; border-radius: 4px;">
+                ${lic.tipoCoordenada === 'RECTIFICADA_APROBADA' ? '✓ RECTIFICADA Y APROBADA' : 'OFICIAL DECLARADA'}
+              </span>
+            </div>
+
+            ${lic.coordenadasVerificadas && lic.latitud && lic.longitud ? `
+              <p style="font-size: 0.9rem; color: #166534; margin: 0 0 0.5rem 0;">
+                Coordenadas: <strong>Lat: ${lic.latitud}, Lon: ${lic.longitud}</strong>
+              </p>
+              <div id="mapContainer"></div>
+
+              <div class="map-actions">
+                ${lic.enlaceNavegacion ? `
+                <a href="${lic.enlaceNavegacion}" target="_blank" rel="noopener noreferrer" class="btn-action btn-navigate">
+                  🧭 Abrir en GPS (Google Maps / Waze)
+                </a>` : ''}
+                <button id="btnGpsInspector" class="btn-action btn-gps">
+                  📍 Cotejar con mi ubicación actual (GPS)
+                </button>
+              </div>
+
+              <div id="gpsResultBox" style="display: none; margin-top: 1rem; padding: 0.75rem; background: #ffffff; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem;">
+              </div>
+            ` : `
+              <div class="alert-banner alert-warning" style="margin-top: 0.5rem;">
+                <span>⚠️ Aviso: El establecimiento no cuenta con coordenadas geográficas verificadas en el padrón municipal.</span>
+              </div>
+            `}
+          </div>
+
+          <p class="legal-notice">
+            Fiscalización oficial realizada por el inspector: <strong>${lic.inspectorConsultante || 'INSPECTOR'}</strong>
+            <br>Registro de auditoría grabado el: <strong>${formatearFechaHora(lic.fechaConsulta)}</strong>.
+            <br>El inspector actúa con facultades de verificación de campo; no tiene competencia para emitir, anular ni modificar títulos habilitantes.
+          </p>
+        </div>
+      </div>
+    `;
+
+    // Si existen coordenadas, inicializar el mapa Leaflet
+    if (lic.coordenadasVerificadas && lic.latitud && lic.longitud) {
+      setTimeout(() => {
+        inicializarMapa(Number(lic.latitud), Number(lic.longitud), lic.nombreComercial, lic.direccionAutorizada, lic.tipoCoordenada);
+      }, 100);
     }
   }
 
-  function renderError(codigo, errorMsg) {
+  function inicializarMapa(lat, lon, nombreComercial, direccion, tipoCoordenada) {
+    if (typeof L === 'undefined') {
+      console.warn('Leaflet no está disponible en este entorno.');
+      return;
+    }
+
+    if (leafletMap) {
+      leafletMap.remove();
+      leafletMap = null;
+    }
+
+    const mapElement = document.getElementById('mapContainer');
+    if (!mapElement) return;
+
+    leafletMap = L.map('mapContainer').setView([lat, lon], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors | MuniHuamanga'
+    }).addTo(leafletMap);
+
+    const marker = L.marker([lat, lon]).addTo(leafletMap);
+    marker.bindPopup(`
+      <strong>${nombreComercial || 'Establecimiento'}</strong><br>
+      ${direccion || ''}<br>
+      <small style="color: #2563eb;">Coordenada: ${tipoCoordenada || 'OFICIAL'}</small>
+    `).openPopup();
+
+    // Evento para cotejar ubicación GPS del inspector
+    const btnGps = document.getElementById('btnGpsInspector');
+    if (btnGps) {
+      btnGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          alert('Su dispositivo no soporta geolocalización GPS.');
+          return;
+        }
+
+        btnGps.disabled = true;
+        btnGps.innerText = 'Obteniendo GPS...';
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            btnGps.disabled = false;
+            btnGps.innerText = '📍 Cotejar con mi ubicación actual (GPS)';
+
+            const inspLat = pos.coords.latitude;
+            const inspLon = pos.coords.longitude;
+            const precision = Math.round(pos.coords.accuracy);
+
+            const distMetros = calcularDistanciaHaversine(inspLat, inspLon, lat, lon);
+
+            if (inspectorMarker) {
+              leafletMap.removeLayer(inspectorMarker);
+            }
+
+            inspectorMarker = L.circleMarker([inspLat, inspLon], {
+              radius: 8,
+              fillColor: '#dc2626',
+              color: '#ffffff',
+              weight: 2,
+              opacity: 1,
+              fillOpacity: 0.9
+            }).addTo(leafletMap);
+
+            inspectorMarker.bindPopup(`<strong>Ubicación Actual del Inspector</strong><br>Precisión: ±${precision}m`).openPopup();
+
+            // Ajustar vista para abarcar ambos puntos
+            const group = new L.featureGroup([marker, inspectorMarker]);
+            leafletMap.fitBounds(group.getBounds().pad(0.2));
+
+            const gpsResultBox = document.getElementById('gpsResultBox');
+            if (gpsResultBox) {
+              gpsResultBox.style.display = 'block';
+              gpsResultBox.innerHTML = `
+                <strong>Distancia aproximada al local:</strong> ${distMetros.toLocaleString()} metros.<br>
+                <span style="color: #64748b;">(Precisión satelital del dispositivo: ±${precision}m)</span><br>
+                <em style="font-size: 0.8rem; color: #d97706;">* Nota: La distancia calculada es un indicador referencial de proximidad y no constituye por sí sola prueba automática de traslado físico.</em>
+              `;
+            }
+          },
+          (err) => {
+            btnGps.disabled = false;
+            btnGps.innerText = '📍 Cotejar con mi ubicación actual (GPS)';
+            alert('No se pudo acceder a la ubicación del dispositivo: ' + err.message);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+  }
+
+  function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Radio de la Tierra en metros
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c);
+  }
+
+  function obtenerBadgeClass(estado, valida) {
+    if (!valida) return 'badge-invalida';
+    if (!estado) return 'badge-vigente';
+    switch (estado.toUpperCase()) {
+      case 'EMITIDA':
+      case 'VIGENTE':
+        return 'badge-vigente';
+      case 'TEMPORAL':
+        return 'badge-temporal';
+      case 'SUSPENDIDA':
+        return 'badge-suspendida';
+      case 'REVOCADA':
+        return 'badge-revocada';
+      case 'VENCIDA':
+        return 'badge-vencida';
+      default:
+        return 'badge-invalida';
+    }
+  }
+
+  function obtenerBadgeTexto(estado, valida) {
+    if (!valida) return '✕ SIN VALIDEZ OFICIAL';
+    if (!estado) return '✓ LICENCIA OFICIAL VÁLIDA';
+    switch (estado.toUpperCase()) {
+      case 'EMITIDA':
+      case 'VIGENTE':
+        return '✓ LICENCIA OFICIAL VIGENTE';
+      case 'TEMPORAL':
+        return '⏱ LICENCIA TEMPORAL VIGENTE';
+      case 'SUSPENDIDA':
+        return '⚠ LICENCIA SUSPENDIDA';
+      case 'REVOCADA':
+        return '✕ LICENCIA REVOCADA';
+      case 'VENCIDA':
+        return '✕ LICENCIA VENCIDA';
+      default:
+        return `ESTADO: ${estado}`;
+    }
+  }
+
+  function formatearFechaHora(fechaIso) {
+    if (!fechaIso) return new Date().toLocaleString('es-PE');
+    try {
+      const d = new Date(fechaIso);
+      return d.toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch {
+      return fechaIso;
+    }
+  }
+
+  function renderError(token, errorMsg) {
     resultadoBox.innerHTML = `
       <div class="verify-card">
-        <div class="verify-header" style="background: var(--danger);">
-          <h2>Error de Conexión</h2>
+        <div class="verify-header" style="background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);">
+          <img class="escudo-muni" src="img/escudo-huamanga.png" alt="Escudo de Huamanga" onerror="this.style.display='none'">
+          <h1>Municipalidad Provincial de Huamanga</h1>
+          <p>Resultado de Verificación de Autenticidad</p>
+          <div class="status-badge badge-invalida">
+            ✕ LICENCIA NO ENCONTRADA O INVÁLIDA
+          </div>
         </div>
-        <div class="verify-body" style="text-align: center;">
-          <p style="color: var(--danger); font-weight: 600; margin-bottom: 1rem;">
-            No se pudo verificar el código: ${codigo}
+        <div class="verify-body" style="text-align: center; padding: 2rem;">
+          <p style="color: #dc2626; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">
+            No se pudo constatar la validez del token: <code>${token}</code>
           </p>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">${errorMsg}</p>
+          <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1.5rem;">
+            ${errorMsg}
+          </p>
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: left; font-size: 0.85rem; color: #475569;">
+            <strong>Recomendaciones para el Administrado / Inspector:</strong>
+            <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+              <li>Verifique haber ingresado o escaneado el código QR completo de la licencia oficial.</li>
+              <li>Asegúrese de que el trámite haya concluido con Resolución Administrativa favorable debidamente firmada digitalmente.</li>
+              <li>Si se encuentra en modo inspector, verifique que su sesión JWT esté activa con permisos de fiscalización.</li>
+            </ul>
+          </div>
         </div>
       </div>
     `;

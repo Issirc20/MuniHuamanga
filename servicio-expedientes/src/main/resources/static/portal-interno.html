@@ -90,11 +90,24 @@
             <option value="DOCUMENTOS_VALIDADOS">Documentos Validados</option>
             <option value="EN_EVALUACION_FINAL">En Evaluación Final</option>
             <option value="OBSERVADO">Observados (LPAG)</option>
+            <option value="APTO_PARA_RESOLUCION">Aptos para Resolución (I07/I08)</option>
             <option value="APROBADO">Aprobados</option>
             <option value="RECHAZADO">Rechazados</option>
           </select>
           <button class="btn btn-secondary btn-sm" onclick="cargarExpedientes(true)">
             ⚠️ Ver en Alerta
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirBandejaPagos()">
+            💳 Pagos SAT (I06)
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirBandejaZonificacion()">
+            🗺️ Zonificación (I06)
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="abrirBandejaEvaluacion()" style="background-color: #4f46e5; border-color: #4338ca;">
+            ⚖️ Evaluación e Informes (I07)
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="abrirBandejaResoluciones()" style="background-color: #0d9488; border-color: #0f766e;">
+            📜 Resoluciones y Licencias (I08)
           </button>
           <button class="btn btn-secondary btn-sm" onclick="abrirModalTupa()">
             📋 Tarifario TUPA
@@ -348,6 +361,452 @@
       <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
         <button class="btn btn-secondary" onclick="cerrarModal('modalEditarTarifa')">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarEdicionTarifa()">Guardar Modificación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bandeja Pagos SAT (M05 - I06) -->
+  <div id="modalBandejaPagos" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 950px; text-align: left;">
+      <div class="modal-header">
+        <div>
+          <h3 class="card-title">💳 Bandeja de Pagos SAT — Revisión y Validación Manual</h3>
+          <p class="hint" style="margin: 0.25rem 0 0 0;">Cotejo y validación de comprobantes según tasas oficiales TUPA (Ordenanza N° 018-2024-MPH).</p>
+        </div>
+        <button class="modal-close" onclick="cerrarModal('modalBandejaPagos')">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; margin: 0.75rem 0; align-items: center;">
+        <label for="filtroEstadoPago" style="font-size: 0.85rem; font-weight: 600;">Estado:</label>
+        <select id="filtroEstadoPago" onchange="cargarBandejaPagos()" style="padding: 0.35rem 0.6rem; font-size: 0.85rem;">
+          <option value="">Todos</option>
+          <option value="PENDIENTE_VALIDACION" selected>Pendiente de Validación</option>
+          <option value="EN_REVISION">En Revisión</option>
+          <option value="VALIDADO_MANUALMENTE">Validado Manualmente</option>
+          <option value="OBSERVADO">Observado</option>
+          <option value="RECHAZADO">Rechazado</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="cargarBandejaPagos()">🔄 Actualizar</button>
+      </div>
+
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Código Comprobante</th>
+              <th>Fecha Declarada</th>
+              <th>Monto Declarado</th>
+              <th>Tasa Esperada</th>
+              <th>Estado</th>
+              <th>Validador</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaPagosBody">
+            <!-- Cargado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalBandejaPagos')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Acción Validar Pago Manual (M05) -->
+  <div id="modalValidarPagoAction" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 500px; text-align: left;">
+      <div class="modal-header">
+        <h3 class="card-title">✅ Validar Pago Manualmente</h3>
+        <button class="modal-close" onclick="cerrarModal('modalValidarPagoAction')">&times;</button>
+      </div>
+      <input type="hidden" id="actionPagoId">
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtValNumOperacion">N° de Operación Oficial SAT / Banco *</label>
+        <input type="text" id="txtValNumOperacion" placeholder="Ej: OP-2026-998822" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtValMonto">Importe Efectivamente Validado (S/.) *</label>
+        <input type="number" step="0.10" id="txtValMonto" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtValFechaReal">Fecha Real de Pago en Caja *</label>
+        <input type="date" id="txtValFechaReal" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtValJustificacion">Justificación y Sustento de Validación *</label>
+        <textarea id="txtValJustificacion" rows="2" placeholder="Cotejado con reporte de caja SAT ventanilla 02" required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalValidarPagoAction')">Cancelar</button>
+        <button class="btn btn-success" onclick="confirmarValidarPagoManual()">Confirmar Validación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Evaluación de Zonificación (M07 - I06) -->
+  <div id="modalZonificacionI06" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 650px; text-align: left;">
+      <div class="modal-header">
+        <div>
+          <h3 class="card-title">🗺️ Evaluación Técnica de Zonificación y Compatibilidad de Uso</h3>
+          <p class="hint" style="margin: 0.25rem 0 0 0;">Dictamen administrativo conforme al Plan de Desarrollo Urbano (PDU).</p>
+        </div>
+        <button class="modal-close" onclick="cerrarModal('modalZonificacionI06')">&times;</button>
+      </div>
+      <input type="hidden" id="zonifExpedienteId">
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="selectResultadoZonif">Resultado de la Evaluación *</label>
+        <select id="selectResultadoZonif">
+          <option value="COMPATIBLE">COMPATIBLE (Giro permitido en la zonificación)</option>
+          <option value="NO_COMPATIBLE">NO COMPATIBLE (Giro prohibido en la zonificación)</option>
+          <option value="REQUIERE_SUBSANACION">REQUIERE SUBSANACION (Aclaración de ubicación o giro)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtRefZonificacion">Referencia de Zonificación / PDU Aplicable *</label>
+        <input type="text" id="txtRefZonificacion" value="PDU Huamanga 2016-2026 / Ordenanza N° 018-2016-MPH" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtFuenteSustento">Fuente del Informe o Sustento Técnico *</label>
+        <input type="text" id="txtFuenteSustento" value="Informe Técnico N° 045-2026-MPH-GDUR" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtObsZonif">Observaciones y Motivación Técnica *</label>
+        <textarea id="txtObsZonif" rows="3" placeholder="Se verificó que el giro solicitado corresponde a Zona de Comercio Vecinal (CV)..." required></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalZonificacionI06')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarEvaluacionZonificacion()">Guardar Evaluación Técnica</button>
+      </div>
+    </div>
+  <!-- Modal Bandeja Unificada de Evaluación (I07 - M08) -->
+  <div id="modalBandejaEvaluacionI07" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 1050px; width: 95%;">
+      <div class="modal-header">
+        <h3 class="card-title">⚖️ Bandeja Unificada de Evaluación Administrativa (M08)</h3>
+        <button class="modal-close" onclick="cerrarModal('modalBandejaEvaluacionI07')">&times;</button>
+      </div>
+      <p class="hint" style="margin-bottom: 1rem;">
+        Integración transversal en tiempo real: Expediente, Documentos, Pago SAT, Zonificación y Sustento ITSE.
+      </p>
+
+      <!-- Filtros de Bandeja -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center;">
+        <input type="text" id="filtroBandejaBusqueda" placeholder="Buscar trámite, titular..." style="flex: 1; min-width: 180px; padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+        <select id="filtroBandejaEstadoExp" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+          <option value="">Estado Expediente (Todos)</option>
+          <option value="PRESENTADO">PRESENTADO</option>
+          <option value="EN_EVALUACION_FINAL">EN EVALUACION FINAL</option>
+          <option value="APTO_PARA_RESOLUCION">APTO PARA RESOLUCION</option>
+          <option value="OBSERVADO">OBSERVADO</option>
+        </select>
+        <select id="filtroBandejaPago" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+          <option value="">Pago SAT (Todos)</option>
+          <option value="VALIDADO_MANUALMENTE">VALIDADO MANUALMENTE</option>
+          <option value="PENDIENTE_REVISION">PENDIENTE REVISION</option>
+          <option value="RECHAZADO">RECHAZADO</option>
+        </select>
+        <select id="filtroBandejaZonif" style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+          <option value="">Zonificación (Todos)</option>
+          <option value="COMPATIBLE">COMPATIBLE</option>
+          <option value="NO_COMPATIBLE">NO COMPATIBLE</option>
+          <option value="REQUIERE_SUBSANACION">REQUIERE SUBSANACION</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="cargarBandejaEvaluacion()">Filtrar</button>
+      </div>
+
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 0.82rem;">
+          <thead>
+            <tr>
+              <th>N° Trámite</th>
+              <th>Titular / Establecimiento</th>
+              <th>F. Presentación</th>
+              <th>Estado</th>
+              <th>Pago SAT</th>
+              <th>Zonificación</th>
+              <th>Riesgo / ITSE</th>
+              <th>Obs.</th>
+              <th>Alerta Plazo</th>
+              <th>Informe</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaBandejaEvaluacionBody">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalBandejaEvaluacionI07')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Checklist Administrativo Integral (I07) -->
+  <div id="modalChecklistIntegralI07" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 850px; width: 90%;">
+      <div class="modal-header">
+        <h3 class="card-title">📋 Checklist Administrativo Integral de Cumplimiento</h3>
+        <button class="modal-close" onclick="cerrarModal('modalChecklistIntegralI07')">&times;</button>
+      </div>
+      <div id="checklistHeaderResumen" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; font-size: 0.9rem;">
+        <!-- Resumen dinámico apto/no apto -->
+      </div>
+      <div class="table-responsive" style="max-height: 380px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th style="width: 20%;">Requisito / Criterio</th>
+              <th style="width: 15%;">Evaluación</th>
+              <th style="width: 35%;">Descripción / Motivo</th>
+              <th style="width: 30%;">Fuente de Evidencia</th>
+            </tr>
+          </thead>
+          <tbody id="tablaChecklistBody">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalChecklistIntegralI07')">Cerrar</button>
+        <button class="btn btn-primary" id="btnProcederElaborarInforme" onclick="procederDesdeChecklist()">📝 Elaborar Informe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Elaborar Informe Administrativo (I07) -->
+  <div id="modalElaborarInformeI07" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 650px; width: 90%;">
+      <div class="modal-header">
+        <h3 class="card-title">📝 Elaborar Informe Administrativo Técnico</h3>
+        <button class="modal-close" onclick="cerrarModal('modalElaborarInformeI07')">&times;</button>
+      </div>
+      <input type="hidden" id="informeExpedienteId">
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="selectConclusionInforme">Conclusión Técnica Propuesta *</label>
+        <select id="selectConclusionInforme" required>
+          <option value="FAVORABLE">FAVORABLE (Cumple todos los requisitos TUPA)</option>
+          <option value="DESFAVORABLE">DESFAVORABLE (Incumplimiento normativo o zonificación incompatible)</option>
+          <option value="REQUIERE_SUBSANACION">REQUIERE SUBSANACION (Faltan recaudos o subsanaciones pendientes)</option>
+        </select>
+        <span class="hint" style="color: var(--danger);">Nota: Conclusión FAVORABLE será bloqueada por el sistema si el checklist detecta pagos pendientes, zonificación incompatible u observaciones no resueltas.</span>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtFundamentosAdmin">Fundamentos Administrativos y Legales *</label>
+        <textarea id="txtFundamentosAdmin" rows="3" placeholder="Se revisó el expediente formal conforme al TUO de la Ley N° 28976 y TUPA MPH..." required></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtReferenciasDoc">Referencias Documentales *</label>
+        <textarea id="txtReferenciasDoc" rows="2" placeholder="DJ Anexo 1 v1 con SHA-256 verificado, Recibo SAT validado, Informe de Zonificación..." required></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtObservacionesInforme">Observaciones Adicionales / Instrucciones de Subsanación</label>
+        <textarea id="txtObservacionesInforme" rows="2" placeholder="Observaciones o notas para el revisor o administrado (opcional)"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalElaborarInformeI07')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarInformeAdministrativo()">Guardar Informe (Borrador)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Gestión y Aprobación de Informe (I07) -->
+  <div id="modalGestionInformeI07" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 750px; width: 90%;">
+      <div class="modal-header">
+        <h3 class="card-title">📑 Gestión, Revisión y Visado de Informe Técnico</h3>
+        <button class="modal-close" onclick="cerrarModal('modalGestionInformeI07')">&times;</button>
+      </div>
+      <input type="hidden" id="gestionInformeId">
+      <input type="hidden" id="gestionExpedienteId">
+      <div id="detallesInformeBox" style="background: var(--surface-alt, #f8fafc); padding: 0.85rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; border: 1px solid var(--border, #e2e8f0);">
+        <!-- Datos de informe cargados dinámicamente -->
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+        <button class="btn btn-secondary btn-sm" onclick="descargarInformePreliminarPdf()">
+          📄 Descargar PDF Preliminar (Borrador)
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnAccionEnviarRevision" onclick="ejecutarTransicionInforme('enviar-revision')">
+          📤 Enviar a Revisión
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnAccionDevolver" onclick="abrirSubModalDevolver()">
+          ↩️ Observar / Devolver
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnAccionVisar" onclick="ejecutarTransicionInforme('visar')">
+          ✍️ Visar Informe
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnAccionAprobar" onclick="abrirSubModalAprobar()" style="background-color: #059669; border-color: #047857;">
+          ✅ Aprobar Informe Administrativo
+        </button>
+      </div>
+
+      <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Historial Inmutable de Decisiones:</h4>
+      <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 0.78rem;">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Estado Resultante</th>
+              <th>Responsable</th>
+              <th>Rol</th>
+              <th>Observaciones / Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorialInformeBody">
+            <!-- Historial dinámico -->
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalGestionInformeI07')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bandeja de Resoluciones y Licencias (I08) -->
+  <div id="modalBandejaResolucionesI08" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 1000px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3 class="card-title">📜 Bandeja de Resoluciones Administrativas y Emisión de Licencias (M09)</h3>
+          <p class="hint">Expedientes aptos para resolución gerencial, control de firma digital institucional y emisión de certificados oficiales.</p>
+        </div>
+        <button class="modal-close" onclick="cerrarModal('modalBandejaResolucionesI08')">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="filtroResolucionesBusqueda" placeholder="Buscar por N° trámite, titular o razón..." style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: 260px;">
+          <button class="btn btn-secondary btn-sm" onclick="cargarBandejaResoluciones()">🔍 Filtrar</button>
+        </div>
+        <div>
+          <button class="btn btn-primary btn-sm" onclick="cargarBandejaResoluciones()">🔄 Refrescar Bandeja</button>
+        </div>
+      </div>
+
+      <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 0.82rem;">
+          <thead>
+            <tr>
+              <th>Expediente</th>
+              <th>Titular / Nombre Comercial</th>
+              <th>Informe Técnico</th>
+              <th>Estado Trámite</th>
+              <th>Resolución Actual</th>
+              <th>Estado Resolución</th>
+              <th>Licencia Emitida</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaBandejaResolucionesBody">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalBandejaResolucionesI08')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Formular Borrador de Resolución (I08) -->
+  <div id="modalPrepararResolucionI08" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 680px; width: 90%;">
+      <div class="modal-header">
+        <h3 class="card-title">📝 Formular Resolución Administrativa Gerencial</h3>
+        <button class="modal-close" onclick="cerrarModal('modalPrepararResolucionI08')">&times;</button>
+      </div>
+      <input type="hidden" id="resolucionExpedienteId">
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="selectTipoDecisionResolucion">Sentido de la Decisión Administrativa *</label>
+        <select id="selectTipoDecisionResolucion" required>
+          <option value="FAVORABLE">FAVORABLE (Declarar PROCEDENTE la solicitud y ordenar emisión de Licencia)</option>
+          <option value="DENEGATORIA">DENEGATORIA (Declarar IMPROCEDENTE la solicitud de Licencia)</option>
+        </select>
+        <span class="hint">Nota: Decisión FAVORABLE exige que el expediente se encuentre en APTO_PARA_RESOLUCION y el informe técnico sea favorable.</span>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtFundamentosResolucion">Fundamentos y Considerandos de Hecho y Derecho *</label>
+        <textarea id="txtFundamentosResolucion" rows="4" placeholder="Que, de la revisión técnica del expediente se advierte que cumple con los requerimientos previstos en el TUPA y la Ley N° 28976..." required></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label for="txtReferenciasLegalesResolucion">Referencias Normativas Aplicables</label>
+        <textarea id="txtReferenciasLegalesResolucion" rows="2" placeholder="Ley N° 27972 Orgánica de Municipalidades, Ley N° 28976, TUO Ley N° 27444, Ordenanza Municipal N° 012-2024-MPH..."></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="txtParteResolutiva">Parte Resolutiva (Opcional - Autogenerada por defecto)</label>
+        <textarea id="txtParteResolutiva" rows="2" placeholder="Dejar en blanco para aplicar artículos estándar de procedimiento..."></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalPrepararResolucionI08')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarBorradorResolucion()">Guardar Borrador de Resolución</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Gestión Integral de Resolución y Licencia (I08) -->
+  <div id="modalGestionResolucionI08" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; width: 92%;">
+      <div class="modal-header">
+        <h3 class="card-title">⚖️ Gestión de Resolución Gerencial y Emisión de Licencia Oficial</h3>
+        <button class="modal-close" onclick="cerrarModal('modalGestionResolucionI08')">&times;</button>
+      </div>
+      <input type="hidden" id="gestionResolucionId">
+      <input type="hidden" id="gestionResolucionExpedienteId">
+
+      <div id="detallesResolucionBox" style="background: var(--surface-alt, #f8fafc); padding: 0.85rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; border: 1px solid var(--border, #e2e8f0);">
+        <!-- Datos de la resolución cargados dinámicamente -->
+      </div>
+
+      <!-- Barra de acciones según máquina de estados -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+        <button class="btn btn-secondary btn-sm" onclick="descargarResolucionPdf()">
+          📄 Descargar Resolución (PDF)
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnAccionAprobarResolucion" onclick="aprobarResolucionGerencial()" style="background-color: #059669; border-color: #047857;">
+          ✅ Aprobar Resolución (Gerente)
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnAccionFirmarResolucion" onclick="solicitarFirmaDigital()">
+          ✍️ Solicitar Firma Digital Institucional
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnAccionEmitirLicencia" onclick="abrirSubModalEmitirLicencia()" style="background-color: #2563eb; border-color: #1d4f8a;">
+          🏷️ Emitir Licencia Oficial con QR
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnAccionDescargarLicencia" onclick="descargarLicenciaOficialPdf()" style="display: none; background-color: #10b981; color: white;">
+          📥 Descargar Certificado Oficial de Licencia
+        </button>
+      </div>
+
+      <div id="firmaDigitalAlertaBox" style="display: none; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem;">
+        <!-- Alerta sobre disponibilidad de proveedor PKI -->
+      </div>
+
+      <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Historial Inmutable de Actuaciones de la Resolución:</h4>
+      <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+        <table class="data-table" style="font-size: 0.78rem;">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Estado Resultante</th>
+              <th>Responsable</th>
+              <th>Motivo / Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorialResolucionBody">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button class="btn btn-secondary" onclick="cerrarModal('modalGestionResolucionI08')">Cerrar</button>
       </div>
     </div>
   </div>

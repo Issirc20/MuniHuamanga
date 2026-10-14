@@ -4,15 +4,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +34,7 @@ import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.security.CustomUserDetails;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
 import pe.gob.munihuamanga.licencias.expedientes.service.CalculadoraDeTasa;
 import pe.gob.munihuamanga.licencias.expedientes.service.DocumentoPdfService;
@@ -42,6 +48,7 @@ import java.util.UUID;
 /**
  * Controlador REST para la gestión integral del trámite de licencias de funcionamiento.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/expedientes")
 @Tag(name = "Expedientes", description = "Endpoints para la gestión, seguimiento, formatos PDF y transiciones del trámite")
@@ -52,22 +59,47 @@ public class ExpedienteController {
     private final AuditoriaService auditoriaService;
     private final CalculadoraDeTasa calculadoraDeTasa;
     private final DocumentoPdfService documentoPdfService;
+    private final pe.gob.munihuamanga.licencias.expedientes.licencias.repository.LicenciaEmitidaRepository licenciaRepository;
+    private final pe.gob.munihuamanga.licencias.expedientes.licencias.service.LicenciaService licenciaService;
 
     public ExpedienteController(ExpedienteService expedienteService,
                                 ExpedienteMapper expedienteMapper,
                                 AuditoriaService auditoriaService,
                                 CalculadoraDeTasa calculadoraDeTasa,
-                                DocumentoPdfService documentoPdfService) {
+                                DocumentoPdfService documentoPdfService,
+                                pe.gob.munihuamanga.licencias.expedientes.licencias.repository.LicenciaEmitidaRepository licenciaRepository,
+                                pe.gob.munihuamanga.licencias.expedientes.licencias.service.LicenciaService licenciaService) {
         this.expedienteService = expedienteService;
         this.expedienteMapper = expedienteMapper;
         this.auditoriaService = auditoriaService;
         this.calculadoraDeTasa = calculadoraDeTasa;
         this.documentoPdfService = documentoPdfService;
+        this.licenciaRepository = licenciaRepository;
+        this.licenciaService = licenciaService;
     }
 
     @PostMapping
-    @Operation(summary = "Mesa de Partes Virtual: Registrar nueva solicitud de licencia")
-    public ResponseEntity<ExpedienteResponseDto> crearExpediente(@Valid @RequestBody CrearExpedienteDto dto) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @Operation(summary = "Mesa de Partes Presencial: Registro directo por funcionario municipal (Justificación: Ingreso físico en ventanilla). Ciudadanos deben usar /api/borradores.")
+    public ResponseEntity<ExpedienteResponseDto> crearExpediente(
+            @Valid @RequestBody CrearExpedienteDto dto,
+            Authentication authentication
+    ) {
+        boolean esAutenticado = authentication != null && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+
+        if (!esAutenticado) {
+            log.warn("[SEGURIDAD - ACCESO V2] Intento no autenticado de creación de expediente rechazado.");
+            throw new AccessDeniedException(
+                    "La creación formal de expedientes en V2 requiere autenticación previa y vinculación de titularidad de cuenta."
+            );
+        }
+
+        // Cliente V2 autenticado: Vincular forzosamente titularidad con el usuario/cuenta autenticado
+        if (authentication.getPrincipal() instanceof CustomUserDetails cud) {
+            dto.setSolicitanteId(cud.getId());
+        }
+
         Expediente nuevo = expedienteService.crearExpediente(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(expedienteMapper.toDto(nuevo));
     }
@@ -193,6 +225,22 @@ public class ExpedienteController {
         if (exp.getEstado() != EstadoExpediente.APROBADO) {
             throw new IllegalStateException("La licencia solo puede emitirse cuando el expediente ha sido APROBADO por la Gerencia de Licencias.");
         }
+        if (!Boolean.TRUE.equals(exp.getFirmaDigitalValida()) || exp.getLicenciaQrCode() == null) {
+            throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " se encuentra aprobado pero la emisión oficial del certificado definitivo está bloqueada: requiere firma digital institucional válida (Ley N° 27269 / DAS DA-06).");
+        }
+
+        // Prioridad: Si existe la licencia oficial emitida en I08, devolver el documento firmado inmutable
+        java.util.Optional<pe.gob.munihuamanga.licencias.expedientes.licencias.model.LicenciaEmitida> optLic =
+                licenciaRepository.findByExpedienteId(id);
+        if (optLic.isPresent()) {
+            byte[] pdf = licenciaService.descargarPdfLicencia(optLic.get().getId());
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + optLic.get().getNumeroLicencia() + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdf);
+        }
+
+        // Fallback para expedientes pre-cargados / históricos aprobados
         ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
         byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);
 
@@ -252,12 +300,24 @@ public class ExpedienteController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = {"/{id}/aprobar", "/{id}/emision-licencia"})
+    @PostMapping("/{id}/aprobar")
     @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
-    @Operation(summary = "Gerencia de Licencias: Dictamen final favorable y emisión de licencia con QR")
+    @Operation(summary = "Gerencia de Licencias: Dictamen final favorable y pase a elaboración de resolución")
     public ResponseEntity<Void> aprobar(@PathVariable UUID id) {
         expedienteService.aprobar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/emision-licencia")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @Operation(summary = "Ruta heredada V1: Emisión directa bloqueada por mandato de I08 (requiere resolución y firma digital)")
+    public ResponseEntity<Map<String, Object>> emisionLicenciaHeredada(@PathVariable UUID id) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(Map.of(
+                "error", "EMISION_DIRECTA_DESHABILITADA",
+                "codigo", HttpStatus.METHOD_NOT_ALLOWED.value(),
+                "mensaje", "La emisión directa mediante la ruta heredada V1 está inhabilitada (Incremento I08.1 / Invariante 8). " +
+                        "Toda licencia oficial requiere resolución administrativa formal debidamente firmada digitalmente (POST /api/resoluciones y POST /api/licencias/emitir)."
+        ));
     }
 
     @PostMapping("/{id}/rechazar")

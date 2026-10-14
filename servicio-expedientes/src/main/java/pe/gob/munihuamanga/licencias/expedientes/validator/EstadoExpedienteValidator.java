@@ -23,6 +23,13 @@ public class EstadoExpedienteValidator {
     static {
         Map<EstadoExpediente, Set<EstadoExpediente>> map = new EnumMap<>(EstadoExpediente.class);
 
+        // Desde PRESENTADO se pasa a DOCUMENTOS_VALIDADOS, OBSERVADO o RECHAZADO
+        map.put(EstadoExpediente.PRESENTADO, EnumSet.of(
+                EstadoExpediente.DOCUMENTOS_VALIDADOS,
+                EstadoExpediente.OBSERVADO,
+                EstadoExpediente.RECHAZADO
+        ));
+
         // Desde FORMATOS_GENERADOS se pasa a DOCUMENTOS_VALIDADOS, OBSERVADO o RECHAZADO
         map.put(EstadoExpediente.FORMATOS_GENERADOS, EnumSet.of(
                 EstadoExpediente.DOCUMENTOS_VALIDADOS,
@@ -30,15 +37,24 @@ public class EstadoExpedienteValidator {
                 EstadoExpediente.RECHAZADO
         ));
 
-        // Desde DOCUMENTOS_VALIDADOS se pasa a EN_EVALUACION_FINAL, OBSERVADO o RECHAZADO
+        // Desde DOCUMENTOS_VALIDADOS se pasa a EN_EVALUACION_FINAL, APTO_PARA_RESOLUCION, OBSERVADO o RECHAZADO
         map.put(EstadoExpediente.DOCUMENTOS_VALIDADOS, EnumSet.of(
                 EstadoExpediente.EN_EVALUACION_FINAL,
+                EstadoExpediente.APTO_PARA_RESOLUCION,
                 EstadoExpediente.OBSERVADO,
                 EstadoExpediente.RECHAZADO
         ));
 
-        // Desde EN_EVALUACION_FINAL se resuelve como APROBADO, OBSERVADO o RECHAZADO
+        // Desde EN_EVALUACION_FINAL se pasa a APTO_PARA_RESOLUCION, APROBADO, OBSERVADO o RECHAZADO
         map.put(EstadoExpediente.EN_EVALUACION_FINAL, EnumSet.of(
+                EstadoExpediente.APTO_PARA_RESOLUCION,
+                EstadoExpediente.APROBADO,
+                EstadoExpediente.OBSERVADO,
+                EstadoExpediente.RECHAZADO
+        ));
+
+        // Desde APTO_PARA_RESOLUCION: informe favorable aprobado, habilitado para resolución (I08)
+        map.put(EstadoExpediente.APTO_PARA_RESOLUCION, EnumSet.of(
                 EstadoExpediente.APROBADO,
                 EstadoExpediente.OBSERVADO,
                 EstadoExpediente.RECHAZADO
@@ -46,9 +62,11 @@ public class EstadoExpedienteValidator {
 
         // Desde OBSERVADO (Ley N° 27444 LPAG): el administrado subsana retornando al flujo o se desestima
         map.put(EstadoExpediente.OBSERVADO, EnumSet.of(
+                EstadoExpediente.PRESENTADO,
                 EstadoExpediente.FORMATOS_GENERADOS,
                 EstadoExpediente.DOCUMENTOS_VALIDADOS,
                 EstadoExpediente.EN_EVALUACION_FINAL,
+                EstadoExpediente.APTO_PARA_RESOLUCION,
                 EstadoExpediente.RECHAZADO
         ));
 

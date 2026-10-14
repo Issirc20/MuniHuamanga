@@ -4,13 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.SatPort;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Adaptador Stub para el SAT Huamanga (Fase 2).
- * Simula la respuesta del sistema tributario municipal para verificación y conciliación de vouchers.
+ * Adaptador para consulta de estado tributario SAT Huamanga (MuniHuamanga V2 - ERS-1.3 / Corrección I02.1).
+ * Deshabilita la simulación de pagos automáticos ("PAGADO" / números falsos de operación)
+ * para evitar que sean interpretados como validaciones oficiales.
+ * La conciliación de pagos se realiza mediante registro manual en ventanilla/caja por el CAJERO.
  */
 @Slf4j
 @Service
@@ -18,18 +19,16 @@ public class SatAdapterService implements SatPort {
 
     @Override
     public Map<String, Object> validarEstadoPago(String voucherId) {
-        log.info("SAT Adapter: Validando conciliación bancaria para voucher {}", voucherId);
-
-        boolean esValido = voucherId != null && voucherId.startsWith("VCH-");
+        log.info("SAT Adapter: Consulta referencial de conciliación para voucher {}", voucherId);
 
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("voucherId", voucherId);
-        respuesta.put("estadoPago", esValido ? "PAGADO" : "PENDIENTE");
-        respuesta.put("fechaPago", esValido ? LocalDateTime.now().minusHours(1) : null);
-        respuesta.put("montoRecaudado", esValido ? 218.00 : 0.00);
-        respuesta.put("entidadRecaudadora", "Servicio de Administración Tributaria de Huamanga (SAT)");
-        respuesta.put("canalPago", "Ventanilla Central / Red Bancaria Autorizada");
-        respuesta.put("numeroOperacionBancaria", "OP-SAT-" + (int)(Math.random() * 900000 + 100000));
+        respuesta.put("estadoPago", "REQUIERE_VALIDACION_MANUAL_VENTANILLA");
+        respuesta.put("valido", false);
+        respuesta.put("simulacionOficial", false);
+        respuesta.put("requiereValidacionManual", true);
+        respuesta.put("mensaje", "La interoperabilidad automática con SAT Huamanga se encuentra en proceso de homologación técnica (I08). La validación y conciliación de vouchers debe ser realizada manualmente por el cajero municipal.");
+        respuesta.put("canalOficial", "Caja Central de la Municipalidad Provincial de Huamanga / Ventanilla SAT");
         return respuesta;
     }
 }

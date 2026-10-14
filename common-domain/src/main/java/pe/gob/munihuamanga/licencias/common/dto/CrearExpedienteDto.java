@@ -30,6 +30,10 @@ public class CrearExpedienteDto {
     @NotNull(message = "El identificador del solicitante es obligatorio")
     private UUID solicitanteId;
 
+    // Incremento I03: Vínculos relacionales opcionales preparados para M01 y M02
+    private UUID cuentaId;
+    private UUID establecimientoId;
+
     // Sección I: Modalidad del Trámite
     @Builder.Default
     private ModalidadTramite modalidadTramite = ModalidadTramite.LICENCIA_INDETERMINADA;

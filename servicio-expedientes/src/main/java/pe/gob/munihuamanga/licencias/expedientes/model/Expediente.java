@@ -46,6 +46,13 @@ public class Expediente {
     @Column(name = "solicitante_id", nullable = false)
     private UUID solicitanteId;
 
+    // Incremento I03: Vínculo relacional aditivo con Cuenta y Establecimiento (M01 / M02)
+    @Column(name = "cuenta_id")
+    private UUID cuentaId;
+
+    @Column(name = "establecimiento_id")
+    private UUID establecimientoId;
+
     // Sección I: Modalidad del Trámite
     @Enumerated(EnumType.STRING)
     @Column(name = "modalidad_tramite", length = 40)
@@ -218,6 +225,10 @@ public class Expediente {
 
     @Column(name = "licencia_qr_code", length = 255)
     private String licenciaQrCode;
+
+    @Column(name = "firma_digital_valida")
+    @Builder.Default
+    private Boolean firmaDigitalValida = false;
 
     // Datos para el Certificado Oficial de Licencia de Funcionamiento (Formato físico)
     @Column(name = "numero_licencia", length = 30)

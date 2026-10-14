@@ -63,6 +63,45 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    @ExceptionHandler({
+            org.springframework.dao.OptimisticLockingFailureException.class,
+            jakarta.persistence.OptimisticLockException.class
+    })
+    public ResponseEntity<Map<String, Object>> handleOptimisticLock(Exception ex) {
+        log.warn("[CONCURRENCIA] Conflicto optimista detectado: {}", ex.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Conflicto de Concurrencia");
+        body.put("message", "El recurso fue modificado por otra solicitud simultánea. Por favor, recargue y reintente la operación.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler({
+            org.springframework.dao.PessimisticLockingFailureException.class,
+            org.springframework.dao.CannotAcquireLockException.class
+    })
+    public ResponseEntity<Map<String, Object>> handlePessimisticLock(Exception ex) {
+        log.warn("[CONCURRENCIA] Bloqueo pesimista no adquirido: {}", ex.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Recurso Ocupado Concurrentemente");
+        body.put("message", "El recurso se encuentra temporalmente ocupado procesando otra transacción concurrente. Por favor reintente en unos instantes.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("[INTEGRIDAD-BD] Violación de restricción única o clave foránea: {}", ex.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Conflicto de Integridad de Datos");
+        body.put("message", "No se pudo completar la operación debido a un conflicto de unicidad o restricción de integridad de datos.");
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<Map<String, Object>> handleIllegalArguments(RuntimeException ex) {
         Map<String, Object> body = new HashMap<>();

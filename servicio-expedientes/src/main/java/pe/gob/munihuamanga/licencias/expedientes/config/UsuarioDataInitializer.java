@@ -61,6 +61,7 @@ public class UsuarioDataInitializer implements CommandLineRunner {
         );
 
         crearUsuarioSiNoExiste(
+                UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
                 "42567891",
                 "ciud123",
                 "María Quispe Huamán - Administrada Titular",
@@ -69,6 +70,7 @@ public class UsuarioDataInitializer implements CommandLineRunner {
         );
 
         crearUsuarioSiNoExiste(
+                UUID.fromString("78999999-0000-0000-0000-000000000001"),
                 "78999999",
                 "ciud123",
                 "Juan Pérez Otro - Administrado No Propietario",
@@ -84,9 +86,20 @@ public class UsuarioDataInitializer implements CommandLineRunner {
             String email,
             RolUsuario rol
     ) {
+        crearUsuarioSiNoExiste(UUID.randomUUID(), username, rawPassword, nombreCompleto, email, rol);
+    }
+
+    private void crearUsuarioSiNoExiste(
+            UUID id,
+            String username,
+            String rawPassword,
+            String nombreCompleto,
+            String email,
+            RolUsuario rol
+    ) {
         if (!usuarioRepository.existsByUsername(username)) {
             Usuario usuario = Usuario.builder()
-                    .id(UUID.randomUUID())
+                    .id(id != null ? id : UUID.randomUUID())
                     .username(username)
                     .password(passwordEncoder.encode(rawPassword))
                     .nombreCompleto(nombreCompleto)
@@ -97,7 +110,7 @@ public class UsuarioDataInitializer implements CommandLineRunner {
                     .build();
 
             usuarioRepository.save(usuario);
-            log.info("[SEGURIDAD] Usuario semilla creado: {} con rol: {}", username, rol);
+            log.info("[SEGURIDAD] Usuario semilla creado: {} ({}) con rol: {}", username, usuario.getId(), rol);
         }
     }
 }

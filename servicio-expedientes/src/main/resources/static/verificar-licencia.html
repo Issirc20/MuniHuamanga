@@ -2,127 +2,287 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verificación Oficial de Licencia de Funcionamiento — MuniHuamanga</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>Verificación Oficial de Licencia de Funcionamiento — Municipalidad Provincial de Huamanga</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet Map CSS para consulta de inspectores -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+      --card-radius: 12px;
+    }
+    body {
+      background-color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+    }
     .verify-container {
-      max-width: 760px;
-      margin: 2rem auto;
+      max-width: 820px;
+      margin: 1.5rem auto 3rem;
       padding: 0 1rem;
     }
     .verify-card {
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border);
+      background: #ffffff;
+      border-radius: var(--card-radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
       overflow: hidden;
       margin-bottom: 2rem;
+      transition: all 0.3s ease;
     }
     .verify-header {
-      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-      color: white;
-      padding: 1.75rem;
+      background: var(--primary-gradient);
+      color: #ffffff;
+      padding: 2rem 1.5rem;
       text-align: center;
+      position: relative;
     }
-    .verify-badge-valid {
-      background: var(--success);
-      color: white;
-      padding: 0.75rem 1.5rem;
-      border-radius: 9999px;
-      font-weight: 700;
-      font-size: 1.1rem;
+    .verify-header .escudo-muni {
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      margin-bottom: 0.75rem;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
+    .verify-header h1 {
+      font-size: 1.35rem;
+      letter-spacing: 0.5px;
+      margin: 0 0 0.25rem 0;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .verify-header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      margin: 0;
+    }
+    .status-badge {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.4);
-      margin-top: 1rem;
-    }
-    .verify-badge-invalid {
-      background: var(--danger);
-      color: white;
       padding: 0.75rem 1.5rem;
       border-radius: 9999px;
-      font-weight: 700;
-      font-size: 1.1rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.4);
-      margin-top: 1rem;
+      font-weight: 800;
+      font-size: 1rem;
+      margin-top: 1.25rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    .badge-vigente {
+      background: #059669;
+      color: #ffffff;
+    }
+    .badge-temporal {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .badge-suspendida {
+      background: #d97706;
+      color: #ffffff;
+    }
+    .badge-revocada, .badge-vencida, .badge-invalida {
+      background: #dc2626;
+      color: #ffffff;
     }
     .verify-body {
-      padding: 2rem;
+      padding: 1.75rem;
+    }
+    .mode-switch-box {
+      display: flex;
+      gap: 0.5rem;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .mode-switch-btn {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .mode-switch-btn.active {
+      background: #ffffff;
+      color: #1e3a8a;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .search-bar-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (min-width: 640px) {
+      .search-bar-box {
+        flex-direction: row;
+      }
+    }
+    .search-bar-box input {
+      flex: 1;
+      padding: 0.85rem 1.25rem;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: border-color 0.2s;
+    }
+    .search-bar-box input:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .search-bar-box button {
+      padding: 0.85rem 1.5rem;
+      border: none;
+      background: #1e3a8a;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .search-bar-box button:hover {
+      background: #1e40af;
     }
     .data-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
-      margin: 1.5rem 0;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    @media (min-width: 640px) {
+      .data-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     .data-item {
-      background: var(--bg-main);
-      padding: 1rem;
+      background: #f8fafc;
+      padding: 1rem 1.25rem;
       border-radius: 8px;
-      border-left: 4px solid var(--primary);
+      border-left: 4px solid #2563eb;
+      border-top: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+      border-bottom: 1px solid #f1f5f9;
     }
     .data-label {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 700;
+      color: #64748b;
+      font-weight: 800;
       letter-spacing: 0.5px;
       margin-bottom: 0.25rem;
     }
     .data-val {
       font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-main);
+      font-weight: 700;
+      color: #0f172a;
       word-break: break-word;
     }
-    .qr-security-box {
-      background: #f1f5f9;
-      border: 1px dashed #cbd5e1;
-      border-radius: var(--radius);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin-top: 1.5rem;
-      gap: 1rem;
-    }
-    .qr-preview-img {
-      background: white;
-      padding: 8px;
+    .alert-banner {
+      padding: 1rem 1.25rem;
       border-radius: 8px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-    }
-    .search-bar-box {
-      display: flex;
-      gap: 0.75rem;
       margin-bottom: 1.5rem;
-    }
-    .search-bar-box input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
-    .search-bar-box input:focus {
-      outline: none;
-      border-color: var(--primary);
+    .alert-success {
+      background: #ecfdf5;
+      color: #065f46;
+      border-left: 4px solid #059669;
+    }
+    .alert-danger {
+      background: #fef2f2;
+      color: #991b1b;
+      border-left: 4px solid #dc2626;
+    }
+    .alert-warning {
+      background: #fffbeb;
+      color: #92400e;
+      border-left: 4px solid #d97706;
+    }
+    .inspector-panel {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .inspector-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #86efac;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .inspector-header h3 {
+      margin: 0;
+      color: #166534;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    #mapContainer {
+      width: 100%;
+      height: 320px;
+      border-radius: 8px;
+      margin-top: 1rem;
+      border: 2px solid #cbd5e1;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .map-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .btn-gps {
+      background: #2563eb;
+      color: white;
+    }
+    .btn-gps:hover {
+      background: #1d4ed8;
+    }
+    .btn-navigate {
+      background: #059669;
+      color: white;
+    }
+    .btn-navigate:hover {
+      background: #047857;
     }
     .legal-notice {
       font-size: 0.8rem;
-      color: var(--text-muted);
+      color: #64748b;
       text-align: center;
-      line-height: 1.4;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -133,7 +293,7 @@
       <div class="shield-icon"><img src="img/escudo-huamanga.png" alt="Escudo de Huamanga"></div>
       <div>
         <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
-        <p>Portal Público de Verificación de Licencias de Funcionamiento (RNF-20)</p>
+        <p>Portal Oficial de Verificación de Licencias y Fiscalización Móvil (M10 - I09)</p>
       </div>
     </div>
     <div>
@@ -143,26 +303,41 @@
 
   <main class="verify-container">
 
+    <!-- Selector de Perfil: Ciudadano vs Inspector -->
+    <div class="mode-switch-box">
+      <button class="mode-switch-btn active" id="tabPublico">👤 Verificación Ciudadana</button>
+      <button class="mode-switch-btn" id="tabInspector">🛡️ Inspector Municipal</button>
+    </div>
+
+    <!-- Barra de búsqueda por Token QR o Código -->
     <div class="search-bar-box">
-      <input type="text" id="inputCodigo" placeholder="Ej: LIC-2026-XXXXXXXX" autofocus />
-      <button class="btn btn-primary" id="btnConsultar">Verificar Licencia</button>
+      <input type="text" id="inputCodigo" placeholder="Ingrese o escanee token QR de la licencia" autofocus />
+      <button id="btnConsultar">Verificar Autenticidad</button>
     </div>
 
-    <div id="loadingBox" style="display: none; text-align: center; padding: 2rem;">
-      <p style="font-size: 1.1rem; color: var(--text-muted);">Consultando el padrón municipal en tiempo real...</p>
+    <div id="inspectorAuthAlert" class="alert-banner alert-warning" style="display: none;">
+      <span>⚠️ <strong>Modo Inspector:</strong> Se requiere iniciar sesión con <code>ROLE_INSPECTOR</code> para acceder a coordenadas oficiales y datos técnicos de campo.</span>
     </div>
 
+    <!-- Animación de carga -->
+    <div id="loadingBox" style="display: none; text-align: center; padding: 2.5rem;">
+      <p style="font-size: 1.1rem; color: #475569; font-weight: 600;">Consultando el padrón municipal en tiempo real...</p>
+    </div>
+
+    <!-- Contenedor dinámico de resultados -->
     <div id="resultadoBox" style="display: none;">
-      <!-- Contenido inyectado dinámicamente por verificar-licencia.js -->
+      <!-- Se inyecta por verificar-licencia.js -->
     </div>
 
   </main>
 
   <footer class="app-footer">
-    <p>© 2026 Municipalidad Provincial de Huamanga — Gerencia de Desarrollo Económico y Licencias.</p>
-    <p>Portal de Consulta Pública de Solo Lectura — Ley N° 28976 / TUO D.S. N° 046-2017-PCM.</p>
+    <p>© 2026 Municipalidad Provincial de Huamanga — Subgerencia de Comercio, Licencias y Control Sanitario.</p>
+    <p>Portal de Consulta Pública de Solo Lectura — Ley N° 28976 / TUO D.S. N° 046-2017-PCM / Ley N° 29733.</p>
   </footer>
 
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/verificar-licencia.js"></script>
 </body>
 </html>

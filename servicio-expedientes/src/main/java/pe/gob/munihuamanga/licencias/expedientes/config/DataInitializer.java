@@ -83,6 +83,7 @@ public class DataInitializer implements CommandLineRunner {
                     .estado(EstadoExpediente.APROBADO)
                     .nivelRiesgo(NivelRiesgo.MEDIO)
                     .montoTasa(new BigDecimal("218.00"))
+                    .firmaDigitalValida(true)
                     .fechaCreacion(LocalDateTime.now().minusDays(5))
                     .fechaLimite(LocalDateTime.now().plusDays(15))
                     .build();

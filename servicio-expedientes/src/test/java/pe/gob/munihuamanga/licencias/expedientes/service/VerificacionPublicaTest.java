@@ -30,11 +30,14 @@ class VerificacionPublicaTest {
     @Mock
     private MetricasExpedienteService metricasExpedienteService;
 
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort firmaDigitalPort;
+
     @InjectMocks
     private ExpedienteService expedienteService;
 
     @Test
-    @DisplayName("US-11: Debe retornar estado VIGENTE y valida=true para un código de licencia aprobado")
+    @DisplayName("US-11: Debe retornar estado VIGENTE y valida=true para un código de licencia aprobado con firma digital")
     void testVerificarLicenciaAprobada() {
         String codigoLicencia = "LIC-2026-X9Y8Z7W6";
         Expediente exp = Expediente.builder()
@@ -42,6 +45,7 @@ class VerificacionPublicaTest {
                 .numeroTramite("EXP-2026-00001")
                 .licenciaQrCode(codigoLicencia)
                 .estado(EstadoExpediente.APROBADO)
+                .firmaDigitalValida(true)
                 .nombreTitular("María Quispe Huamán")
                 .documentoIdentidad("45879632")
                 .razonSocial("COMERCIAL HUAMANGA S.A.C.")
@@ -64,6 +68,31 @@ class VerificacionPublicaTest {
         assertEquals("María Quispe Huamán", resultado.getTitular());
         assertEquals("Jr. 28 de Julio N° 120, Huamanga", resultado.getDireccion());
         assertTrue(resultado.getMensajeVerificacion().contains("auténtica y vigente"));
+    }
+
+    @Test
+    @DisplayName("I02.1: Debe retornar valida=false y estado PENDIENTE DE FIRMA DIGITAL si no cuenta con firma digital válida")
+    void testVerificarLicenciaAprobadaSinFirmaDigital() {
+        String codigoLicencia = "LIC-2026-SIN-FIRMA";
+        Expediente exp = Expediente.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-2026-00003")
+                .licenciaQrCode(codigoLicencia)
+                .estado(EstadoExpediente.APROBADO)
+                .firmaDigitalValida(false)
+                .nombreTitular("Carlos Huamán")
+                .direccionEstablecimiento("Jr. Callao 150")
+                .nivelRiesgo(NivelRiesgo.BAJO)
+                .build();
+
+        when(expedienteRepository.findByLicenciaQrCode(codigoLicencia)).thenReturn(Optional.of(exp));
+
+        VerificacionLicenciaDto resultado = expedienteService.verificarLicencia(codigoLicencia);
+
+        assertNotNull(resultado);
+        assertFalse(resultado.isValida(), "No debe ser válida sin firma digital oficial");
+        assertEquals("PENDIENTE DE FIRMA DIGITAL", resultado.getEstado());
+        assertTrue(resultado.getMensajeVerificacion().contains("firma digital"));
     }
 
     @Test

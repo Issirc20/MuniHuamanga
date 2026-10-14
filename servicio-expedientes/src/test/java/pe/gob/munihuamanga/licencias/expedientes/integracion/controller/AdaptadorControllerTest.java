@@ -33,14 +33,19 @@ class AdaptadorControllerTest {
     @DisplayName("US-13: Debe consultar validación de pago ante el puerto SAT")
     void testValidarPagoSat() {
         String voucherId = "VCH-2026-123456";
-        when(satPort.validarEstadoPago(voucherId)).thenReturn(Map.of("estadoPago", "PAGADO", "voucherId", voucherId));
+        when(satPort.validarEstadoPago(voucherId)).thenReturn(Map.of(
+                "estadoPago", "REQUIERE_VALIDACION_MANUAL_VENTANILLA",
+                "valido", false,
+                "voucherId", voucherId
+        ));
 
         ResponseEntity<Map<String, Object>> resp = adaptadorController.validarPagoSat(voucherId);
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
-        assertEquals("PAGADO", resp.getBody().get("estadoPago"));
+        assertEquals("REQUIERE_VALIDACION_MANUAL_VENTANILLA", resp.getBody().get("estadoPago"));
+        assertEquals(false, resp.getBody().get("valido"));
     }
 
     @Test
@@ -49,13 +54,17 @@ class AdaptadorControllerTest {
         String direccion = "Jr. 28 de Julio N° 120";
         String giro = "Restaurante";
         when(edificacionesPort.consultarCompatibilidadZonificacion(direccion, giro))
-                .thenReturn(Map.of("compatibilidadUso", "COMPATIBLE / PERMITIDO"));
+                .thenReturn(Map.of(
+                        "clasificacionZonificacion", "REFERENCIAL_PDU",
+                        "compatibilidadUso", "PENDIENTE_DICTAMEN_TECNICO_EVALUADOR"
+                ));
 
         ResponseEntity<Map<String, Object>> resp = adaptadorController.consultarZonificacion(direccion, giro);
 
         assertNotNull(resp);
         assertEquals(200, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
-        assertEquals("COMPATIBLE / PERMITIDO", resp.getBody().get("compatibilidadUso"));
+        assertEquals("PENDIENTE_DICTAMEN_TECNICO_EVALUADOR", resp.getBody().get("compatibilidadUso"));
+        assertEquals("REFERENCIAL_PDU", resp.getBody().get("clasificacionZonificacion"));
     }
 }

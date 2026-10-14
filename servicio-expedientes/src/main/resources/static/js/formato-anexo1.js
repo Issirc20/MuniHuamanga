@@ -583,7 +583,10 @@ async function guardarEnBaseDeDatos() {
   try {
     const res = await fetch(API_EXPEDIENTES, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Legacy-Client': 'v1-portal'
+      },
       body: JSON.stringify(payload),
     });
 

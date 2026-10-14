@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
+import pe.gob.munihuamanga.licencias.expedientes.borradores.security.DocumentoSecurityValidator;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 
@@ -25,6 +26,8 @@ import java.util.UUID;
 public class ExpedienteSecurity {
 
     private final ExpedienteRepository expedienteRepository;
+    private final pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository operadorCuentaRepository;
+    private final pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository cuentaRepository;
 
     /**
      * Comprueba si el usuario autenticado tiene autorización para consultar el expediente completo.
@@ -177,30 +180,63 @@ public class ExpedienteSecurity {
                 .orElse(false);
     }
 
+    /**
+     * Verifica la vinculación de titularidad legítima entre el usuario autenticado y el expediente.
+     * En MuniHuamanga V2 (Auditoría I05.1):
+     * - Exige estrictamente la vinculación de identidad persistente Cuenta <-> Expediente (solicitanteId == usuarioId o cuentaId).
+     * - Si usuarioId no está en el token (p. ej. en pruebas), resuelve la Cuenta persistente por authUsername y valida el UUID.
+     * - Admite operadores nominativos activos con permiso CONSULTAR_EXPEDIENTE.
+     * - REGLA DE SEGURIDAD OBLIGATORIA I05.1: Se elimina tajantemente la autorización por coincidencia simple entre
+     *   username y documentoIdentidad. Los expedientes V1 sin titularidad verificada (solicitanteId y cuentaId nulos)
+     *   permanecen bajo acceso municipal restringido hasta su reclamación y vinculación formal (I04).
+     */
     private boolean esPropietarioDeExpediente(Authentication authentication, Expediente exp) {
         if (!estaAutenticado(authentication) || exp == null) {
             return false;
         }
 
-        String username = authentication.getName();
-        UUID usuarioId = null;
+        final String authUsername = (authentication.getPrincipal() instanceof CustomUserDetails cud)
+                ? cud.getUsername()
+                : authentication.getName();
+        UUID usuarioId = (authentication.getPrincipal() instanceof CustomUserDetails cud)
+                ? cud.getId()
+                : null;
 
-        if (authentication.getPrincipal() instanceof CustomUserDetails cud) {
-            usuarioId = cud.getId();
-            username = cud.getUsername();
+        // Si usuarioId no está en el principal (p. ej. autenticación mock), resolver por cuenta persistente
+        if (usuarioId == null && authUsername != null) {
+            usuarioId = cuentaRepository.findByNumeroDocumento(authUsername)
+                    .map(pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta::getId)
+                    .orElse(null);
         }
 
-        // Comprobación por UUID de solicitante
-        if (usuarioId != null && exp.getSolicitanteId() != null && usuarioId.equals(exp.getSolicitanteId())) {
-            return true;
+        // 1. Vinculación estricta y persistente de titularidad (Cuenta.id == Expediente.solicitanteId o cuentaId)
+        if (usuarioId != null) {
+            if (exp.getSolicitanteId() != null && usuarioId.equals(exp.getSolicitanteId())) {
+                return true;
+            }
+            if (exp.getCuentaId() != null && usuarioId.equals(exp.getCuentaId())) {
+                return true;
+            }
         }
 
-        // Comprobación por documento de identidad (DNI o RUC con el que inició sesión)
-        if (username != null && exp.getDocumentoIdentidad() != null
-                && username.trim().equalsIgnoreCase(exp.getDocumentoIdentidad().trim())) {
-            return true;
+        // 2. Operador nominativo de la cuenta asociada al expediente (I03)
+        if (exp.getCuentaId() != null) {
+            final UUID finalUsuarioId = usuarioId;
+            boolean esOperadorAutorizado = operadorCuentaRepository.findByCuentaId(exp.getCuentaId()).stream()
+                    .anyMatch(op -> Boolean.TRUE.equals(op.getActivo()) &&
+                            (op.getDniOperador().equalsIgnoreCase(authUsername) ||
+                                    (op.getUsuario() != null && op.getUsuario().getUsername().equalsIgnoreCase(authUsername)) ||
+                                    (finalUsuarioId != null && op.getUsuario() != null && finalUsuarioId.equals(op.getUsuario().getId()))) &&
+                            op.getPermisos().contains(pe.gob.munihuamanga.licencias.common.enums.PermisoOperador.CONSULTAR_EXPEDIENTE));
+            if (esOperadorAutorizado) {
+                return true;
+            }
         }
 
+        // Si el expediente no tiene solicitanteId ni cuentaId (expediente histórico V1 sin reclamar),
+        // ningún ciudadano tiene acceso directo; requiere resolución formal de reclamación de titularidad.
+        log.warn("[SEGURIDAD - TITULARIDAD] Acceso denegado: No existe vinculación de titularidad persistente verificada para usuario {} en expediente {}",
+                DocumentoSecurityValidator.ofuscarDocumento(authUsername), exp.getId());
         return false;
     }
 

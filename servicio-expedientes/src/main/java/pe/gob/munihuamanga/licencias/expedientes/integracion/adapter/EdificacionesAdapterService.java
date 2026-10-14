@@ -4,13 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.EdificacionesPort;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Adaptador Stub para la Subgerencia de Edificaciones y Urbanismo (Fase 2).
- * Simula la consulta de zonificación y compatibilidad de uso del Plan de Desarrollo Urbano.
+ * Adaptador para consulta de zonificación con Edificaciones (MuniHuamanga V2 - RF-EVA-003 / Corrección I02.1).
+ * Deshabilita la emisión simulada de certificados automáticos ("CERT-ZONIF-...", "COMPATIBLE / PERMITIDO"
+ * o firmas de arquitectos ficticios) que puedan interpretarse como actos administrativos oficiales.
+ * La compatibilidad de zonificación debe ser dictaminada y motivada técnicamente por el evaluador municipal.
  */
 @Slf4j
 @Service
@@ -18,17 +19,17 @@ public class EdificacionesAdapterService implements EdificacionesPort {
 
     @Override
     public Map<String, Object> consultarCompatibilidadZonificacion(String direccion, String giro) {
-        log.info("Edificaciones Adapter: Evaluando zonificación para dirección '{}' con giro '{}'", direccion, giro);
+        log.info("Edificaciones Adapter: Consulta técnica referencial para dirección '{}' con giro '{}'", direccion, giro);
 
         Map<String, Object> respuesta = new HashMap<>();
         respuesta.put("direccion", direccion);
         respuesta.put("giroSolicitado", giro);
-        respuesta.put("clasificacionZonificacion", "ZRE-CH (Zona de Reglamentación Especial - Centro Histórico de Huamanga)");
-        respuesta.put("compatibilidadUso", "COMPATIBLE / PERMITIDO");
-        respuesta.put("certificadoNumero", "CERT-ZONIF-2026-" + (int)(Math.random() * 9000 + 1000));
-        respuesta.put("fechaEmision", LocalDateTime.now());
-        respuesta.put("evaluadorTecnico", "Arq. Lucía Quispe Morales (CAP 1245)");
-        respuesta.put("vigencia", "VÁLIDO PARA PROCEDIMIENTO TUPA");
+        respuesta.put("clasificacionZonificacion", "REFERENCIAL_PDU");
+        respuesta.put("compatibilidadUso", "PENDIENTE_DICTAMEN_TECNICO_EVALUADOR");
+        respuesta.put("certificadoNumero", null);
+        respuesta.put("simulacionOficial", false);
+        respuesta.put("requiereInformeTecnico", true);
+        respuesta.put("mensaje", "La compatibilidad de zonificación no puede emitirse automáticamente por simulación. Requiere dictamen técnico motivado del evaluador municipal de Edificaciones conforme al Plan de Desarrollo Urbano (PDU) vigente.");
         return respuesta;
     }
 }
