@@ -22,9 +22,14 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -55,6 +60,9 @@ class ExpedienteServiceTest {
 
     @Mock
     private NotificacionEmailService notificacionEmailService;  // Fase 04 Sprint 4-B
+
+    @Mock
+    private FirmaDigitalPort firmaDigitalPort;
 
     @InjectMocks
     private ExpedienteService expedienteService;
@@ -165,7 +173,7 @@ class ExpedienteServiceTest {
     }
 
     @Test
-    @DisplayName("Debe aprobar expediente cuando cumple con ITSE y pago, generando código QR único")
+    @DisplayName("Debe aprobar expediente cuando cumple con ITSE y pago, generando código QR único si la firma digital es válida")
     void testAprobarExpedienteConforme() {
         expedienteBase.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
         expedienteBase.setNivelRiesgo(NivelRiesgo.MEDIO);
@@ -174,11 +182,33 @@ class ExpedienteServiceTest {
 
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(firmaDigitalPort.estaDisponible()).thenReturn(true);
 
         expedienteService.aprobar(expedienteId);
 
         assertEquals(EstadoExpediente.APROBADO, expedienteBase.getEstado());
         assertNotNull(expedienteBase.getLicenciaQrCode());
+        assertTrue(expedienteBase.getFirmaDigitalValida());
+        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.EN_EVALUACION_FINAL), eq(EstadoExpediente.APROBADO), any(), any());
+    }
+
+    @Test
+    @DisplayName("I02.1 / DAS DA-06: Aprobación sin firma digital válida aprueba administrativamente pero NO emite licencia ni QR activo")
+    void testAprobarExpedienteSinFirmaDigital_NoGeneraLicenciaNiQrActivo() {
+        expedienteBase.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
+        expedienteBase.setNivelRiesgo(NivelRiesgo.MEDIO);
+        expedienteBase.setVoucherId("VCH-2026-123456");
+        expedienteBase.setMontoTasa(new BigDecimal("218.00"));
+
+        when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
+        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(firmaDigitalPort.estaDisponible()).thenReturn(false);
+
+        expedienteService.aprobar(expedienteId);
+
+        assertEquals(EstadoExpediente.APROBADO, expedienteBase.getEstado());
+        assertNull(expedienteBase.getLicenciaQrCode());
+        assertFalse(expedienteBase.getFirmaDigitalValida());
         verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.EN_EVALUACION_FINAL), eq(EstadoExpediente.APROBADO), any(), any());
     }
 

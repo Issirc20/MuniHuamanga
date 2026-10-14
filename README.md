@@ -1,409 +1,308 @@
-# 🏛️ Sistema de Gestión Digital del Trámite de Licencia de Funcionamiento
-### Municipalidad Provincial de Huamanga (MuniHuamanga)
-> **Arquitectura de Software Empresarial para la Digitalización Integral del Trámite de Licencia de Funcionamiento, con Generación Automática de Formatos Oficiales en PDF (Anexos 1, 3 y 4), Wizard Ciudadano Multipaso, Flujo de Subsanaciones LPAG, Firma Digital, Verificación de Licencias mediante Código QR, Seguridad Blindada OWASP ASVS y Empaquetado en Contenedores Docker, Desarrollada en Java 21 LTS y PostgreSQL 15, Modelada con C4 hasta el Nivel de Componentes.**
+# 🏛️ MuniHuamanga V2 — Sistema de Gestión Digital de Licencias de Funcionamiento
+### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v0.9.0--rc1-blue?style=flat-square)
+> **Plataforma de Gobierno Digital para la Tramitación, Evaluación, Acto Resolutivo y Verificación de Licencias de Funcionamiento con Firma Digital Institucional, Códigos QR Dinámicos y Monolito Modular con Clean Architecture.**
+
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-V2.0.0--rc1-blue?style=flat-square)
 ![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange?logo=openjdk&style=flat-square)
 ![Spring Boot 3.3.4](https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen?logo=springboot&style=flat-square)
-![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql&style=flat-square)
-![Docker](https://img.shields.io/badge/Docker-Multi--Stage%20(Temurin%2021)-2496ED?logo=docker&style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-94%20passing%20(100%25)-brightgreen?style=flat-square)
-![Concurrencia](https://img.shields.io/badge/Concurrencia-%E2%89%A5150%20usuarios%20(<110ms)-success?style=flat-square)
-![Auditoría](https://img.shields.io/badge/Auditor%C3%ADa-16%2F16%20Hallazgos%20Cerrados-brightgreen?style=flat-square)
-![Normativa](https://img.shields.io/badge/Marco%20Legal-Ley%20N%C2%B0%2028976%20%2F%20Ley%2027444-red?style=flat-square)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql&style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-301%20passing%20(100%25)-brightgreen?style=flat-square)
+![Concurrencia](https://img.shields.io/badge/Concurrencia-%E2%89%A5150%20tx%20simult%C3%A1neas-success?style=flat-square)
+![Firma Digital](https://img.shields.io/badge/Firma%20Digital-Fail--Closed%20IOFE-red?style=flat-square)
+![Marco Legal](https://img.shields.io/badge/Marco%20Legal-Ley%2028976%20%2F%20Ley%2027269%20%2F%20Ley%2029733-red?style=flat-square)
 
 ---
 
-## 📋 1. Resumen de la Solución
+## 1. Problema que Resuelve y Objetivo
 
-El presente proyecto implementa la arquitectura de software empresarial para digitalizar, transparentar y dar trazabilidad completa al trámite de **Licencia de Funcionamiento** en el ámbito municipal peruano, anclado al marco normativo de la **Ley N° 28976** (Ley Marco de Licencia de Funcionamiento), el **D.S. N° 002-2018-PCM** (Reglamento de Inspecciones Técnicas de Seguridad en Edificaciones - ITSE), la **Ley N° 27444** (Ley del Procedimiento Administrativo General - LPAG) y la **Ley N° 29733** (Ley de Protección de Datos Personales).
+En la provincia de Huamanga, la tramitación tradicional de licencias de funcionamiento enfrentaba demoras administrativas de hasta 45 días hábiles, duplicidad en la captura de datos, expedientes físicos extraviados, opacidad tributaria y vulnerabilidad ante licencias comerciales falsificadas o adulteradas.
 
-### 🎯 Estado Consolidado de Fases del Proyecto
-
-| Fase | Estado | Descripción del Alcance y Entregables |
-|:---:|:---:|---|
-| **Fase 01** | ✅ Completada | Digitalización de base de datos (45 atributos normativos), capa de dominio, máquina de estados finitos, APIs REST y auditoría inmutable de transiciones. |
-| **Fase 02** | ✅ Completada | Motor de generación de formatos oficiales en PDF con OpenPDF: Anexo 1 (2 pág.), Anexo 3 Matriz ITSE CENEPRED (2 pág.), Anexo 4 Condiciones de Seguridad (4 pág.), Voucher SAT con Code 128 y Certificado Oficial con QR. |
-| **Fase 03** | ✅ Completada | Frontend Wizard Multipaso Ciudadano (3 pasos), descarga de documentos en memoria, Dashboard de Gestión Interna con KPIs y módulo de Mesa de Ayuda. |
-| **Fase 04** | ✅ Completada | Autenticación JWT Stateless, Spring Security 6 RBAC (`ADMIN`, `EVALUADOR`, `CAJERO`), notificaciones asíncronas por correo electrónico (Thymeleaf + JavaMailSender) y gestión dinámica del tarifario TUPA (Ordenanza N° 018-2024-MPH). |
-| **Auditoría & Estabilización** | ✅ Certificada (`v0.9.0-rc1`) | **Auditoría Integral de 5 Fases:** Cierre del 100% de los 16 hallazgos técnicos (H01-H16), blindaje Default-Deny, mitigación BOLA/IDOR con `SeguimientoCiudadanoDto`, soporte de estado `OBSERVADO` y subsanaciones LPAG en portales, suite de 94 tests automatizados, pruebas de concurrencia de 150 usuarios sobre BD real (<110ms) y Dockerfile multi-stage con manuales de despliegue y rollback. |
+**MuniHuamanga V2** resuelve esta problemática digitalizando el ciclo de vida del trámite de punta a punta:
+- **Cero Papel y Celeridad:** Reducción del plazo legal de atención de 45 días a 1 día hábil para riesgo Bajo/Medio y máximo 15 días hábiles para riesgo Alto/Muy Alto.
+- **Validez Jurídica Indubitable:** Emisión de resoluciones administrativas formales (`RES-YYYY-XXXXX`) y licencias oficiales (`LIC-YYYY-XXXXX`) mediante secuencias atómicas pesimistas y firma digital institucional acreditada ante la IOFE (Ley N° 27269).
+- **Protección de Datos Personales (Ley N° 29733):** Código QR dinámico con minimización estricta de datos para la ciudadanía general y vista protegida con mapa interactivo (Leaflet) para inspectores municipales en campo.
+- **Eficiencia Operativa:** Unificación en un **Monolito Modular** de alta cohesión que elimina la latencia de red de los microservicios, consume menos de 500 MB de RAM y renderiza formatos oficiales (Anexos 1, 3, 4 y licencias) en memoria volátil en menos de 500 ms.
 
 ---
 
-## 🏗️ 2. Estructura de Módulos del Repositorio
+## 2. Tecnologías y Versiones Reales
 
-El proyecto está estructurado bajo el estilo arquitectónico de **Monolito Modular (Modular Monolith)** con diseño interno de **Clean Architecture (Arquitectura Limpia y Hexagonal / Ports & Adapters)**, organizado como un proyecto multi-módulo Maven (`muni-licencias-parent`):
+| Componente | Tecnología | Versión | Rol en la Arquitectura |
+|---|---|:---:|---|
+| **Lenguaje de Programación** | Java SE (LTS) | `21` | Plataforma base con soporte a largo plazo y Virtual Threads |
+| **Framework Backend** | Spring Boot | `3.3.4` | Inversión de control, inyección de dependencias y configuración |
+| **Seguridad y Tokens** | Spring Security & JJWT | `6.x` / `0.12.6` | Autenticación stateless y autorización RBAC con protección IDOR/BOLA |
+| **Motor de Base de Datos** | PostgreSQL | `16.x` | Base de datos relacional ACID con transacciones locales |
+| **Persistencia ORM** | Spring Data JPA / Hibernate | `6.x` | Mapeo objeto-relacional y bloqueos pesimistas `PESSIMISTIC_WRITE` |
+| **Renderizado Documental** | OpenPDF | `2.0.3` | Generación in-memory de Anexos 1, 3, 4 y licencias oficiales en PDF |
+| **Generación QR y Barras** | ZXing (Zebra Crossing) | `3.5.3` | Códigos QR dinámicos y código de barras Code 128 para vouchers |
+| **Georreferenciación Móvil** | Leaflet & OpenStreetMap | `1.9.4` | Renderizado interactivo de mapas para inspectores en campo |
+| **Gestor de Construcción** | Apache Maven | `3.9.x` | Compilación multi-módulo (`common-domain` y `servicio-expedientes`) |
+| **Contenedores** | Docker Engine & Compose | $\ge 24.0$ | Empaquetamiento multi-stage sobre `eclipse-temurin:21-jre-alpine` |
+
+---
+
+## 3. Arquitectura del Sistema
+
+### 3.1. Estilo Arquitectónico: Monolito Modular
+El sistema está construido bajo el estilo **Monolito Modular (Modular Monolith)**. Todos los módulos operativos se ejecutan en un único proceso JVM (`servicio-expedientes.jar`), eliminando la sobrecarga operacional, los saltos de red HTTP interservicios y la consistencia eventual, garantizando transacciones locales ACID y llamadas en memoria de microsegundos.
+👉 Consulta el documento canónico: **[Estilo arquitectónico](docs/arquitectura/estilo-arquitectonico.md)**.
+
+### 3.2. Enfoque Arquitectónico: Clean Architecture y Puertos Hexagonales
+La lógica de negocio se aísla de frameworks y bases de datos mediante **Clean Architecture** estructurada en capas concéntricas (Dominio ➔ Aplicación ➔ Adaptadores ➔ Infraestructura), complementada con el patrón **Ports & Adapters (Hexagonal)**:
+- `FirmaDigitalPort`: Puerto desacoplado para servicios criptográficos IOFE con política *fail-closed*.
+- `SatPort`: Puerto de verificación de recaudación tributaria.
+- `DefensaCivilPort`: Puerto para registro de inspecciones técnicas de seguridad.
+- `EdificacionesPort`: Puerto de consulta de compatibilidad urbanística PDU.
+
+👉 Consulta el documento canónico: **[Enfoque arquitectónico](docs/arquitectura/enfoque-arquitectonico.md)**.
+
+### 3.3. Modelo C4 Resumido
+El sistema se documenta formalmente mediante el modelo C4 hasta el nivel de componentes y código crítico:
+- **Nivel 1 (Contexto):** Ciudadanos, Administradores, Evaluadores, Cajeros SAT, Inspectores, IOFE/RENIEC y Servidor SMTP.
+- **Nivel 2 (Contenedores):** Frontend Web SPA, Monolito Modular Spring Boot y Base de Datos PostgreSQL 16.
+- **Nivel 3 (Componentes):** Controladores REST, Servicios de Aplicación, Entidades de Dominio, Repositorios JPA y Adaptadores Portuarios.
+- **Nivel 4 (Código):** Diagrama de secuencia del flujo crítico *fail-closed* de resolución y firma digital.
+
+👉 Consulta el modelo completo: **[Modelo C4](docs/arquitectura/c4-model.md)**.
+
+```mermaid
+graph TD
+    subgraph Actores
+        CIU["👤 Administrado / Ciudadano"]
+        OPE["👤 Evaluador / Cajero / Inspector / Admin"]
+        PUB["🌐 Público General (Escaneo QR)"]
+    end
+
+    subgraph MuniHuamanga V2
+        UI["💻 Frontend Web<br>(HTML5 / CSS3 / JS / Leaflet)"]
+        APP["🏛️ Monolito Modular Backend<br>(Spring Boot 3.3.4 / Java 21 LTS)"]
+        DB[("🗄️ Base de Datos Relacional<br>(PostgreSQL 16 ACID)")]
+    end
+
+    subgraph Servicios Externos
+        IOFE["🔑 Infraestructura Oficial de Firma (IOFE)<br>FirmaDigitalPort (Fail-Closed)"]
+        SMTP["✉️ Servidor SMTP Municipal<br>Notificaciones Asíncronas"]
+    end
+
+    CIU -->|HTTPS| UI
+    OPE -->|HTTPS (JWT)| UI
+    PUB -->|HTTPS (Token QR)| UI
+    UI -->|REST / JSON| APP
+    APP -->|JPA / JDBC| DB
+    APP -.->|Firma PKI| IOFE
+    APP -.->|JavaMail| SMTP
+```
+
+---
+
+## 4. Módulos del Sistema (M01 a M12)
+
+MuniHuamanga V2 organiza sus capacidades en doce (12) Bounded Contexts lógicos:
+
+| Módulo | Nombre | Responsabilidad Principal | Estado |
+|:---:|---|---|:---:|
+| **M01** | **Cuentas y Operadores** | Registro de titulares, operadores institucionales y locales multi-establecimiento. | ✅ Completo |
+| **M02** | **Solicitudes Borrador** | Autoguardado de trámites progresivos y validación previa de checklist. | ✅ Completo* |
+| **M03** | **Expedientes y Documentos** | Máquina de 10 estados, generación in-memory de Anexos 1, 3, 4 y hash SHA-256. | ✅ Completo |
+| **M04** | **Pagos SAT** | Liquidación TUPA, emisión de vouchers y validación manual de comprobantes en caja. | ✅ Completo |
+| **M05** | **Tarifario TUPA** | Mantenimiento dinámico en caliente de tasas (`PUT /api/tupa/tarifas/{id}`). | ✅ Completo |
+| **M06** | **Zonificación PDU** | Compatibilidad de uso del suelo y rectificación cartográfica de locales. | ✅ Completo |
+| **M07** | **Evaluación e Informes** | Evaluación técnica, emisión de informes previos y alertas por correo. | ✅ Completo |
+| **M08** | **Resoluciones Administrativas** | Acto formal con secuencia atómica anual (`RES-YYYY-XXXXX`) y firma digital fail-closed. | ✅ Completo |
+| **M09** | **Licencias Oficiales** | Emisión atómica de licencia (`LIC-YYYY-XXXXX`), doble marco y código QR. | ✅ Completo |
+| **M10** | **Verificación QR y Móvil** | Vista pública minimizada (Ley 29733) y vista inspector con mapa Leaflet. | ✅ Completo |
+| **M11** | **Reclamaciones** | Registro y resolución motivada de recursos y controversias ciudadanas. | 🟡 Backend Listo |
+| **M12** | **Auditoría y Seguridad** | Auditoría inmutable *append-only*, tokens JWT y mitigación IDOR/BOLA. | 🟡 Backend Listo |
+
+*\* Nota: En M02, el backend está completado y probado; el frontend ciudadano está en proceso de reconexión directa.*
+👉 Consulta la especificación detallada: **[Guía de Módulos (M01–M12)](docs/v2/GUIA_MODIFICACIONES_MODULARES.md)**.
+
+---
+
+## 5. Máquina de Estados del Expediente
+
+El ciclo de vida administrativo se gobierna estrictamente mediante una máquina de diez (10) estados finitos (`EstadoExpediente.java`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> REGISTRADO: Solicitud presentada
+    REGISTRADO --> PENDIENTE_PAGO: Liquidación generada
+    PENDIENTE_PAGO --> PAGO_OBSERVADO: Comprobante observado en caja
+    PAGO_OBSERVADO --> PENDIENTE_PAGO: Nuevo comprobante cargado
+    PENDIENTE_PAGO --> EN_EVALUACION: Pago validado manualmente
+    EN_EVALUACION --> OBSERVADO: Observación técnica o legal
+    OBSERVADO --> EN_EVALUACION: Documentos subsanados (SHA-256)
+    EN_EVALUACION --> APROBADO_CON_RESOLUCION: Resolución aprobada y firmada IOFE
+    EN_EVALUACION --> DENEGADO: Resolución denegatoria motivada
+    APROBADO_CON_RESOLUCION --> EMITIDO: Emisión atómica de Licencia Oficial
+    EMITIDO --> ENTREGADO: Descargada / puesta a disposición
+    EN_EVALUACION --> ANULADO: Nulidad o desistimiento formal
+    ENTREGADO --> [*]
+    DENEGADO --> [*]
+    ANULADO --> [*]
+```
+
+---
+
+## 6. Estructura del Repositorio
 
 ```text
 MuniHuamanga/
-├── pom.xml                                  # POM Padre Multi-Módulo Maven (Java 21 / SB 3.3.4, OpenPDF, JJWT, ZXing)
-├── Dockerfile                               # Empaquetado Multi-Stage (Maven 3.9 + Temurin 21 JRE no-root UID 10001, G1GC)
-├── .dockerignore                            # Exclusiones optimizadas para construcción de imágenes Docker
-├── docker-compose.yml                       # Orquestación integral: PostgreSQL 15, backend Spring Boot y pgAdmin 4
-├── .env.example                             # Plantilla exhaustiva de variables de entorno (JWT_SECRET, BD, SMTP)
-├── .gitignore                               # Exclusiones optimizadas para Java, Maven e IDEs
+├── pom.xml                                  # POM Padre Multi-Módulo Maven (Java 21 / SB 3.3.4)
+├── Dockerfile                               # Empaquetado Multi-Stage (Maven 3.9 + Temurin 21 JRE no-root)
+├── docker-compose.yml                       # Orquestación local: PostgreSQL 16 y Spring Boot
+├── .env.example                             # Plantilla de variables de entorno seguras
 │
-├── common-domain/                           # Módulo Bounded Context: Contratos y DTOs del dominio compartidos
+├── common-domain/                           # Módulo Bounded Context: Contratos y DTOs compartidos
 │   └── src/main/java/.../common/
-│       ├── enums/
-│       │   ├── EstadoExpediente.java       # FORMATOS_GENERADOS → DOCUMENTOS_VALIDADOS ⇄ OBSERVADO → EN_EVALUACION_FINAL → APROBADO/RECHAZADO
-│       │   ├── NivelRiesgo.java           # BAJO, MEDIO, ALTO, MUY_ALTO (Matriz CENEPRED)
-│       │   ├── RolUsuario.java            # ROLE_ADMIN, ROLE_EVALUADOR, ROLE_CAJERO (RBAC institucional)
-│       │   ├── TipoPersona.java           # NATURAL, JURIDICA
-│       │   ├── TipoDocumento.java         # DNI, RUC, CARNET_EXTRANJERIA
-│       │   ├── ModalidadTramite.java      # Sección I Anexo 1 (Indeterminada, Temporal, Cesionaria, etc.)
-│       │   └── FuncionEdificacion.java    # Anexos 3 y 4 ITSE (Salud, Encuentro, Comercio, Almacén, etc.)
-│       ├── dto/                            # 16 DTOs de contrato del dominio
-│       │   ├── CrearExpedienteDto.java    # Solicitud Mesa de Partes (45 campos normativos, Anexo 1 + SUNARP + Ubicación)
-│       │   ├── ExpedienteResponseDto.java # Payload interno completo (para administradores y evaluadores)
-│       │   ├── SeguimientoCiudadanoDto.java # Payload público de consulta con datos personales ofuscados (Ley N° 29733 / H07)
-│       │   ├── SubsanacionExpedienteDto.java# DTO formal de subsanación de observaciones ciudadanas (Ley 27444 / H11)
-│       │   ├── Anexo4CondicionesDto.java  # Checklist de seguridad en edificación (23 campos booleanos de inspección)
-│       │   ├── ClasificacionRiesgoDto.java# Calificación ITSE (Nivel + N° Informe Técnico + Observaciones)
-│       │   ├── RegistroPagoDto.java       # Validación SAT (Voucher + N° Operación Bancaria + Monto)
-│       │   ├── VoucherDto.java            # Orden de pago SAT con código Code 128
-│       │   ├── VerificacionLicenciaDto.java# Consulta pública ciudadana vía QR (RNF-20)
-│       │   ├── ResolucionExpedienteDto.java# Dictamen de aprobación o motivo fundamentado de observación/rechazo
-│       │   ├── HistorialEstadoDto.java    # Línea de tiempo de auditoría inmutable
-│       │   ├── LoginRequestDto.java       # Credenciales para autenticación JWT de funcionarios
-│       │   ├── LoginResponseDto.java      # Token Bearer JWT, roles, username y tiempo de expiración
-│       │   ├── UsuarioDto.java            # Perfil público y rol del funcionario autenticado
-│       │   ├── TarifaTupaDto.java         # Catálogo oficial de tasas municipales vigentes
-│       │   └── ActualizarTarifaDto.java   # DTO validado para actualización en caliente de montos TUPA
-│       └── exception/
-│           ├── TransicionInvalidaException.java
-│           └── RecursoNoEncontradoException.java
+│       ├── dto/                             # 41 DTOs de contrato inmutables
+│       ├── enums/                           # 19 Enums de negocio (EstadoExpediente, NivelRiesgo, etc.)
+│       └── exception/                       # Excepciones de dominio
 │
-├── servicio-expedientes/                    # Aplicación Principal: Monolito Modular con Clean Architecture (Puerto 8081)
+├── servicio-expedientes/                    # Módulo de Aplicación y Persistencia (Monolito)
 │   ├── src/main/java/.../expedientes/
-│   │   ├── ExpedientesApplication.java      # Punto de entrada autónomo Spring Boot 3.3.4
-│   │   ├── config/
-│   │   │   ├── AsyncConfig.java             # Pool de hilos @Async para notificaciones por correo
-│   │   │   ├── SecurityConfig.java          # Spring Security 6: Default-Deny, filtros JWT y reglas estrictas RBAC
-│   │   │   ├── DataInitializer.java          # Datos semilla de prueba (@Profile("!prod"), expedientes demo)
-│   │   │   ├── UsuarioDataInitializer.java   # Usuarios semilla institucionales (@Profile("!prod"), BCrypt)
-│   │   │   └── TarifaTupaDataInitializer.java# Catálogo inicial de tasas TUPA (Ordenanza N° 018-2024-MPH)
-│   │   │
-│   │   ├── controller/                      # Capa Web / Adaptadores de Entrega REST
-│   │   │   ├── AuthController.java          # Autenticación JWT (/api/auth/login, /api/auth/me)
-│   │   │   ├── ExpedienteController.java    # Ciclo de vida del trámite, /observar, /subsanar y consultas
-│   │   │   ├── PublicLicenciasController.java # Endpoints públicos de verificación QR y consultas (RNF-20)
-│   │   │   ├── TarifaTupaController.java    # CRUD y actualización en caliente del tarifario TUPA
-│   │   │   ├── DocumentosFormulariosController.java # Generación y descarga blindada de formatos oficiales en PDF
-│   │   │   └── GlobalExceptionHandler.java  # Manejo global de errores HTTP (RFC-7807, mensajes institucionalmente seguros)
-│   │   │
-│   │   ├── integracion/                     # Bounded Context: Puertos y Adaptadores Externos (Clean Architecture)
-│   │   │   ├── port/                        # Puertos de salida (Interfaces del dominio)
-│   │   │   │   ├── DefensaCivilPort.java    # Puerto de integración con Defensa Civil (ITSE D.S. 002-2018-PCM)
-│   │   │   │   ├── EdificacionesPort.java   # Puerto de compatibilidad de zonificación PDU
-│   │   │   │   ├── FiscalizacionPort.java   # Puerto de actas de control y fiscalización posterior
-│   │   │   │   └── SatPort.java             # Puerto de recaudación y conciliación de vouchers SAT
-│   │   │   ├── adapter/                     # Adaptadores de infraestructura
-│   │   │   │   ├── DefensaCivilAdapterService.java
-│   │   │   │   ├── EdificacionesAdapterService.java
-│   │   │   │   ├── FiscalizacionAdapterService.java
-│   │   │   │   └── SatAdapterService.java
-│   │   │   └── controller/
-│   │   │       └── AdaptadorController.java # Endpoints protegidos de simulación e interoperabilidad (/api/integraciones)
-│   │   │
-│   │   ├── service/                         # Capa de Aplicación / Casos de Uso
-│   │   │   ├── ExpedienteService.java       # Máquina de estados (6 estados), observar(), subsanar() y persistencia
-│   │   │   ├── CalculadoraDeTasa.java       # Motor de cálculo dinámico con desglose y fallback a YAML
-│   │   │   ├── TarifaTupaService.java       # Gestión transaccional de tasas municipales TUPA
-│   │   │   ├── AuditoriaService.java        # Log inmutable de transiciones con sellado de tiempo
-│   │   │   ├── MetricasExpedienteService.java # Micrometer/Actuator: SLAs, alertas de vencimiento (15 días hábiles)
-│   │   │   ├── NotificacionEmailService.java # Envío asíncrono de correos con plantillas Thymeleaf y PDF adjunto
-│   │   │   ├── AuthService.java             # Lógica de login con BCrypt y emisión JWT
-│   │   │   ├── DocumentoPdfService.java     # Coordinador de renderizado PDF en memoria (OpenPDF 2.0.3)
-│   │   │   ├── LicenciaPdfGenerator.java    # Certificado oficial de Licencia (doble marco, escudo, QR ZXing, 6 notas)
-│   │   │   ├── Anexo1PdfGenerator.java      # Generador Anexo 1 (2 páginas, Ley 28976)
-│   │   │   ├── Anexo3PdfGenerator.java      # Generador Matriz ITSE (2 páginas, CENEPRED)
-│   │   │   └── Anexo4PdfGenerator.java      # Generador Condiciones de Seguridad (4 páginas)
-│   │   │
-│   │   ├── security/                        # Capa de seguridad JWT sin estado (Stateless)
-│   │   │   ├── JwtTokenProvider.java        # Firma HMAC-SHA256, validación de secreto robusto en prod y expiración 8h
-│   │   │   ├── JwtAuthenticationFilter.java # Filtro OncePerRequest para interceptar Bearer token
-│   │   │   ├── JwtAuthenticationEntryPoint.java # Manejo de error 401 Unauthorized en JSON
-│   │   │   ├── JwtAccessDeniedHandler.java  # Manejo de error 403 Forbidden en JSON
-│   │   │   ├── CustomUserDetails.java       # Wrapper UserDetails de Spring Security
-│   │   │   └── CustomUserDetailsService.java # Carga de usuario desde base de datos
-│   │   │
-│   │   ├── validator/                       # Validadores de Reglas de Negocio
-│   │   │   ├── EstadoExpedienteValidator.java # Precondiciones legales de aprobación y matriz de transiciones
-│   │   │   └── MesaPartesValidator.java      # Validación estricta de solicitud y requisitos TUPA
-│   │   ├── mapper/ExpedienteMapper.java      # MapStruct: cómputo 15 días hábiles, Anexo 4 y ofuscación DTO ciudadano
-│   │   ├── model/                           # Entidades del Dominio (JPA)
-│   │   │   ├── Expediente.java               # Entidad central con 45 atributos normativos + campos de observación/subsanación
-│   │   │   ├── Anexo4Condiciones.java        # Objeto embebido JPA (@Embeddable) 23 campos
-│   │   │   ├── HistorialEstado.java          # Auditoría inmutable @Entity
-│   │   │   ├── Usuario.java                  # Entidad JPA de usuarios con roles RBAC y BCrypt
-│   │   │   └── TarifaTupa.java               # Entidad JPA de tarifario municipal con constraints
-│   │   └── repository/                      # Adaptadores de Persistencia (Spring Data JPA)
-│   │       ├── ExpedienteRepository.java
-│   │       ├── HistorialRepository.java
-│   │       ├── UsuarioRepository.java
-│   │       └── TarifaTupaRepository.java
-│   │
+│   │   ├── borradores/                      # M02: Gestión de Solicitudes Borrador
+│   │   ├── cuentas/                         # M01: Cuentas y Operadores
+│   │   ├── documentos/                      # M03: Documentos Adjuntos y Versionado
+│   │   ├── establecimientos/                # M01: Locales Comerciales Desacoplados
+│   │   ├── evaluacion/                      # M07: Evaluación e Informes Administrativos
+│   │   ├── integracion/                     # M08: Puertos y Adaptadores (FirmaDigitalPort)
+│   │   ├── licencias/                       # M09: Emisión y Consulta de Licencias
+│   │   ├── pagos/                           # M04: Pagos SAT y Validación Manual
+│   │   ├── reclamaciones/                   # M11: Reclamaciones Administrativas
+│   │   ├── rectificacion/                   # M06: Rectificación de Ubicación Georreferenciada
+│   │   ├── resoluciones/                    # M08: Resoluciones con Secuencia Atómica
+│   │   ├── security/                        # M12: Seguridad JWT, RBAC y Anti-IDOR
+│   │   ├── service/                         # Servicios de Aplicación y Generación OpenPDF/ZXing
+│   │   └── zonificacion/                    # M06: Evaluación de Zonificación PDU
 │   ├── src/main/resources/
-│   │   ├── application.yml                   # Configuración principal Spring, JPA, Mail, JWT, Actuator
-│   │   ├── application-dev.yml               # Perfil de desarrollo local con H2 (modo PostgreSQL)
-│   │   ├── application-local.yml             # Perfil local para PostgreSQL
-│   │   ├── application-prod.yml              # Perfil blindado de producción (ddl-auto: validate, pool Hikari optimizado)
-│   │   ├── templates/email/                  # Plantillas Thymeleaf para notificaciones asíncronas
-│   │   │   ├── email-registro.html           # Notificación de registro con N° Expediente
-│   │   │   ├── email-aprobacion.html         # Notificación de aprobación con Licencia PDF adjunta
-│   │   │   └── email-rechazo.html            # Notificación motivada de observación o rechazo
-│   │   └── static/                          # Frontend Institucional Completo
-│   │       ├── index.html                    # Landing page con tarjetas de acceso institucional
-│   │       ├── portal-ciudadano.html         # Wizard Ciudadano Multipaso: 3 pasos + Descarga PDFs + Modal Subsanación Online
-│   │       ├── portal-interno.html           # Dashboard KPI + Bandeja Formatos PDF + Login Modal + Acciones Observar/Subsanar + CRUD TUPA
-│   │       ├── verificar-licencia.html       # Portal Público de Verificación QR (RNF-20)
-│   │       ├── css/styles.css                # Sistema de diseño integral (wizard, kpi-cards, modales, alertas, badge-observado)
-│   │       ├── js/
-│   │       │   ├── portal-ciudadano.js       # Wizard logic: navegación, validaciones, seguimiento ofuscado y subsanación LPAG
-│   │       │   ├── portal-interno.js         # Sesión JWT, renderFormatosPdf(), modales de observación, subsanación y gestión TUPA
-│   │       │   └── verificar-licencia.js     # Consulta QR pública en tiempo real
-│   │       └── img/escudo-huamanga.png       # Escudo oficial de Huamanga
-│   │
-│   └── src/test/                            # 94 tests automatizados pasando al 100%
-│       ├── java/.../concurrencia/
-│       │   └── Concurrencia150UsuariosTest.java # Carga real con 150 hilos sobre HikariCP y motor JPA (H13)
-│       └── java/.../security/
-│           └── SeguridadEndToEndTest.java       # Pruebas E2E de seguridad: Default-Deny, RBAC, ofuscación BOLA y Actuator
+│   │   ├── static/                          # Frontend Web: HTML5, CSS y JavaScript Vanilla
+│   │   │   ├── css/                         # Tokens de estilo y diseño institucional
+│   │   │   ├── js/                          # Lógica cliente y mapas Leaflet
+│   │   │   ├── portal-ciudadano.html        # Mesa de partes y seguimiento ciudadano
+│   │   │   ├── formato-anexo1.html          # Formulario ministerial asistido Anexo 1
+│   │   │   ├── portal-interno.html          # Backoffice unificado de operadores municipales
+│   │   │   └── verificar-licencia.html      # Verificación pública QR y móvil de inspector
+│   │   └── application.yml                  # Configuración de perfiles (dev, prod)
+│   └── src/test/java/                       # 301 Pruebas automatizadas (Unitarias, MockMvc, Seguridad)
 │
-├── docker/
-│   └── postgres/init/01-init-databases.sql # DDL canónico: expedientes (con motivo/subsanación), historial, usuarios y tarifas
-│
-├── tests/                                   # Pruebas de Carga y Rendimiento Externas
-│   └── load-test/
-│       ├── k6-load-test.js                  # Suite k6 para simulación de ≥150 usuarios virtuales concurrentes
-│       └── run-load-test-150.ps1            # Arnés multi-escenario PowerShell (150 usuarios concurrentes en ráfaga HTTP)
-│
-└── docs/                                    # Documentación Técnica Oficial del Proyecto
-    ├── auditoria/
-    │   ├── AUDITORIA_INTEGRAL.md            # Informe Maestro de Auditoría: 16/16 hallazgos resueltos y certificación v0.9.0-rc1
-    │   └── REPORTE_QA.md                    # Reporte formal QA: Matriz consolidada de 94 tests, carga 150 usuarios < 110ms
-    ├── despliegue/
-    │   ├── GUIA_DESPLIEGUE.md               # Manual de despliegue con Docker Compose, .env y smoke tests
-    │   ├── PLAN_ROLLBACK.md                 # Plan de contingencia, reversión de versiones y restauración de backups
-    │   └── CHECKLIST_PRODUCCION.md          # Lista de verificación pre-pase a producción (20 controles OWASP/LPAG)
-    ├── arquitectura/
-    │   ├── diseno-arquitectonico-monolito-modular-clean-architecture.md # Documento Maestro de Diseño
-    │   └── c4-model.md                      # Modelo C4 (Contexto, Contenedores, Componentes, Dominio)
-    ├── auditoria-codigo-calidad-resolucion-101-problemas.md # Auditoría previa de 101 advertencias de calidad resueltas
-    ├── entrega-fase-01.md                   # Entrega Fase 01: Dominio, BD y APIs
-    ├── entrega-fase-02.md                   # Entrega Fase 02: Motor PDF (Anexos 1, 3, 4)
-    ├── entrega-fase-03.md                   # Entrega Fase 03: Frontend Wizard + Descarga PDFs
-    ├── entrega-fase-04-consolidado.md       # Entrega Fase 04 Completa: Consolidado (80/80 tests)
-    ├── normativa-legal.md                   # Marco Legal: Ley 28976, Anexos 1, 3 y 4 ITSE
-    ├── v0.1-inventario-matriz-campos.md     # Matriz de trazabilidad campo por campo (45 atributos)
-    └── scrum/                               # Product Backlogs e Historias de Usuario (Sprints 0 a 4)
+├── docker/postgres/init/                    # Scripts SQL de inicialización en limpio (01 a 08)
+└── docs/                                    # Repositorio integral de documentación técnica
+    ├── arquitectura/                        # Estilo, Enfoque, C4 y Diseño Detallado
+    ├── analisis-de-sistema/                 # Actores, Historias, RF, RNF, Restricciones, ADRs
+    ├── auditoria/                           # Informes de QA y Consolidación Documental
+    ├── despliegue/                          # Guía de Despliegue, Checklist y Rollback
+    ├── scrum/                               # Product Backlog y Sprints
+    └── v2/                                  # Instrumentos rectores, Cierres I02..I09 y Estado Actual
 ```
 
 ---
 
-## ⚙️ 3. Requisitos del Entorno
+## 7. Requisitos de Instalación y Ejecución Local
 
-| Herramienta | Versión Mínima | Finalidad |
-|-------------|:--------------:|-----------|
-| **JDK (Java Development Kit)** | **21 LTS** | Eclipse Adoptium Temurin 21 recomendado |
-| **Apache Maven** | **3.9+** | Compilación y empaquetado multi-módulo POM |
-| **Docker Engine & Compose** | **24.0+ / Compose v2** | Orquestación contenerizada de PostgreSQL 15 y Backend |
-| **Git** | **2.40+** | Control de versiones y trazabilidad |
-| **PowerShell / Bash** | 7.x / 5.x | Ejecución de scripts de prueba de carga y automatización |
+### 7.1. Prerrequisitos
+- **Java SE Development Kit (JDK):** Versión 21 LTS (Eclipse Temurin o Amazon Corretto).
+- **Apache Maven:** Versión $\ge 3.9.0$.
+- **PostgreSQL:** Versión 16 (local o mediante Docker).
+- **Docker Engine y Compose (opcional para ejecución contenedorizada):** $\ge 24.0$.
 
----
+### 7.2. Compilación y Ejecución de Pruebas
+Para compilar los módulos y ejecutar la batería completa de **301 pruebas automatizadas**:
 
-## 🚀 4. Guía Rápida de Inicio y Ejecución
-
-### Opción A: Despliegue con Docker Compose (Recomendado para Producción y Staging)
-
-1. **Configurar el archivo de variables de entorno:**
-   ```bash
-   cp .env.example .env
-   ```
-2. **Construir y levantar todos los contenedores en segundo plano:**
-   ```bash
-   docker compose up -d --build
-   ```
-3. **Verificar que los servicios estén saludables:**
-   ```bash
-   docker compose ps
-   # Muestra: muni_licencias_postgres (healthy), muni_licencias_backend (healthy), muni_licencias_pgadmin (running)
-   ```
-
-### Opción B: Ejecución Rápida en Desarrollo Local (Perfil `dev` con H2 en modo Postgres)
-
-No requiere levantar Docker ni bases de datos externas:
-```powershell
-mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+```bash
+mvn clean verify
 ```
 
-### Opción C: Ejecución Local con PostgreSQL de Docker
-
-1. **Iniciar únicamente PostgreSQL:**
-   ```bash
-   docker compose up -d postgres
-   ```
-2. **Ejecutar el backend:**
-   ```powershell
-   mvn spring-boot:run "-Dspring-boot.run.profiles=local"
-   ```
-
-> El servicio se inicia en el puerto **`8081`**, exponiendo tanto la API REST, el motor documental PDF, los servicios de seguridad y los portales web frontales.
-
-### Enlaces a los Portales Web del Sistema
-
-| Portal Institucional | URL | Audiencia / Función |
-|----------------------|-----|---------------------|
-| **Landing Page Principal** | http://localhost:8081/ | Página institucional de bienvenida con accesos directos |
-| **Portal Ciudadano (Wizard)** | http://localhost:8081/portal-ciudadano.html | Registro de trámites (3 pasos) + Descarga de Anexos + Subsanación de Observaciones |
-| **Gestión Interna (Dashboard RBAC)** | http://localhost:8081/portal-interno.html | Bandeja de expedientes, evaluación, observar, subsanar, emisión y tarifario TUPA |
-| **Verificación QR Pública (RNF-20)** | http://localhost:8081/verificar-licencia.html | Fiscalización ciudadana y validación de autenticidad de licencias emitidas |
-
----
-
-## 🧪 5. Pruebas Automatizadas y de Concurrencia
-
-### 5.1 Ejecución de la Suite Completa de Pruebas (Maven)
-```powershell
-mvn clean test
-```
-*Salida esperada:*
+Salida esperada:
 ```text
-[INFO] Results:
-[INFO] Tests run: 94, Failures: 0, Errors: 0, Skipped: 0
-[INFO] ------------------------------------------------------------------------
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S   S U M M A R Y
+[INFO] -------------------------------------------------------
+[INFO] Tests run: 301, Failures: 0, Errors: 0, Skipped: 0
+[INFO] -------------------------------------------------------
 [INFO] BUILD SUCCESS
 ```
 
-### 5.2 Ejecución de Pruebas de Estrés HTTP en Vivo (150 Usuarios Concurrentes)
-Con el servidor backend iniciado en el puerto 8081, ejecute el arnés de carga:
-```powershell
-pwsh -ExecutionPolicy Bypass -File .\tests\load-test\run-load-test-150.ps1
-```
-*Resultados consolidados de la prueba de carga en vivo:*
-```text
-==================================================================
-                   RESUMEN CONSOLIDADO QA
-==================================================================
-Escenario                                  |   Reqs |  Avg(ms) |  P95(ms) | Throughput
---------------------------------------------------------------------------------
-1. Verificacion Publica QR (RNF-20)        |    150 |   102.63 |      107 |    1415.09 req/s
-2. Consulta Tramite Ciudadano (RNF-01/H07) |    150 |    66.78 |       69 |    2173.91 req/s
---------------------------------------------------------------------------------
-[EVALUACION FINAL]: TODOS LOS ESCENARIOS CUMPLEN RNF-01 (>= 150 usuarios) Y RNF-02 (< 3.00s).
+### 7.3. Ejecución Local del Backend
+```bash
+# Iniciar base de datos con Docker
+docker compose up -d postgres
+
+# Ejecutar el backend con perfil de desarrollo
+mvn spring-boot:run -pl servicio-expedientes -Dspring-boot.run.profiles=dev
 ```
 
----
-
-## 📖 6. Documentación Interactiva de APIs (OpenAPI / Swagger)
-
-| Servicio | URL Swagger | Entorno |
-|----------|-------------|---------|
-| **Monolito Modular Unificado** | http://localhost:8081/swagger-ui.html | Habilitado en `dev` y `local` (Desactivado en `prod` por seguridad) |
-| **Descriptor OpenAPI JSON** | http://localhost:8081/api-docs | Especificación OpenAPI 3.0 |
+El sistema estará disponible en `http://localhost:8081`.
 
 ---
 
-## 🔌 7. Catálogo Completo de Endpoints REST
+## 8. Seguridad Institucional y Política Fail-Closed
 
-### 7.1 Gestión de Expedientes y Mesa de Partes (`/api/expedientes/**`)
-
-| Método | Endpoint | Descripción | Acceso / Rol |
-|:---:|---|---|:---:|
-| `POST` | `/api/expedientes` | Registrar nueva solicitud en Mesa de Partes Virtual (45 campos) | Público |
-| `GET` | `/api/expedientes` | Consultar bandeja general de expedientes (filtros por estado/alerta) | `ROLE_ADMIN`, `ROLE_EVALUADOR`, `ROLE_CAJERO` |
-| `GET` | `/api/expedientes/{id}` | Consultar detalle completo de un expediente por su UUID | `ROLE_ADMIN`, `ROLE_EVALUADOR` |
-| `GET` | `/api/expedientes/tramite/{numero}` | **Consulta de seguimiento ciudadano:** Retorna datos personales ofuscados (`SeguimientoCiudadanoDto` Ley N° 29733) | **Público** |
-| `GET` | `/api/expedientes/{id}/historial` | Consultar historial inmutable de auditoría del expediente | `ROLE_ADMIN`, `ROLE_EVALUADOR` |
-| `POST` | `/api/expedientes/{id}/clasificacion-riesgo` | Registrar calificación de riesgo ITSE de Defensa Civil | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
-| `POST` | `/api/expedientes/{id}/voucher` | Generar orden de pago / voucher SAT | `ROLE_CAJERO`, `ROLE_ADMIN` |
-| `POST` | `/api/expedientes/{id}/pago` | Registrar y validar constancia de pago SAT | `ROLE_CAJERO`, `ROLE_ADMIN` |
-| `POST` | `/api/expedientes/{id}/observar` | **LPAG (Ley 27444):** Declarar expediente en estado `OBSERVADO` con fundamentación | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
-| `POST` | `/api/expedientes/{id}/subsanar` | **LPAG (Ley 27444):** Subsanar observaciones por administrado o funcionario | **Público** / Autenticado |
-| `POST` | `/api/expedientes/{id}/aprobar` | Dictamen final aprobatorio y emisión oficial de Licencia con QR | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
-| `POST` | `/api/expedientes/{id}/rechazar` | Dictamen final denegatorio con resolución motivada | `ROLE_EVALUADOR`, `ROLE_ADMIN` |
-| `GET` | `/api/expedientes/{id}/desglose-tasa` | Consultar desglose de conceptos tributarios TUPA | Público |
-
-### 7.2 Descarga y Generación de Documentos Oficiales en PDF
-
-| Método | Endpoint | Descripción | Regla de Negocio / Acceso |
-|:---:|---|---|:---:|
-| `GET` | `/api/expedientes/{id}/documentos/declaracion-jurada` | 📄 PDF Anexo 1 — Declaración Jurada oficial (Ley 28976) | Descarga inmediata pública / funcionario |
-| `GET` | `/api/expedientes/{id}/documentos/anexo3-matriz-riesgo-itse` | 🛡️ PDF Anexo 3 — Reporte de Nivel de Riesgo ITSE | Descarga inmediata para firma Defensa Civil |
-| `GET` | `/api/expedientes/{id}/documentos/anexo4-condiciones-seguridad` | 🔒 PDF Anexo 4 — Condiciones Técnicas de Seguridad (4 pág.) | Descarga inmediata para suscripción |
-| `GET` | `/api/expedientes/{id}/documentos/voucher-sat` | 🧾 PDF Voucher SAT con código de barras Code 128 | Generación de orden de pago |
-| `GET` | `/api/expedientes/{id}/documentos/licencia` | 📜 **Certificado Oficial de Licencia con QR y Sello:** Blindado bajo validación estricta (H08) | **Solo expedientes en estado `APROBADO`** |
-
-### 7.3 Verificación Pública de Autenticidad QR (RNF-20)
-
-| Método | Endpoint | Descripción | Acceso |
-|:---:|---|---|:---:|
-| `GET` | `/api/public/licencias/{codigoLicencia}` | Verificación ciudadana y fiscalización de licencias emitidas | Público (Solo lectura) |
-| `GET` | `/api/public/licencias/{codigoLicencia}/qr` | Obtención de imagen PNG del código QR de la licencia | Público |
-| `GET` | `/api/public/verificar/{codigoLicencia}` | Alias de compatibilidad para validación por código QR | Público |
-
-### 7.4 Autenticación, Usuarios y Tarifario TUPA
-
-| Método | Endpoint | Descripción | Rol Requerido |
-|:---:|---|---|:---:|
-| `POST` | `/api/auth/login` | Inicio de sesión de personal municipal (emisión JWT 8h) | Público |
-| `GET` | `/api/auth/me` | Obtener datos de la sesión del usuario actual | Autenticado |
-| `GET` | `/api/tupa/tarifas` | Catálogo de tasas TUPA vigentes (Ordenanza N° 018-2024-MPH) | Público |
-| `PUT` | `/api/tupa/tarifas/{id}` | Actualización en caliente de tasas municipales | `ROLE_ADMIN` |
+1. **Autorización Backend Centralizada (ADR-02):** Prohibido confiar en controles de JavaScript. Cada método protegido evalúa la relación de propiedad entre el usuario autenticado y el recurso (`@PreAuthorize("@expedienteSecurity.isOwner(authentication, #id)")`).
+2. **Política Fail-Closed de Firma Digital (ADR-04, ADR-07):** Prohibidas las firmas simuladas. Si la infraestructura IOFE no responde, el expediente pasa a `ERROR_FIRMA` y el sistema **bloquea la expedición de licencias oficiales y la activación del código QR público**.
+3. **Minimización de Datos en QR Público (ADR-05):** Cumplimiento estricto de la Ley N° 29733. La consulta anónima no expone DNI, RUC ni coordenadas del local comercial.
 
 ---
 
-## 🔄 8. Máquina de Estados Finitos y Ciclo de Vida del Expediente
+## 9. Restricciones Institucionales (ADR-06)
 
-El ciclo de vida del trámite municipal respeta rigurosamente las garantías del debido procedimiento administrativo (Ley N° 27444 LPAG):
-
-```text
-       [ Portal Ciudadano: Wizard 3 Pasos ]
-                        │
-                        ▼ (POST /api/expedientes)
-             [ FORMATOS_GENERADOS ]
-                        │
-                        ▼ (Defensa Civil registra calificación ITSE)
-             [ DOCUMENTOS_VALIDADOS ] ◄─────────────────────────┐
-                   │          │                                  │
-      (Observación)│          │ (Pago validado en SAT)           │ (Subsanación
-       Ley N° 27444│          ▼                                  │  conforme)
-                   │    [ EN_EVALUACION_FINAL ]                  │
-                   ▼          │                │                 │
-             [ OBSERVADO ] ───┴────────────────┼─────────────────┘
-                   │                           │
-                   ▼ (Subsanación denegada)    ▼ (Evaluación conforme)
-              [ RECHAZADO ]               [ APROBADO ]
-        (Resolución Denegatoria)       (Licencia Oficial PDF + QR)
-```
+- **SAT Huamanga:** El sistema no realiza cobros en línea con pasarelas web no auditadas. Los pagos se abonan en ventanillas del SAT y un cajero municipal valida manualmente el abono.
+- **Defensa Civil (ITSE):** El administrado suscribe de puño y letra los Anexos 3 y 4 y los presenta físicamente ante la Subgerencia de Gestión del Riesgo de Desastres.
+- **Exclusión de Fiscalización Sancionadora:** La herramienta móvil de inspectores se limita a la verificación de autenticidad y ubicación física; no contiene módulos de multas, actas de control ni clausuras.
 
 ---
 
-## 🛡️ 9. Seguridad, Blindaje OWASP y Protección de Datos
+## 10. Índice Completo de Documentación Técnica
 
-En el marco de la auditoría integral, se implementaron controles técnicos avanzados:
-1. **Default-Deny:** Regla estricta `.anyRequest().authenticated()` en Spring Security, protegiendo todo nuevo endpoint desarrollado.
-2. **Mitigación BOLA / IDOR (Ley N° 29733):** La consulta pública de trámites no devuelve la entidad interna completa, sino [`SeguimientoCiudadanoDto`](file:///d:/ArqSoftware/MuniHuamanga/common-domain/src/main/java/pe/gob/munihuamanga/licencias/common/dto/SeguimientoCiudadanoDto.java) con datos personales ofuscados (`M*** Q***`, `42***91`), eliminando correos y teléfonos.
-3. **Control RBAC Estricto:** Separación de privilegios entre cajeros (`ROLE_CAJERO`), evaluadores (`ROLE_EVALUADOR`) y administradores (`ROLE_ADMIN`).
-4. **Protección de Clickjacking:** Cabecera `X-Frame-Options: SAMEORIGIN` activa.
-5. **Aislamiento Actuator:** Endpoint `/actuator/**` protegido bajo rol de administrador, exponiendo únicamente `/actuator/health` para sondas de infraestructura.
-6. **Contenedor No-Root:** Ejecución de la JVM bajo el usuario sin privilegios `appuser` (UID 10001).
+Todos los documentos se encuentran enlazados mediante rutas relativas compatibles con GitHub:
+
+### Arquitectura de Software
+- [Estilo arquitectónico (Monolito Modular)](docs/arquitectura/estilo-arquitectonico.md)
+- [Enfoque arquitectónico (Clean Architecture & Ports)](docs/arquitectura/enfoque-arquitectonico.md)
+- [Modelo C4 (Niveles 1 al 4)](docs/arquitectura/c4-model.md)
+- [Diseño Detallado de Componentes e Integración V2](docs/arquitectura/diseno-arquitectonico-monolito-modular-clean-architecture.md)
+
+### Análisis del Sistema
+- [01. Actores y Roles RBAC](docs/analisis-de-sistema/01-actores.md)
+- [02. Historias de Usuario (US-01 a US-23)](docs/analisis-de-sistema/02-historias-del-usuario.md)
+- [03. Requisitos Funcionales (RF-01 a RF-15)](docs/analisis-de-sistema/03-requisitos-funcionales.md)
+- [04. Atributos de Calidad (ISO/IEC 25010)](docs/analisis-de-sistema/04-atributos-de-calidad.md)
+- [05. Restricciones Técnicas y Legales](docs/analisis-de-sistema/05-restricciones.md)
+- [06. Drivers Arquitectónicos](docs/analisis-de-sistema/06-driver-arquitectonicos.md)
+- [07. Mantenibilidad del Sistema](docs/analisis-de-sistema/07-mantenibilidad.md)
+- [08. Índice de Decisiones Arquitectónicas (ADR)](docs/analisis-de-sistema/08-decisiones-arquitectonicas.md)
+
+### Gestión de Incrementos V2
+- [Índice Especializado de Incrementos V2](docs/v2/README.md)
+- [Estado Actual del Sistema (Corte I10 Fase A)](docs/v2/ESTADO_ACTUAL_SISTEMA.md)
+- [Guía de Módulos (M01 – M12)](docs/v2/GUIA_MODIFICACIONES_MODULARES.md)
+- [Guía de Interfaces Frontend](docs/v2/GUIA_INTERFACES_FRONTEND.md)
+- [Registro Maestro de Decisiones de Arquitectura (ADR-01 a ADR-07)](docs/v2/DECISIONES_ARQUITECTURA.md)
+- [Reporte de Pruebas y Validación (301 Tests)](docs/v2/PRUEBAS_Y_VALIDACION.md)
+
+### Gestión Ágil (Scrum)
+- [Product Backlog V2](docs/scrum/product-backlog.md)
+
+### Auditoría y Calidad
+- [Informe de Consolidación Documental V2](docs/auditoria/CONSOLIDACION_DOCUMENTAL_V2.md)
+- [Auditoría Integral de Código](docs/auditoria/AUDITORIA_INTEGRAL.md)
+- [Reporte de Calidad y Pruebas QA](docs/auditoria/REPORTE_QA.md)
+
+### Despliegue y Operaciones
+- [Manual de Despliegue y Operaciones](docs/despliegue/GUIA_DESPLIEGUE.md)
+- [Lista de Verificación Pre-Pase a Producción (Checklist)](docs/despliegue/CHECKLIST_PRODUCCION.md)
+- [Plan de Contingencia y Rollback](docs/despliegue/PLAN_ROLLBACK.md)
 
 ---
 
-## 📚 10. Referencias de Documentación Técnica
+## 11. Estado del Roadmap y Pendientes
 
-- [**Informe Maestro de Auditoría Integral (`AUDITORIA_INTEGRAL.md`)**](docs/auditoria/AUDITORIA_INTEGRAL.md): Matriz de 16 hallazgos resueltos y certificación oficial `v0.9.0-rc1`.
-- [**Reporte Formal de Aseguramiento de Calidad (`REPORTE_QA.md`)**](docs/auditoria/REPORTE_QA.md): Resultados de las 94 pruebas automatizadas y pruebas de carga con 150 usuarios.
-- [**Manual Institucional de Despliegue (`GUIA_DESPLIEGUE.md`)**](docs/despliegue/GUIA_DESPLIEGUE.md): Procedimiento paso a paso para despliegue en producción con Docker Compose.
-- [**Plan de Contingencia y Rollback (`PLAN_ROLLBACK.md`)**](docs/despliegue/PLAN_ROLLBACK.md): Procedimiento estandarizado de reversión y contingencias.
-- [**Lista de Verificación Pre-Producción (`CHECKLIST_PRODUCCION.md`)**](docs/despliegue/CHECKLIST_PRODUCCION.md): Checklist pre-pase a producción con 20 ítems de control.
-- [**Diseño Arquitectónico y Modelo C4 (`c4-model.md`)**](docs/arquitectura/c4-model.md): Diagramas de Contexto, Contenedores, Componentes y Dominio.
-
----
-
-*Municipalidad Provincial de Huamanga — Gerencia de Licencias y Autorizaciones*  
-*Equipo de Arquitectura de Software, Ciberseguridad & DevOps*  
-*Marco Legal: Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / Ley N° 27444 LPAG / Ley N° 29733*
+1. **Incrementos I01 a I09:** Implementados y verificados formalmente con actas de cierre y pruebas continuas.
+2. **Incremento I10 (Fase A):** Diagnóstico de integración visual y consolidación arquitectónica completada con éxito.
+3. **Incremento I10 (Fase B):** Demostración funcional en servidor local en vivo y validación E2E en navegador (*Pendiente de autorización en siguiente etapa*).
+4. **Pendientes Técnicos para Producción:**
+   - Suscripción e integración con proveedor real de firma digital acreditado ante IOFE (sustituir mock adapter de pruebas).
+   - Reemplazo de credenciales y semillas por defecto en PostgreSQL 16 por secretos de alta entropía.
+   - Reconexión del script `portal-ciudadano.js` para consumir la API de borradores autoguardados V2.

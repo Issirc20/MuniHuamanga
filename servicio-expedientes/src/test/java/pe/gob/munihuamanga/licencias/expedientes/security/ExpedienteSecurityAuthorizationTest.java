@@ -11,12 +11,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import pe.gob.munihuamanga.licencias.common.dto.CrearExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.LoginRequestDto;
 import pe.gob.munihuamanga.licencias.common.dto.LoginResponseDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -260,7 +262,7 @@ class ExpedienteSecurityAuthorizationTest {
     }
 
     @Test
-    @DisplayName("REQ-6: INSPECTOR SÍ puede consultar verificación ampliada de licencia para fiscalización en campo")
+    @DisplayName("REQ-6: INSPECTOR SÍ puede consultar verificación ampliada de licencia con datos completos (DNI/RUC) para fiscalización")
     void inspectorPuedeConsultarVerificacionAmpliada() throws Exception {
         String codigoLicencia = expedienteAprobado.getLicenciaQrCode();
 
@@ -270,7 +272,9 @@ class ExpedienteSecurityAuthorizationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.numeroLicencia").value(codigoLicencia))
                 .andExpect(jsonPath("$.direccion").exists())
-                .andExpect(jsonPath("$.nivelRiesgo").exists());
+                .andExpect(jsonPath("$.nivelRiesgo").exists())
+                .andExpect(jsonPath("$.documentoIdentidad").exists())
+                .andExpect(jsonPath("$.documentoIdentidad").value("20608765432"));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -278,7 +282,7 @@ class ExpedienteSecurityAuthorizationTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("REQ-7: Consulta de QR pública minimiza y ofusca datos personales (Ley N° 29733)")
+    @DisplayName("REQ-7: Consulta de QR pública no expone documento de identidad (DNI/RUC) (I02.1 / Ley N° 29733)")
     void qrPublicoMinimizaDatosPersonales() throws Exception {
         String codigoLicencia = expedienteAprobado.getLicenciaQrCode();
 
@@ -286,7 +290,7 @@ class ExpedienteSecurityAuthorizationTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.numeroLicencia").value(codigoLicencia))
-                .andExpect(jsonPath("$.documentoIdentidad").value(containsString("***")))
+                .andExpect(jsonPath("$.documentoIdentidad").doesNotExist())
                 .andExpect(jsonPath("$.correoElectronico").doesNotExist())
                 .andExpect(jsonPath("$.telefono").doesNotExist());
     }
@@ -330,5 +334,89 @@ class ExpedienteSecurityAuthorizationTest {
                         .header("Authorization", "Bearer " + tokenCiudadanoTercero)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // REQUISITO 10: Control de Acceso en POST /api/expedientes (I02.1)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("REQ-10: Creación de expediente anónimo sin cabecera de compatibilidad V1 es rechazada con 403")
+    void creacionExpedienteV2AnonimoSinCabeceraRetorna403() throws Exception {
+        CrearExpedienteDto dto = CrearExpedienteDto.builder()
+                .solicitanteId(UUID.randomUUID())
+                .nombreTitular("Juan Pérez")
+                .documentoIdentidad("42567891")
+                .nombreComercial("Bodega San Juan")
+                .giroNegocio("Bodega")
+                .direccionEstablecimiento("Jr. 28 de Julio 123")
+                .areaMetrosCuadrados(new BigDecimal("45.00"))
+                .build();
+
+        mockMvc.perform(post("/api/expedientes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("REQ-10: Intento anónimo con cabecera heredada X-Legacy-Client es rechazado con 401 Unauthorized (I03 Fase Previa)")
+    void creacionExpedienteAnonimoConCabeceraLegacyEsRechazada() throws Exception {
+        CrearExpedienteDto dto = CrearExpedienteDto.builder()
+                .solicitanteId(UUID.randomUUID())
+                .nombreTitular("Juan Pérez")
+                .documentoIdentidad("42567891")
+                .nombreComercial("Bodega San Juan")
+                .giroNegocio("Bodega")
+                .direccionEstablecimiento("Jr. 28 de Julio 123")
+                .areaMetrosCuadrados(new BigDecimal("45.00"))
+                .build();
+
+        mockMvc.perform(post("/api/expedientes")
+                        .header("X-Legacy-Client", "v1-portal")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("I04.1: Ciudadano autenticado NO puede crear expediente directamente omitiendo borrador (403 Forbidden)")
+    void creacionExpedientePorCiudadanoEsRechazada() throws Exception {
+        CrearExpedienteDto dto = CrearExpedienteDto.builder()
+                .solicitanteId(UUID.randomUUID())
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("42567891")
+                .nombreComercial("Bodega Los Rosales")
+                .giroNegocio("Bodega y Abarrotes")
+                .direccionEstablecimiento("Jr. San Martín 456")
+                .areaMetrosCuadrados(new BigDecimal("35.00"))
+                .build();
+
+        mockMvc.perform(post("/api/expedientes")
+                        .header("Authorization", "Bearer " + tokenCiudadanoPropietario)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("I04.1: Funcionario municipal (ADMIN/EVALUADOR) puede registrar expediente formal directo por mesa de partes presencial (201 Created)")
+    void creacionExpedientePorFuncionarioMesaPartesPresencialExitoso() throws Exception {
+        CrearExpedienteDto dto = CrearExpedienteDto.builder()
+                .solicitanteId(UUID.randomUUID())
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad("42567891")
+                .nombreComercial("Bodega Los Rosales")
+                .giroNegocio("Bodega y Abarrotes")
+                .direccionEstablecimiento("Jr. San Martín 456")
+                .areaMetrosCuadrados(new BigDecimal("35.00"))
+                .build();
+
+        mockMvc.perform(post("/api/expedientes")
+                        .header("Authorization", "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.numeroTramite").exists());
     }
 }

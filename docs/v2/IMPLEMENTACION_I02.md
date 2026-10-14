@@ -165,7 +165,7 @@ La ejecución del comando `mvn clean verify` arrojó los siguientes resultados c
 
 ```
 [INFO] Reactor Summary for MuniHuamanga - Gestión de Licencias de Funcionamiento 1.0.0-SNAPSHOT:
-[INFO] 
+[INFO]
 [INFO] MuniHuamanga - Gestión de Licencias de Funcionamiento SUCCESS [  0.094 s]
 [INFO] Common Domain ...................................... SUCCESS [  2.892 s]
 [INFO] MuniHuamanga - Monolito Modular .................... SUCCESS [ 25.002 s]

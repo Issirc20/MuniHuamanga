@@ -1,6 +1,6 @@
 # Sprint 2 Backlog — Formatos PDF Oficiales, Tasas TUPA y Vouchers SAT
 
-**Objetivo del Sprint:**  
+**Objetivo del Sprint:**
 Generar documentos oficiales en formato PDF con OpenPDF y ZXing según la Ley N° 28976 y el D.S. N° 046-2017-PCM (Declaración Jurada Anexo 1, Solicitud ITSE Defensa Civil y Orden de Pago SAT con código de barras Code 128), liquidación desglosada de tasas TUPA y habilitación de descarga directa desde la plataforma web.
 
 ---

@@ -124,10 +124,13 @@ public class DocumentosFormulariosController {
 
     @PostMapping("/licencia")
     @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
-    @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR (Requiere estado APROBADO)")
+    @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR (Requiere estado APROBADO y firma digital válida)")
     public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
         if (expediente.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
             throw new IllegalArgumentException("No se puede emitir el Certificado de Licencia para un expediente que no esté en estado APROBADO. Estado actual: " + expediente.getEstado());
+        }
+        if (!Boolean.TRUE.equals(expediente.getFirmaDigitalValida()) && (expediente.getLicenciaQrCode() == null || expediente.getLicenciaQrCode().isBlank())) {
+            throw new IllegalArgumentException("No se puede emitir el Certificado de Licencia oficial: requiere firma digital institucional válida (Ley N° 27269 / DAS DA-06).");
         }
         byte[] pdf = documentoPdfService.generarLicenciaPdf(expediente);
         String codigo = expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : expediente.getNumeroTramite();
@@ -139,11 +142,14 @@ public class DocumentosFormulariosController {
 
     @GetMapping("/licencia/{id}/pdf")
     @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
-    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente (Requiere estado APROBADO)")
+    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente (Requiere estado APROBADO y firma digital válida)")
     public ResponseEntity<byte[]> descargarLicenciaPorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
         if (exp.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
             throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " no se encuentra APROBADO. Estado actual: " + exp.getEstado());
+        }
+        if (!Boolean.TRUE.equals(exp.getFirmaDigitalValida()) || exp.getLicenciaQrCode() == null) {
+            throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " se encuentra aprobado pero la emisión oficial del certificado definitivo está bloqueada: requiere firma digital institucional válida (Ley N° 27269 / DAS DA-06).");
         }
         ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
         byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);

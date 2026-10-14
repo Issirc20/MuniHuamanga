@@ -192,7 +192,10 @@ async function registrarSolicitud() {
   try {
     const res = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Legacy-Client': 'v1-portal'
+      },
       body: JSON.stringify(payload),
     });
 

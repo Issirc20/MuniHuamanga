@@ -1,183 +1,144 @@
 # 03. Requisitos Funcionales (RF)
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
-### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
+### Municipalidad Provincial de Huamanga (Ayacucho, Perú) — Versión 2.0
 
-> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM  
+> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / Ley N° 27444 / Ley N° 27269 / Ley N° 29733
+> **Plataforma:** Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 16, Spring Security 6
 > **Ubicación:** `docs/analisis-de-sistema/03-requisitos-funcionales.md`
+> **Estado:** Documento Canónico Vigente V2
 
 ---
 
 ## 1. Introducción y Alcance Funcional
 
-Los **Requisitos Funcionales (RF)** definen las capacidades operativas, reglas de cálculo, transiciones de estado, servicios de entrega documental y comportamientos específicos que el sistema de software debe ejecutar obligatoriamente para satisfacer los mandatos de la **Ley Marco de Licencia de Funcionamiento (Ley N° 28976)** y los procedimientos del **TUPA de la Municipalidad Provincial de Huamanga**.
+Los **Requisitos Funcionales (RF)** definen las capacidades operativas, reglas de negocio, transiciones de estado, servicios documentales y políticas de seguridad que el sistema MuniHuamanga V2 ejecuta obligatoriamente. Están organizados en concordancia con los módulos M01 a M12 del Monolito Modular y los ADR consolidados.
 
 ---
 
-## 2. Clasificación General de Requisitos Funcionales
+## 2. Clasificación de Requisitos por Módulo V2
 
 ```mermaid
 graph TD
-    RF["Requisitos Funcionales (RF)"]
-    RF --> M1["1. Captura y Mesa de Partes Virtual (RF-01 a RF-03)"]
-    RF --> M2["2. Máquina de Estados y Workflow (RF-04 a RF-06)"]
-    RF --> M3["3. Motor de Formatos Oficiales PDF (RF-07 a RF-09)"]
-    RF --> M4["4. Recaudación y TUPA Dinámico (RF-10 a RF-11)"]
-    RF --> M5["5. Seguridad RBAC y Auditoría (RF-12 a RF-13)"]
-    RF --> M6["6. Verificación QR y Alertas Email (RF-14 a RF-15)"]
+    RF["Requisitos Funcionales V2"]
+    RF --> M01["M01: Cuentas y Establecimientos (RF-01, RF-14)"]
+    RF --> M02["M02: Borradores y Solicitudes (RF-02, RF-15)"]
+    RF --> M03["M03: Expedientes y Documentos (RF-03, RF-07, RF-08, RF-16)"]
+    RF --> M04["M04: Pagos SAT y Comprobantes (RF-04, RF-17)"]
+    RF --> M05["M05: Tarifario TUPA Dinámico (RF-10, RF-11)"]
+    RF --> M06["M06: Zonificación y Rectificación (RF-05, RF-18)"]
+    RF --> M07["M07: Evaluación e Informes Técnicos (RF-06, RF-19)"]
+    RF --> M08["M08: Resoluciones y Firma Digital (RF-20, RF-21)"]
+    RF --> M09["M09: Licencias Oficiales (RF-09, RF-22)"]
+    RF --> M10["M10: Verificación QR Diferenciada (RF-23, RF-24)"]
+    RF --> M11["M11: Reclamaciones Ciudadanas (RF-25)"]
+    RF --> M12["M12: Auditoría y Seguridad (RF-12, RF-13)"]
 ```
 
 ---
 
 ## 3. Catálogo Detallado de Requisitos Funcionales
 
-### Módulo 1: Captura de Datos y Mesa de Partes Virtual
+### RF-01: Gestión de Cuentas y Múltiples Establecimientos (M01)
+* **Descripción:** Permitir el registro de cuentas ciudadanas (`Cuenta`) desacopladas de las solicitudes y asociar uno o más locales comerciales (`Establecimiento`) bajo titularidad de la misma persona natural o jurídica.
+* **Seguridad:** Autorización centralizada (`@PreAuthorize`); un ciudadano solo accede a sus establecimientos (ADR-02).
 
-#### RF-01: Registro Multipaso de la Solicitud (Wizard 3 Pasos)
-* **Descripción:** El sistema debe proveer una interfaz ciudadana asistida de tres etapas consecutivas para el registro de solicitudes de licencia de funcionamiento.
-  - **Paso 1 (Datos del Administrado):** Tipo de persona (`NATURAL` o `JURIDICA`), tipo de documento (`DNI`, `RUC`, `CARNET_EXTRANJERIA`), número de documento, nombres/razón social, teléfonos, correo de notificación electrónica y domicilio fiscal. En caso de persona jurídica: datos del representante legal y número de partida electrónica en SUNARP.
-  - **Paso 2 (Datos del Establecimiento y Giro):** Nombre comercial, dirección física completa (distrito, zona, avenida/jirón, número, manzana, lote), código de zonificación urbana, código CIIU principal y secundario, actividad comercial detallada, área ocupada total ($m^2$) y aforo estimado.
-  - **Paso 3 (Confirmación y Declaración Jurada):** Aceptación explícita de condiciones de veracidad legal (Ley 27444), confirmación de datos y despacho del formulario.
-* **Entradas:** Payload JSON conforme a `CrearExpedienteDto` (45 campos normativos).
-* **Salidas:** Código correlativo de expediente `EXP-2026-XXXXX`, número de trámite correlativo, código de seguimiento seguro y código de orden de pago `VCH-2026-XXXXXX`.
-* **Regla de Negocio:** No se admiten DNI con longitud distinta a 8 dígitos ni RUC con longitud distinta a 11 dígitos.
+### RF-02: Gestión de Solicitudes Borrador (M02)
+* **Descripción:** Permitir al administrado crear borradores de solicitud, actualizar formularios seccionales, autoguardar avances y formalizar la presentación (`POST /api/borradores/{id}/presentar`) únicamente cuando el checklist de requisitos esté satisfecho.
+* **Salida:** Creación del expediente formal con código único anual `EXP-YYYY-XXXXX`.
 
-#### RF-02: Calificación Determinista del Nivel de Riesgo ITSE
-* **Descripción:** El sistema debe computar y asignar automáticamente el nivel de riesgo del local conforme a la Matriz de Riesgo ITSE (D.S. N° 002-2018-PCM y lineamientos CENEPRED).
-* **Entradas:** Área del establecimiento, aforo, función de la edificación (`Salud`, `Encuentro`, `Hospedaje`, `Educación`, `Industrial`, `Comercio`, `Almacén`), almacenamiento de combustibles o gas licuado (GLP), presencia de calderas.
-* **Salidas:** Valor del enum `NivelRiesgo` (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`) y tipo de inspección aplicable (`ITSE_POSTERIOR` para Bajo/Medio; `ITSE_PREVIA` para Alto/Muy Alto).
-
-#### RF-03: Seguimiento y Consulta Ciudadana del Trámite
-* **Descripción:** El administrado debe poder consultar el estado actual de su expediente en cualquier momento ingresando su número de expediente o código de seguimiento en el portal web.
-* **Salidas:** Estado actual del ciclo de vida, fecha de recepción, monto a pagar, estado del pago, observaciones técnicas (si las hubiera) y enlaces de descarga directa de los documentos generados.
-
----
-
-### Módulo 2: Máquina de Estados y Workflow del Expediente
-
-#### RF-04: Gestión Finita del Ciclo de Vida del Expediente
-* **Descripción:** El sistema debe gobernar las mutaciones de estado del expediente mediante una máquina de estados finita estricta, impidiendo transiciones inválidas o saltos de fases no autorizados.
-* **Diagrama de Transiciones de Estado:**
+### RF-03: Ciclo de Vida y Máquina de Estados Finita del Expediente (M03)
+* **Descripción:** El sistema debe gobernar las mutaciones de estado del expediente mediante una máquina de estados finita estricta con soporte para los 10 estados formales de V2 (`EstadoExpediente.java`) y compatibilidad con transiciones legadas (`EstadoExpedienteValidator.java`).
+* **Estados Formales V2:**
+  1. `REGISTRADO`: Expediente admitido en mesa de partes virtual.
+  2. `PENDIENTE_PAGO`: Liquidación TUPA calculada a la espera del comprobante de abono SAT.
+  3. `PAGO_OBSERVADO`: Comprobante observado por caja SAT, pendiente de subsanación de pago.
+  4. `EN_EVALUACION`: Pago validado; en revisión administrativa y zonificación.
+  5. `OBSERVADO`: Observaciones técnicas o documentales emitidas, con plazo de 5 días hábiles.
+  6. `APROBADO_CON_RESOLUCION`: Resolución administrativa aprobada y firmada digitalmente.
+  7. `EMITIDO`: Licencia de funcionamiento oficial generada atómicamente con correlativo anual.
+  8. `ENTREGADO`: Certificado descargado o puesto a disposición formal del titular.
+  9. `DENEGADO`: Trámite denegado motivadamente por resolución administrativa denegatoria.
+  10. `ANULADO`: Acto administrativo o solicitud cancelada por desistimiento o nulidad de oficio.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> FORMATOS_GENERADOS: Solicitud Registrada (Mesa de Partes)
-    FORMATOS_GENERADOS --> DOCUMENTOS_VALIDADOS: Pago Conciliado en SAT
-    DOCUMENTOS_VALIDADOS --> EN_EVALUACION_FINAL: Dictamen Técnico / Zonificación Conforme
-    EN_EVALUACION_FINAL --> APROBADO: Resolución Favorable y Firma
-    EN_EVALUACION_FINAL --> RECHAZADO: Dictamen Desfavorable / No Subsanado
-    APROBADO --> [*]
-    RECHAZADO --> [*]
+    [*] --> REGISTRADO
+    REGISTRADO --> PENDIENTE_PAGO
+    PENDIENTE_PAGO --> PAGO_OBSERVADO: Comprobante observado
+    PAGO_OBSERVADO --> PENDIENTE_PAGO: Nuevo comprobante
+    PENDIENTE_PAGO --> EN_EVALUACION: Pago validado SAT
+    EN_EVALUACION --> OBSERVADO: Observación técnica
+    OBSERVADO --> EN_EVALUACION: Subsanación presentada
+    EN_EVALUACION --> APROBADO_CON_RESOLUCION: Resolución aprobada y firmada
+    EN_EVALUACION --> DENEGADO: Resolución denegatoria
+    APROBADO_CON_RESOLUCION --> EMITIDO: Emisión atómica de Licencia
+    EMITIDO --> ENTREGADO: Puesta a disposición
+    EN_EVALUACION --> ANULADO: Nulidad / Desistimiento
+    ENTREGADO --> [*]
+    DENEGADO --> [*]
+    ANULADO --> [*]
 ```
 
-* **Matriz de Transiciones Válidas:**
+### RF-04: Validación Manual de Pagos SAT (M04)
+* **Descripción:** Los pagos por derechos TUPA se abonan en ventanillas SAT Huamanga (ADR-06). El administrado registra el número de comprobante y monto; el cajero municipal (`ROLE_CAJERO`) califica el pago con los estados: `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO` o `RECHAZADO`.
 
-| Estado Origen | Estado Destino Permitido | Condición de Negocio / Actor |
-|---|---|---|
-| `FORMATOS_GENERADOS` | `DOCUMENTOS_VALIDADOS` | Pago verificado en SAT (`ROLE_CAJERO` o `ROLE_ADMIN`). |
-| `DOCUMENTOS_VALIDADOS` | `EN_EVALUACION_FINAL` | Zonificación aprobada y dictamen ITSE favorable (`ROLE_EVALUADOR`). |
-| `EN_EVALUACION_FINAL` | `APROBADO` | Autorización emitida por Gerencia (`ROLE_ADMIN` / `ROLE_EVALUADOR`). |
-| `EN_EVALUACION_FINAL` | `RECHAZADO` | Causal insubsanable o inspección ITSE desfavorable motivada. |
+### RF-05: Calificación de Nivel de Riesgo ITSE y Zonificación PDU (M06, M07)
+* **Descripción:** Determinación objetiva del riesgo ITSE (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`) según función de edificación, área y aforo (D.S. N° 002-2018-PCM). Evaluación técnica manual de compatibilidad de zonificación según Plano de Desarrollo Urbano (PDU) de Huamanga realizada por el evaluador (`ROLE_EVALUADOR`).
 
-* **Regla de Negocio:** Si se intenta una transición prohibida (por ejemplo, de `FORMATOS_GENERADOS` directamente a `APROBADO`), el sistema debe lanzar una excepción `TransicionInvalidaException` y responder con HTTP `400 Bad Request`.
+### RF-06: Rectificación de Ubicación Georreferenciada (M06)
+* **Descripción:** Permitir al titular solicitar la rectificación de coordenadas geográficas o dirección física de un establecimiento, con revisión y resolución fundamentada del evaluador técnico.
 
-#### RF-05: Control de Plazos y Alertas de Vencimiento Legal
-* **Descripción:** El sistema debe registrar la fecha límite de atención calculada automáticamente según el tipo de procedimiento legal:
-  - Riesgo Bajo y Medio (Aprobación automática con ITSE Posterior): Emisión de licencia inmediata o máximo 1 día hábil.
-  - Riesgo Alto y Muy Alto (Con ITSE Previa): Plazo máximo de 15 días hábiles conforme al Art. 8° de la Ley N° 28976.
-* **Salidas:** Flag de advertencia de vencimiento en el Dashboard Interno para priorizar expedientes próximos al límite del silencio administrativo positivo.
+### RF-07: Generación en Memoria de Anexos Oficiales en PDF (M03)
+* **Descripción:** Renderizado en memoria volátil (`ByteArrayOutputStream`) sin escribir en disco:
+  - **Anexo 1:** Declaración Jurada oficial (D.S. N° 163-2020-PCM) en 2 páginas A4 con 45 atributos normativos.
+  - **Anexo 3:** Reporte de Nivel de Riesgo ITSE (2 páginas).
+  - **Anexo 4:** Declaración Jurada de Condiciones de Seguridad (4 páginas con matriz de 23 ítems técnicos).
 
-#### RF-06: Gestión de Observaciones y Subsanaciones
-* **Descripción:** El evaluador municipal debe poder registrar observaciones técnicas o documentales fundamentadas, otorgando al administrado un plazo de subsanación de hasta cinco (5) días hábiles conforme a la Ley N° 27444.
+### RF-08: Subsanación de Observaciones con Inmutabilidad SHA-256 (M03)
+* **Descripción:** Registro de documentos subsanados incrementando versión correlativa (`version = version_previa + 1`), estado `SUBSANADO`, cálculo de hash criptográfico SHA-256 e inmutabilidad histórica probatoria (ADR-03).
 
----
+### RF-09: Tarifario TUPA Dinámico (M05)
+* **Descripción:** Mantenimiento de tarifas en base de datos PostgreSQL con actualización en caliente (`PUT /api/tupa/tarifas/{id}`) protegida para `ROLE_ADMIN`, y mecanismo de fallback resiliente a `application.yml`.
 
-### Módulo 3: Motor de Generación de Formatos Oficiales en PDF
+### RF-10: Elaboración de Informes Técnicos Administrativos (M07)
+* **Descripción:** El evaluador elabora informes técnicos con dictamen favorable o desfavorable. Por principio de legalidad (ADR-07), el informe técnico es un acto preparatorio de instrucción interna que no otorga por sí mismo la licencia.
 
-#### RF-07: Generación en Memoria del Anexo 1 (Declaración Jurada)
-* **Descripción:** El sistema debe renderizar en memoria (sin escribir archivos en disco duro) el formulario oficial del Anexo 1 aprobado por D.S. N° 163-2020-PCM, en exactamente dos (2) páginas A4, conteniendo los 45 campos del expediente distribuidos en sus 6 secciones normativas.
-* **Endpoint:** `GET /api/expedientes/{id}/documentos/anexo1-declaracion-jurada`.
+### RF-11: Emisión de Resolución Administrativa y Firma Digital Fail-Closed (M08)
+* **Descripción:**
+  1. La autoridad resolutiva (`ROLE_ADMIN`) emite la resolución administrativa con correlativo anual atómico pesimista (`RES-YYYY-XXXXX`).
+  2. La resolución pasa a proceso de firma institucional mediante `FirmaDigitalPort`.
+  3. **Regla Fail-Closed (ADR-04, ADR-07):** Si la firma digital falla o no está configurada, el estado pasa a `ERROR_FIRMA` y el sistema bloquea estrictamente la emisión de la licencia oficial y la activación del QR público.
 
-#### RF-08: Generación en Memoria de Anexos ITSE (Anexo 3 y Anexo 4)
-* **Descripción:** El sistema debe generar los documentos técnicos de Defensa Civil:
-  - **Anexo 3 (Reporte de Nivel de Riesgo):** Documento técnico de 2 páginas con la clasificación por función de edificación, factores de riesgo y matriz CENEPRED.
-  - **Anexo 4 (Declaración Jurada de Condiciones de Seguridad):** Formato ministerial de 4 páginas con la matriz completa de 23 ítems técnicos (rutas de evacuación, extintores, pozo a tierra, tablero eléctrico, luces de emergencia) prellenado para suscripción del administrado.
-* **Endpoints:** 
-  - `GET /api/expedientes/{id}/documentos/anexo3-matriz-riesgo-itse`
-  - `GET /api/expedientes/{id}/documentos/anexo4-condiciones-seguridad`
+### RF-12: Emisión Oficial de Licencia de Funcionamiento con QR (M09)
+* **Descripción:** Generación de la licencia con numeración atómica anual (`LIC-YYYY-XXXXX`), doble marco ornamental (azul `#1A365D` y dorado `#C69214`), escudo institucional, notas legales del Art. 3° Ley 28976 y código QR dinámico de alta resolución.
 
-#### RF-09: Generación del Certificado Oficial de Licencia de Funcionamiento con QR
-* **Descripción:** Tras la aprobación del expediente, el sistema debe renderizar el Certificado Oficial de Licencia de Funcionamiento con las siguientes especificaciones de diseño institucional:
-  - Doble borde ornamental perimetral (azul `#1A365D` y dorado `#C69214`).
-  - Escudo provincial oficial de Huamanga y marca de agua de seguridad tenue.
-  - Número de resolución correlativo oficial (`LIC-2026-XXXXX`).
-  - Código QR de alta resolución generado mediante ZXing incrustado en el documento.
-  - Bloque normativo de las seis (6) notas legales institucionales.
-  - Vigencia indeterminada estipulada expresamente según el Art. 3° de la Ley N° 28976.
-* **Endpoint:** `GET /api/expedientes/{id}/documentos/licencia-oficial-pdf`.
+### RF-13: Verificación QR Diferenciada y Minimización de Datos (M10)
+* **Descripción:** Cumplimiento de la Ley N° 29733 de Protección de Datos Personales (ADR-05):
+  - **Vista Pública:** Token dinámico no enumerable; expone únicamente razón social, nombre comercial, giro autorizado, dirección pública y vigencia. No expone DNI, RUC ni coordenadas geográficas.
+  - **Vista Móvil de Inspector:** Accesible con autenticación (`ROLE_INSPECTOR`); expone geolocalización, coordenadas y renderizado en mapa interactivo Leaflet para comprobaciones in situ.
+
+### RF-14: Gestión de Reclamaciones Ciudadanas (M11)
+* **Descripción:** Registro y atención de recursos o reclamaciones sobre expedientes observados o denegados, con asignación y resolución fundamentada.
+
+### RF-15: Auditoría Inmutable y Seguridad RBAC (M12)
+* **Descripción:** Registro cronológico no modificable de todas las operaciones administrativas críticas, actores intervinientes, timestamps y hashes documentales. Autenticación JWT stateless con 5 roles formalizados.
 
 ---
 
-### Módulo 4: Recaudación Tributaria y Tarifario TUPA Dinámico
+## 4. Matriz de Cobertura de Requisitos frente a Pruebas Automatizadas
 
-#### RF-10: Motor de Cálculo y Desglose de Tasas TUPA
-* **Descripción:** Computar la tasa administrativa total desglosando los conceptos de derecho de trámite e inspección técnica según el nivel de riesgo ITSE.
-* **Salidas:** Total en soles (PEN), desglose por concepto y número de cuenta de recaudación del SAT.
-
-#### RF-11: Mantenimiento CRUD en Caliente del Tarifario TUPA
-* **Descripción:** El sistema debe permitir a los usuarios con rol `ROLE_ADMIN` listar y modificar en tiempo real los montos de las tasas TUPA en la base de datos sin requerir recompilación ni reinicio del servicio backend.
-* **Endpoints:**
-  - `GET /api/tupa/tarifas` (Público/Interno para consulta de catálogo).
-  - `PUT /api/tupa/tarifas/{id}` (Protegido con `@PreAuthorize("hasRole('ADMIN')")`).
-
----
-
-### Módulo 5: Seguridad, Control de Acceso (RBAC) y Auditoría
-
-#### RF-12: Autenticación Stateless con Tokens JWT y Roles RBAC
-* **Descripción:** El sistema debe proteger las operaciones del personal municipal mediante tokens criptográficos JWT (HMAC-SHA256).
-* **Roles del Sistema:**
-  - `ROLE_ADMIN`: Acceso irrestricto, configuración TUPA, auditoría total.
-  - `ROLE_EVALUADOR`: Evaluación técnica, registro ITSE, aprobación y rechazo de licencias.
-  - `ROLE_CAJERO`: Registro y conciliación de vouchers de pago SAT.
-* **Endpoints de Seguridad:**
-  - `POST /api/auth/login` (Recepción de credenciales, validación BCrypt y retorno de Bearer Token).
-  - `GET /api/auth/me` (Datos y roles del usuario en sesión).
-
-#### RF-13: Registro Inmutable de Auditoría
-* **Descripción:** Toda transición de estado del expediente debe quedar registrada en la tabla `auditoria_expedientes` con sellado de tiempo UTC, usuario responsable, dirección IP de origen, estado previo, estado nuevo y motivación técnica.
-
----
-
-### Módulo 6: Verificación Pública y Notificaciones Asíncronas
-
-#### RF-14: Verificación Pública de Licencias mediante Escaneo QR (RNF-20)
-* **Descripción:** El sistema debe exponer un endpoint de alta velocidad y libre acceso que retorne la información pública de una licencia a partir del código QR escaneado.
-* **Endpoint:** `GET /api/public/licencias/{codigoQr}`.
-* **Respuesta JSON:** Número de licencia, número de expediente, titular/razón social, RUC/DNI, nombre comercial, dirección del establecimiento, giro autorizado, nivel de riesgo, estado de vigencia y fecha de expedición.
-
-#### RF-15: Notificaciones Asíncronas por Correo Electrónico
-* **Descripción:** El sistema debe despachar alertas automáticas por correo electrónico mediante un pool de hilos independiente (`@Async`) ante eventos clave:
-  1. **Confirmación de Registro:** Notificación de ingreso con número de expediente y voucher adjunto.
-  2. **Notificación de Aprobación:** Mensaje formal de felicitación con el **Certificado Oficial de Licencia adjunto en PDF**.
-  3. **Notificación de Rechazo u Observación:** Detalle motivado de las observaciones técnicas para su subsanación.
-
----
-
-## 4. Matriz de los 45 Atributos Normativos Digitalizados
-
-| Sección del Formato Anexo 1 | Atributos Digitalizados en la Entidad `Expediente` |
-|---|---|
-| **I. Identificación General** | `numeroExpediente`, `numeroTramite`, `codigoSeguimiento`, `fechaRecepcion`, `estadoActual`, `modalidadTramite` |
-| **II. Datos del Solicitante** | `tipoPersona`, `tipoDocumento`, `numeroDocumento`, `nombresRazonSocial`, `telefono`, `correoElectronico`, `domicilioFiscal` |
-| **III. Representante Legal** | `dniRepresentante`, `nombresRepresentante`, `partidaElectronicaSunarp`, `asientoInscripcionSunarp` |
-| **IV. Establecimiento y Local** | `nombreComercial`, `direccionEstablecimiento`, `distrito`, `zonaUrbana`, `manzana`, `lote`, `numeroPuerta`, `codigoZonificacion`, `croquisReferencial` |
-| **V. Actividad Económica** | `giroComercial`, `codigoCiiuPrincipal`, `codigoCiiuSecundario`, `descripcionActividad`, `areaOcupadaM2`, `aforoTotal` |
-| **VI. ITSE y Seguridad** | `nivelRiesgo`, `funcionEdificacion`, `tipoInspeccionItse`, `almacenaMaterialInflamable`, `capacidadGlpGalones`, `cuentaConCaldera` |
-| **VII. Liquidación y Pago** | `costoTramite`, `desgloseTasa`, `codigoVoucher`, `fechaPago`, `numeroOperacionSat`, `canalPago` |
-| **VIII. Licencia y Emisión** | `numeroLicencia`, `fechaEmisionLicencia`, `licenciaQrCode`, `codigoQrContenido`, `vigenciaIndeterminada` |
-
----
-
-## 5. Conclusión
-
-Los Requisitos Funcionales documentados garantizan que el sistema responda con exactitud matemática, técnica y jurídica a cada una de las disposiciones de la Ley N° 28976, eliminando la discrecionalidad administrativa y ofreciendo un servicio ágil y transparente a la ciudadanía de Huamanga.
+| Requisito Funcional | Módulo | Suite de Pruebas Automatizadas | Estado |
+|---|:---:|---|:---:|
+| **RF-01 (Cuentas/Establecimientos)** | M01 | `CuentaServiceTest`, `EstablecimientoServiceTest` | ✅ Verificado |
+| **RF-02 (Borradores V2)** | M02 | `BorradorServiceTest`, `BorradorControllerTest` | ✅ Verificado |
+| **RF-03 (Expedientes 10 Estados)** | M03 | `ExpedienteServiceTest`, `EstadoExpedienteValidatorTest` | ✅ Verificado |
+| **RF-04 (Pagos SAT)** | M04 | `PagoServiceTest`, `PagoControllerTest` | ✅ Verificado |
+| **RF-05 / RF-06 (Zonificación)** | M06 | `ZonificacionServiceTest`, `RectificacionUbicacionTest` | ✅ Verificado |
+| **RF-07 / RF-08 (Documentos)** | M03 | `DocumentoServiceTest`, `SubsanacionTest` | ✅ Verificado |
+| **RF-09 (TUPA Dinámico)** | M05 | `TarifaTupaServiceTest`, `CalculadoraDeTasaTest` | ✅ Verificado |
+| **RF-10 (Evaluación e Informes)** | M07 | `EvaluacionServiceTest`, `InformeAdministrativoTest` | ✅ Verificado |
+| **RF-11 (Resoluciones y Firma)** | M08 | `ResolucionServiceTest`, `FirmaDigitalAdapterTest` | ✅ Verificado |
+| **RF-12 (Licencias Oficiales)** | M09 | `LicenciaServiceTest`, `LicenciaPdfGeneratorTest` | ✅ Verificado |
+| **RF-13 (QR Diferenciado / Móvil)** | M10 | `VerificacionPublicaTest`, `VerificacionQrI09Test` | ✅ Verificado |
+| **RF-14 (Reclamaciones)** | M11 | `ReclamacionServiceTest` | ✅ Verificado |
+| **RF-15 (Seguridad y Auditoría)** | M12 | `ExpedienteSecurityAuthorizationTest`, `SecurityConfigProdTest` | ✅ Verificado |

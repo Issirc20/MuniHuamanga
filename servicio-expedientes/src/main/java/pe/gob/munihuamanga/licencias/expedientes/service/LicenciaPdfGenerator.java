@@ -116,6 +116,11 @@ public class LicenciaPdfGenerator {
             // ── 12. Pie: Firma + QR
             pieFirmaQr(doc, expediente, qrBytes);
 
+            // ── 13. Marca de agua para vista preliminar sin validez oficial (Invariante 7 - I08.1)
+            if (!Boolean.TRUE.equals(expediente.getFirmaDigitalValida())) {
+                marcaDeAguaVistaPreliminar(writer, doc);
+            }
+
             doc.close();
             log.info("PDF Licencia generado — expediente: {}", expediente.getNumeroTramite());
             return baos.toByteArray();
@@ -283,6 +288,27 @@ public class LicenciaPdfGenerator {
             }
         } catch (Exception e) {
             log.debug("Marca de agua no disponible: {}", e.getMessage());
+        }
+    }
+
+    private void marcaDeAguaVistaPreliminar(PdfWriter writer, Document doc) {
+        try {
+            float pw = doc.getPageSize().getWidth();
+            float ph = doc.getPageSize().getHeight();
+            PdfContentByte cb = writer.getDirectContent();
+            cb.saveState();
+            PdfGState gs = new PdfGState();
+            gs.setFillOpacity(0.28f);
+            cb.setGState(gs);
+            cb.setColorFill(new Color(200, 30, 30));
+            cb.beginText();
+            BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, false);
+            cb.setFontAndSize(bf, 32f);
+            cb.showTextAligned(Element.ALIGN_CENTER, "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL", pw / 2f, ph / 2f, 45f);
+            cb.endText();
+            cb.restoreState();
+        } catch (Exception e) {
+            log.warn("No se pudo agregar marca de agua de vista preliminar: {}", e.getMessage());
         }
     }
 
@@ -593,11 +619,20 @@ public class LicenciaPdfGenerator {
 
         Paragraph pF = new Paragraph();
         pF.setAlignment(Element.ALIGN_CENTER);
-        pF.add(new Chunk("\n\n_________________________________\n", f(8, Font.NORMAL, Color.DARK_GRAY)));
-        pF.add(new Chunk("Ing. / Lic. ...............................\n",   f(8, Font.BOLD,   AZUL_INST)));
-        pF.add(new Chunk("SUBGERENTE DE COMERCIO Y LICENCIAS\n",           f(7, Font.NORMAL, Color.DARK_GRAY)));
-        pF.add(new Chunk("Municipalidad Provincial de Huamanga\n",         f(7, Font.ITALIC, Color.GRAY)));
-        pF.add(new Chunk("\nPROVINCIA - HUAMANGA - AYACUCHO",              f(7, Font.BOLD,   AZUL_INST)));
+
+        boolean firmada = Boolean.TRUE.equals(exp.getFirmaDigitalValida());
+        if (firmada) {
+            pF.add(new Chunk("\n[DOCUMENTO FIRMADO DIGITALMENTE]\n", f(8, Font.BOLD, AZUL_INST)));
+            pF.add(new Chunk("SUBGERENCIA DE COMERCIO Y LICENCIAS\n", f(7, Font.NORMAL, Color.DARK_GRAY)));
+            pF.add(new Chunk("Municipalidad Provincial de Huamanga\n", f(7, Font.ITALIC, Color.GRAY)));
+            pF.add(new Chunk("Firma Digital Oficial — Ley N° 27269\n", f(6, Font.ITALIC, Color.DARK_GRAY)));
+        } else {
+            pF.add(new Chunk("\n[BORRADOR ADMINISTRATIVO — SIN FIRMA DIGITAL]\n", f(8, Font.BOLD, new Color(180, 0, 0))));
+            pF.add(new Chunk("SUBGERENCIA DE COMERCIO Y LICENCIAS\n", f(7, Font.NORMAL, Color.DARK_GRAY)));
+            pF.add(new Chunk("Municipalidad Provincial de Huamanga\n", f(7, Font.ITALIC, Color.GRAY)));
+            pF.add(new Chunk("No válido como licencia emitida sin firma digital oficial\n", f(6, Font.ITALIC, new Color(180, 0, 0))));
+        }
+        pF.add(new Chunk("PROVINCIA - HUAMANGA - AYACUCHO", f(7, Font.BOLD, AZUL_INST)));
         cFirma.addElement(pF);
         tbl.addCell(cFirma);
 

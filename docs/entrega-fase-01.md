@@ -1,9 +1,9 @@
 # 🏛️ DOCUMENTACIÓN OFICIAL — ENTREGA FASE 01
 ## Digitalización de Formularios Municipales, Dominio y Base de Datos
 ### Municipalidad Provincial de Huamanga (MuniHuamanga)
-> **Versión del Entregable:** Fase 01  
-> **Fecha de Cierre:** 29 de Septiembre de 2026  
-> **Estado:** Implementado, Verificado y Aprobado (`BUILD SUCCESS`)  
+> **Versión del Entregable:** Fase 01
+> **Fecha de Cierre:** 29 de Septiembre de 2026
+> **Estado:** Implementado, Verificado y Aprobado (`BUILD SUCCESS`)
 > **Commit de Referencia:** `"feat(fase-01): digitalizacion de modelos, anexos normativos 1-3-4 y esquema de base de datos"`
 
 ---
@@ -58,7 +58,7 @@ sequenceDiagram
 
     Adm->>MP: 1. Registra Anexo 1 (Licencia) + Anexo 4 (Condiciones de Seguridad)
     MP->>MP: Genera Expediente EXP-2026-XXXXX y Notifica al Administrado
-    
+
     par Derivación Técnica Simultánea
         MP->>DC: Deriva Expediente para Calificación ITSE
         DC->>DC: Evalúa Matriz de Riesgo (Anexo 3)
@@ -202,13 +202,13 @@ sequenceDiagram
 
 ## 4. Reglas de Negocio y Validación Incorporadas
 
-1. **Regla de Persona Jurídica:**  
+1. **Regla de Persona Jurídica:**
    Cuando `tipoPersona = JURIDICA`, el solicitante debe ingresar obligatoriamente un RUC válido iniciado en 20, su Razón Social, y los datos registrales de SUNARP (Partida y Asiento), acreditando a su Representante Legal.
-2. **Regla de Autorización de Notificación Electrónica:**  
+2. **Regla de Autorización de Notificación Electrónica:**
    En observancia estricta del Art. 20.4 del TUO de la Ley N° 27444, el administrado autoriza la notificación por medios electrónicos (`autorizaNotificacion = true`), otorgando validez jurídica a las comunicaciones automáticas de cambio de estado y resolución.
-3. **Regla de Clasificación ITSE:**  
+3. **Regla de Clasificación ITSE:**
    La clasificación técnica de Defensa Civil asocia la función del local y su nivel de riesgo (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`), registrando el número de informe oficial y condicionando la inspección técnica (Ex Post para Bajo/Medio; Ex Ante para Alto/Muy Alto).
-4. **Regla de Conciliación de Pago SAT:**  
+4. **Regla de Conciliación de Pago SAT:**
    La transición a `EN_EVALUACION_FINAL` exige registrar el identificador del voucher SAT, el número de operación bancaria/caja y la fecha de liquidación conforme a la tasa TUPA municipal.
 
 ---

@@ -1,55 +1,55 @@
-# MANUAL INSTITUCIONAL DE DESPLIEGUE Y OPERACIONES
-## Sistema de Gestión Digital de Licencias de Funcionamiento — MuniHuamanga
-**Versión de Entrega:** `v0.9.0-rc1`  
-**Fecha:** 09 de Octubre de 2026  
-**Audiencia:** Administradores de Sistemas, Ingenieros DevOps, DBAs y Soporte Técnico MPH  
-**Arquitectura:** Monolito Modular Spring Boot 3.3.4 (Java 21 LTS) + PostgreSQL 15
+# Manual Institucional de Despliegue y Operaciones — MuniHuamanga V2
+## Sistema de Gestión Digital de Licencias de Funcionamiento
+
+**Entidad:** Municipalidad Provincial de Huamanga (Ayacucho, Perú)
+**Versión:** `v2.0.0-rc1` (Corte I10 Fase A)
+**Fecha de Actualización:** 14 de octubre de 2026
+**Audiencia:** Ingenieros DevOps, Administradores de Sistemas, DBAs y Soporte TI MPH
+**Plataforma Tecnológica:** Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 16, Docker Compose
 
 ---
 
-## 1. REQUISITOS DEL SISTEMA Y PRERREQUISITOS
+## 1. Requisitos del Sistema e Infraestructura
 
-### 1.1 Entorno de Producción Recomendado (Servidor On-Premise / Cloud)
-- **Sistema Operativo:** Ubuntu Server 22.04 LTS / Debian 12 / Rocky Linux 9 / Red Hat Enterprise Linux 9.
+### 1.1 Entorno de Servidor Recomendado (On-Premise / Servidor Municipal)
+- **Sistema Operativo:** Ubuntu Server 22.04 LTS / Debian 12 / Rocky Linux 9 / RHEL 9.
 - **CPU:** 4 vCPUs (Mínimo 2 vCPUs).
-- **Memoria RAM:** 8 GB RAM (Mínimo 4 GB RAM con asignación de 2.5 GB para JVM heap).
-- **Almacenamiento:** 50 GB SSD NVMe (Espacio para base de datos y logs rotativos).
-- **Red:** Conectividad a Internet para sincronización NTP y servicio SMTP institucional.
+- **Memoria RAM:** 8 GB RAM (Mínimo 4 GB RAM con asignación de 1024 MB a 2048 MB para Heap JVM).
+- **Almacenamiento:** 50 GB SSD NVMe (Espacio para PostgreSQL 16, volúmenes Docker y logs).
+- **Red:** Conectividad interna municipal, puerto HTTPS (443) y servicio SMTP institucional.
 
 ### 1.2 Software Base Requerido
-1. **Docker Engine:** Versión >= `24.0.0`
-2. **Docker Compose Plugin:** Versión >= `v2.20.0`
-3. **Git:** Versión >= `2.40.0`
-4. **Puertos de Red Requeridos:**
-   - `8081` (o mapeado a `80`/`443` vía Nginx/Caddy Reverse Proxy): Portal Web y API REST
-   - `5432`: PostgreSQL (Aislado a red interna de Docker en producción)
-   - `5050`: pgAdmin 4 (Opcional, únicamente para administración de base de datos)
+1. **Docker Engine:** Versión $\ge 24.0.0$
+2. **Docker Compose Plugin:** Versión $\ge v2.20.0$
+3. **Java Runtime (si se ejecuta sin Docker):** OpenJDK 21 LTS (Eclipse Temurin recomendado)
+4. **Apache Maven (para compilación):** Versión $\ge 3.9.0$
+5. **PostgreSQL (si se ejecuta sin Docker):** Versión **16.x**
 
 ---
 
-## 2. CONFIGURACIÓN DEL ENTORNO (.env)
+## 2. Variables de Entorno y Configuración de Seguridad (`.env`)
 
-Antes del primer arranque, clone la plantilla de variables de entorno y configure las credenciales reales:
+Antes del primer arranque en producción, configure el archivo `.env` a partir de `.env.example`:
 
 ```bash
-cd /opt/munihuamanga  # o el directorio donde se encuentre el repositorio
+cd /opt/munihuamanga
 cp .env.example .env
 chmod 600 .env
 ```
 
-Edite el archivo `.env` con un editor de texto seguro (`nano .env`):
+Parámetros mandatorios de producción:
 
 ```ini
 # ══════════════════════════════════════════════════════════════════════════════
-# CONFIGURACIÓN DE PRODUCCIÓN - MUNICIPALIDAD DE HUAMANGA
+# CONFIGURACIÓN DE PRODUCCIÓN - MUNIHUAMANGA V2
 # ══════════════════════════════════════════════════════════════════════════════
 
-# 1. Base de Datos PostgreSQL
+# 1. Base de Datos Relacional PostgreSQL 16
 POSTGRES_DB=muni_licencias_db
 POSTGRES_USER=muni_user
 POSTGRES_PASSWORD=<DEFINIR_PASSWORD_COMPLEJO_ALFANUMERICO_32_CHARS>
 
-# 2. Seguridad y Tokens JWT (CWE-326: Mínimo 256 bits / 32 caracteres)
+# 2. Seguridad y Tokens JWT (CWE-326: Clave criptográfica aleatoria de alta entropía)
 # Generar mediante: openssl rand -base64 48
 JWT_SECRET=<SECRETO_CRIPTO_ALEATORIO_GENERADO_DE_ALTA_ENTROPIA_2026!>
 JWT_EXPIRATION_MS=28800000 # 8 Horas
@@ -66,46 +66,50 @@ MAIL_PASSWORD=<PASSWORD_CUENTA_SERVICIOS_CORREO>
 
 # 5. Dominios Públicos Institucionales
 PORTAL_URL=https://licencias.munihuamanga.gob.pe
-PORTAL_VERIFICACION_URL=https://licencias.munihuamanga.gob.pe/verificar-licencia.html?codigo=
+PORTAL_VERIFICACION_URL=https://licencias.munihuamanga.gob.pe/verificar-licencia.html?token=
 ```
 
 ---
 
-## 3. PROCEDIMIENTO DE CONSTRUCCIÓN Y DESPLIEGUE
+## 3. Política Estricta de Inicialización y Migración de Base de Datos
 
-### 3.1 Despliegue Automatizado con Docker Compose (Recomendado)
+> [!WARNING]
+> **ADVERTENCIA CRÍTICA SOBRE SCRIPTS SQL:**
+> Los scripts ubicados en `docker/postgres/init/` (`01-init-databases.sql` a `08-v2-verificacion-qr-inspeccion.sql`) son **SCRIPTS DE INICIALIZACIÓN PARA ENTORNOS LIMPIOS**.
+> **NO DEBEN CONSIDERARSE NI EJECUTARSE COMO UN MECANISMO AUTOMÁTICO DE MIGRACIÓN SOBRE BASES DE DATOS EN PRODUCCIÓN CON DATOS PREEXISTENTES.**
+> En una base de datos productiva existente, cualquier cambio de esquema debe aplicarse mediante scripts DDL versionados incrementales controlados por el DBA municipal, previa copia de seguridad certificada.
 
-1. **Construir la imagen de contenedor multi-stage:**
+---
+
+## 4. Procedimiento de Construcción y Despliegue
+
+### 4.1 Despliegue con Docker Compose (Recomendado)
+
+1. **Construir el artefacto y la imagen multi-stage:**
    ```bash
    docker compose build --no-cache
    ```
-2. **Iniciar los servicios en segundo plano:**
+2. **Iniciar los servicios:**
    ```bash
    docker compose up -d
    ```
-3. **Verificar el estado de salud de los contenedores:**
+3. **Verificar el estado de los contenedores:**
    ```bash
    docker compose ps
    ```
-   *Debe mostrar los 3 contenedores con estado `healthy` o `running`:*
-   - `muni_licencias_postgres` (healthy)
-   - `muni_licencias_backend` (healthy)
-   - `muni_licencias_pgadmin` (running)
+   *Debe confirmar estado `healthy` o `running`:*
+   - `muni_licencias_postgres` (PostgreSQL 16)
+   - `muni_licencias_backend` (Spring Boot 3.3.4 en Java 21)
 
-4. **Monitorear los registros de arranque del backend:**
+4. **Monitorear logs de arranque:**
    ```bash
    docker compose logs -f app
    ```
-   *Debe confirmar:*
-   ```text
-   Started ExpedientesApplication in X.XXX seconds
-   ```
 
-### 3.2 Despliegue Híbrido Local / Desarrollo (Sin Docker para Backend)
+### 4.2 Despliegue Autónomo con JAR Local
 
-Si la base de datos se ejecuta en Docker o PostgreSQL local pero desea ejecutar el jar directamente:
 ```bash
-# Empaquetar
+# Compilar y empaquetar con Maven
 mvn clean package -DskipTests
 
 # Ejecutar con perfil prod
@@ -115,53 +119,46 @@ java -jar servicio-expedientes/target/servicio-expedientes-1.0.0-SNAPSHOT.jar \
 
 ---
 
-## 4. VERIFICACIÓN Y PRUEBAS DE HUMO (SMOKE TESTS)
+## 5. Pruebas de Humo (Smoke Tests) y Validación Post-Despliegue
 
-Una vez iniciado el contenedor, ejecute las siguientes validaciones:
-
-1. **Verificar estado de salud del backend (Actuator):**
+1. **Salud del Sistema (Spring Actuator):**
    ```bash
    curl -i http://localhost:8081/actuator/health
    # Respuesta esperada: HTTP/1.1 200 OK -> {"status":"UP"}
    ```
-
-2. **Verificar consulta pública de licencia por QR (Solo lectura):**
-   ```bash
-   curl -i http://localhost:8081/api/public/licencias/LIC-2026-00000002
-   # Respuesta esperada: HTTP/1.1 200 OK -> {"valida":true, "estado":"VIGENTE / AUTORIZADA"}
-   ```
-
-3. **Verificar rechazo de acceso no autenticado a expedientes internos (H01/H05):**
+2. **Verificación de Seguridad (Rechazo sin Autenticación):**
    ```bash
    curl -i http://localhost:8081/api/expedientes
    # Respuesta esperada: HTTP/1.1 401 Unauthorized
    ```
-
-4. **Acceso a los Portales Web:**
-   - **Portal Ciudadano:** `http://localhost:8081/portal-ciudadano.html`
-   - **Portal Interno Municipal:** `http://localhost:8081/portal-interno.html`
-   - **Verificación de Licencia por QR:** `http://localhost:8081/verificar-licencia.html?codigo=LIC-2026-00000002`
+3. **Consulta Pública QR:**
+   ```bash
+   curl -i http://localhost:8081/api/public/licencias/{tokenQr}
+   # Respuesta esperada: HTTP/1.1 200 OK (Minimización Ley 29733: sin DNI ni coordenadas)
+   ```
 
 ---
 
-## 5. MANTENIMIENTO, LOGS Y COPIAS DE SEGURIDAD
+## 6. Mantenimiento, Copias de Seguridad y Recuperación
 
-### 5.1 Rotación y Consulta de Logs
+### 6.1 Respaldo Diario Automatizado (`pg_dump`)
+Ejecutar tarea programada diaria con retención de 30 días:
 ```bash
-# Ver las últimas 100 líneas con seguimiento en vivo:
-docker compose logs -f --tail=100 app
-
-# Inspeccionar logs de base de datos:
-docker compose logs -f postgres
-```
-
-### 5.2 Respaldo Automatizado de Base de Datos (pg_dump)
-Cree una tarea programada cron en el host para generar backups diarios:
-
-```bash
-# Backup manual inmediato:
 FECHA=$(date +%Y%m%d_%H%M%S)
 docker exec muni_licencias_postgres pg_dump -U muni_user -d muni_licencias_db -F c -b -v -f /var/lib/postgresql/data/backup_muni_${FECHA}.dump
-
-echo "Copia de respaldo generada exitosamente en el volumen de datos."
 ```
+
+### 6.2 Procedimiento de Recuperación (Disaster Recovery)
+```bash
+docker exec -i muni_licencias_postgres pg_restore -U muni_user -d muni_licencias_db -v -c /var/lib/postgresql/data/backup_muni_${FECHA}.dump
+```
+
+---
+
+## 7. Dependencias Institucionales y Condición para Pase a Producción
+
+> [!CAUTION]
+> **NO DECLARAR EL SISTEMA APTO PARA PRODUCCIÓN SIN RESOLVER:**
+> 1. **Firma Digital Institucional (ADR-04, ADR-07):** El sistema aplica política *fail-closed*. Requiere la integración formal con un proveedor acreditado ante la Infraestructura Oficial de Firma Electrónica (IOFE - RENIEC / INDECOPI). Sin esta integración, la emisión oficial de licencias permanece bloqueada por diseño legal.
+> 2. **Sustitución de Credenciales:** Obligatorio cambiar las contraseñas de las cuentas de demostración preconfiguradas (`admin123`, `eval123`, etc.) y definir un `JWT_SECRET` criptográfico de producción.
+> 3. **Procesos Manuales SAT y Defensa Civil (ADR-06):** Operadores de caja y evaluadores deben estar debidamente capacitados en las ventanillas físicas institucionales.

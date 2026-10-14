@@ -27,6 +27,8 @@ public class ExpedienteResponseDto {
     private UUID id;
     private String numeroTramite;
     private UUID solicitanteId;
+    private UUID cuentaId;
+    private UUID establecimientoId;
 
     // Modalidad Anexo 1
     private ModalidadTramite modalidadTramite;
@@ -97,6 +99,7 @@ public class ExpedienteResponseDto {
     private BigDecimal montoTasa;
     private String voucherId;
     private String licenciaQrCode;
+    private Boolean firmaDigitalValida;
 
     // Datos del Certificado Oficial de Licencia (Formato físico)
     private String numeroLicencia;          // Número correlativo de licencia (Ej: 202613788)

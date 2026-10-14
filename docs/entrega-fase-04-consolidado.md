@@ -1,7 +1,7 @@
 # Entrega Técnica Consolidada — Fase 04 (Completa)
 ### Sistema de Gestión Documentaria de Licencias de Funcionamiento — Municipalidad Provincial de Huamanga
-**Marco Normativo:** Ley N° 28976 (TUO D.S. N° 046-2017-PCM)  
-**Fecha:** 2026-10-02  
+**Marco Normativo:** Ley N° 28976 (TUO D.S. N° 046-2017-PCM)
+**Fecha:** 2026-10-02
 **Estado:** 100% COMPLETADO (80/80 tests en verde, 0 fallos)
 
 ---

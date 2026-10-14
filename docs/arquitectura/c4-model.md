@@ -1,512 +1,253 @@
-# Modelo de Arquitectura C4 — Sistema de Gestión de Licencias de Funcionamiento
-### Municipalidad Provincial de Huamanga (MuniHuamanga)
-> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM  
-> **Versión de Arquitectura:** Fase 04 Completada — Seguridad JWT RBAC, Notificaciones Email, Formato Oficial y TUPA Dinámico  
-> **Modelo:** C4 Model (Contexto, Contenedores, Componentes y Diagrama de Clases de Dominio)
+# Modelo de Arquitectura C4 — Sistema de Licencias de Funcionamiento
+## MuniHuamanga V2 — Municipalidad Provincial de Huamanga (Ayacucho, Perú)
+
+> **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / D.S. N° 163-2020-PCM / Ley N° 27269 / Ley N° 29733
+> **Plataforma Tecnológica:** Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 16, OpenPDF 2.0.3, ZXing 3.5.3
+> **Estado:** Documento Canónico Vigente — MuniHuamanga V2
+> **Ubicación:** `docs/arquitectura/c4-model.md`
 
 ---
 
-## 1. Nivel 1 — Diagrama de Contexto del Sistema
+## 1. Convenciones y Leyenda del Modelo C4
 
-Describe la interacción del sistema con los usuarios clave de la municipalidad y las entidades e instancias externas del ecosistema municipal:
+Para garantizar total transparencia técnica y fidelidad con la realidad del repositorio, los componentes se identifican bajo las siguientes categorías de estado:
+
+| Distintivo Visual / Estado | Significado Técnico en MuniHuamanga V2 |
+| :---: | :--- |
+| **[IMPLEMENTADO]** | Código fuente, persistencia y pruebas automatizadas 100% funcionales en el repositorio. |
+| **[PARCIAL]** | Backend implementado; interfaz de usuario o vinculación frontend en proceso de integración. |
+| **[SIMULADO EN PRUEBAS]** | Mocks y adaptadores desacoplados empleados en suites de prueba unitarias/integración. |
+| **[PENDIENTE INSTITUCIONAL]** | Requiere convenio, credenciales oficiales o infraestructura física municipal externa (IOFE, SAT, RENIEC). |
+
+---
+
+## 2. Nivel 1 — Diagrama de Contexto del Sistema
+
+Describe las interacciones entre los usuarios (administrados, operadores, funcionarios e inspectores) y los sistemas externos del ecosistema municipal y gubernamental:
 
 ```mermaid
 graph TD
     classDef person fill:#08427b,stroke:#073b6f,color:#fff;
     classDef system fill:#1168bd,stroke:#0b4884,color:#fff;
-    classDef extSystem fill:#555555,stroke:#333333,color:#fff;
+    classDef extManual fill:#718096,stroke:#4a5568,color:#fff;
+    classDef extPendiente fill:#d69e2e,stroke:#b7791f,color:#fff;
 
-    solicitante["Ciudadano / Administrado<br>(Persona)<br>Registra solicitud en Wizard 3 pasos,<br>descarga PDFs y consulta seguimiento"]:::person
-    inspectorItse["Inspector Defensa Civil<br>(Persona)<br>Aplica Matriz de Riesgo ITSE Anexo 3,<br>emite informes tecnicos via Portal Interno"]:::person
-    cajeroSat["Cajero / Operador SAT<br>(Persona)<br>Liquida y valida el pago de tasas TUPA"]:::person
-    funcionarioGL["Funcionario Gerencia Licencias<br>(Persona)<br>Evalua dictamenes, aprueba y emite<br>licencias definitivas con QR"]:::person
-    fiscalizador["Fiscalizador / Inspectores<br>(Persona)<br>Escanea y verifica autenticidad in situ<br>mediante Codigo QR"]:::person
+    ciudadano["Ciudadano / Administrado<br>[Persona]<br>Registra cuenta DNI/RUC, elabora borradores,<br>presenta formalmente su solicitud y subsana observaciones"]:::person
+    operador["Operador Delegado<br>[Persona]<br>Persona autorizada con permisos específicos<br>para gestionar trámites de una persona jurídica"]:::person
+    cajeroSat["Cajero SAT Huamanga<br>[Persona]<br>Recauda tasas TUPA presencialmente<br>y valida comprobantes de pago"]:::person
+    evaluador["Funcionario Evaluador<br>[Persona]<br>Evalúa zonificación PDU, verifica requisitos,<br>elabora informes técnicos y registra observaciones"]:::person
+    autoridad["Autoridad Competente (Subgerente)<br>[Persona]<br>Aprueba informes técnicos, emite resoluciones<br>administrativas y autoriza licencias de funcionamiento"]:::person
+    inspector["Inspector Municipal<br>[Persona]<br>Fiscaliza en campo, escanea QR y verifica<br>vigencia y georreferenciación oficial en mapa"]:::person
 
-    sistema["Sistema de Licencias MuniHuamanga<br>(Software System)<br>Wizard ciudadano 3 pasos, generacion PDF Anexos 1/3/4,<br>maquina de estados, calculo tasas TUPA dinamico,<br>emision de licencias oficiales con QR, notificaciones<br>email asincronas, JWT RBAC y Dashboard KPI"]:::system
+    sistema["MuniHuamanga V2<br>[Sistema de Software - Monolito Modular]<br>Gestión integral del trámite de licencias, 10 estados normativos,<br>cálculo TUPA, verificación QR y trazabilidad inmutable"]:::system
 
-    sat["SAT Huamanga<br>(Sistema Externo)<br>Recaudacion de tasas,<br>vouchers y conciliacion bancaria"]:::extSystem
-    defensaCivil["Subgerencia de Defensa Civil<br>(Sistema / Instancia Externa)<br>Inspecciones ITSE/ECSE"]:::extSystem
-    desarrolloUrbano["Gerencia de Desarrollo Urbano<br>(Sistema / Instancia Externa)<br>Zonificacion y compatibilidad de uso del suelo"]:::extSystem
-    sunarp["SUNARP / Plataforma PIDE<br>(Sistema Externo)<br>Validacion de personerias juridicas y poderes"]:::extSystem
-    reniecPki["Plataforma de Firma Digital / RENIEC<br>(Sistema Externo)<br>Firma digital con validez legal y sellado de tiempo"]:::extSystem
+    sat["SAT Huamanga<br>[Sistema Externo - Proceso Manual / Ventanilla]<br>Recaudación física de tasas TUPA y emisión de comprobantes"]:::extManual
+    defensaCivil["Subgerencia de Defensa Civil<br>[Entidad Externa - Trámite Presencial]<br>Inspección técnica de seguridad en edificaciones (ITSE)"]:::extManual
+    iofe["Proveedor de Firma Digital IOFE<br>[Sistema Externo - Pendiente Activación]<br>Infraestructura Oficial de Firma Electrónica (Ley 27269)"]:::extPendiente
+    pide["Plataforma PIDE (SUNAT / RENIEC / SUNARP)<br>[Sistema Externo - Pendiente Integración]<br>Validación automática de identidad y vigencia de poder"]:::extPendiente
 
-    solicitante -->|"1. Completa wizard 3 pasos y descarga Anexos 1/3/4"| sistema
-    inspectorItse -->|"2. Registra dictamen ITSE via Portal Interno"| sistema
-    cajeroSat -->|"3. Valida pago y registra voucher SAT"| sistema
-    funcionarioGL -->|"4. Aprueba y emite licencia oficial con QR"| sistema
-    fiscalizador -->|"5. Verifica autenticidad y vigencia via QR"| sistema
+    ciudadano -->|"Registra solicitud, carga documentos y subsana"| sistema
+    operador -->|"Gestiona trámites autorizados"| sistema
+    cajeroSat -->|"Valida comprobante de pago manualmente"| sistema
+    evaluador -->|"Evalúa zonificación y elabora informe técnico"| sistema
+    autoridad -->|"Aprueba informe y emite resolución"| sistema
+    inspector -->|"Consulta autenticidad y ubicación en campo"| sistema
 
-    sistema -->|"Consulta y concilia recaudacion"| sat
-    sistema -->|"Deriva expedientes para evaluacion de riesgo"| defensaCivil
-    sistema -->|"Valida zonificacion y compatibilidad de uso"| desarrolloUrbano
-    sistema -->|"Consulta vigencia de poderes y RUC"| sunarp
-    sistema -->|"Aplica sellado digital y firma de documentos"| reniecPki
+    sistema -.->|"Cotejo manual de comprobante de pago"| sat
+    sistema -.->|"Presentación física de Anexos 3 y 4"| defensaCivil
+    sistema -.->|"FirmaDigitalPort (Fail-closed si no está activo)"| iofe
+    sistema -.->|"Verificación registral y de personería"| pide
 ```
 
 ---
 
-## 2. Nivel 2 — Diagrama de Contenedores (Monolito Modular)
+## 3. Nivel 2 — Diagrama de Contenedores
 
-Ilustra la arquitectura consolidada de **Monolito Modular con Clean Architecture**, donde un único contenedor de aplicación Spring Boot atiende a los portales web cliente, gestiona el ciclo de vida del expediente, renderiza documentos PDF oficiales, expone puertos de integración desacoplados y persiste datos en PostgreSQL:
+Ilustra la arquitectura técnica consolidada: clientes web ligeros, el contenedor backend Spring Boot 3.3.4 (Monolito Modular) y la persistencia en PostgreSQL 16:
 
 ```mermaid
 graph TD
+    classDef frontend fill:#63a0e2,stroke:#3b7abf,color:#fff;
     classDef container fill:#438dd5,stroke:#2e6295,color:#fff;
     classDef db fill:#23527c,stroke:#173752,color:#fff;
-    classDef frontend fill:#63a0e2,stroke:#3b7abf,color:#fff;
-    classDef ext fill:#555555,stroke:#333333,color:#fff;
+    classDef ext fill:#718096,stroke:#4a5568,color:#fff;
 
-    subgraph CapaPresentacion [Capa de Presentacion - Portales Web Institucionales]
-        portalCiudadano["Portal Ciudadano<br>(HTML5 / CSS3 / Vanilla JS)<br>Wizard 3 pasos: Solicitante -> Local -> Confirmacion<br>Descarga inmediata de Anexos 1, 3 y 4<br>Mesa de Ayuda para tramitacion presencial"]:::frontend
-        portalInterno["Sistema Interno de Gestion<br>(HTML5 / CSS3 / Vanilla JS)<br>Dashboard KPI con control RBAC JWT<br>Bandeja con columna Formatos PDF y Modales<br>Mantenimiento en caliente del Tarifario TUPA"]:::frontend
-        portalVerificacion["Portal Publico de Verificacion<br>(HTML5 / CSS3 / Vanilla JS)<br>Consulta publica de autenticidad via QR RNF-20"]:::frontend
-        landing["Landing Page Institucional<br>(HTML5 / CSS3)<br>Acceso centralizado al ecosistema municipal"]:::frontend
+    subgraph ClientesWeb [Capa de Presentación: Interfaces Web Ligeras]
+        landing["Portal Principal / Hub<br>(index.html)<br>[IMPLEMENTADO]"]:::frontend
+        pCiudadano["Portal Ciudadano<br>(portal-ciudadano.html / js)<br>[PARCIAL - Pendiente enlace V2]"]:::frontend
+        pInterno["Portal Interno Municipal<br>(portal-interno.html / js)<br>[IMPLEMENTADO - RBAC JWT]"]:::frontend
+        pVerif["Verificación QR e Inspectores<br>(verificar-licencia.html / js)<br>[IMPLEMENTADO - Leaflet OpenStreetMap]"]:::frontend
+        pAnexo1["Formato Anexo 1 Oficial<br>(formato-anexo1.html / js)<br>[IMPLEMENTADO]"]:::frontend
     end
 
-    subgraph Backend [Contenedor Principal: Monolito Modular - Java 21 / Spring Boot 3.3.4 :8081]
-        monolito["MuniHuamanga Monolito Modular<br>(servicio-expedientes :8081)<br>• Bounded Context: Expedientes (Workflow y 5 estados)<br>• Bounded Context: Documentos Oficiales (Anexo 1, 3, 4, Licencia QR)<br>• Bounded Context: TUPA Dinamico (Calculo automatizado)<br>• Bounded Context: Verificacion Publica QR (ZXing)<br>• Bounded Context: Integracion (Ports & Adapters SAT, DC)<br>• Bounded Context: Seguridad (Spring Security 6 + JJWT)"]:::container
+    subgraph BackendApp [Contenedor de Aplicación: servicio-expedientes :8081]
+        app["MuniHuamanga Monolito Modular<br>(Java 21 LTS / Spring Boot 3.3.4)<br>• M01 a M10 Bounded Contexts implementados<br>• Spring Security 6 Stateless (JWT)<br>• Generadores OpenPDF y ZXing QR en memoria<br>• FirmaDigitalPort con salvaguarda fail-closed"]:::container
     end
 
-    subgraph Persistencia [Capa de Datos Relacional]
-        postgres[("PostgreSQL 15 / H2<br>muni_licencias_db :5432<br>Expedientes 45 atributos, Usuarios RBAC,<br>Tarifario TUPA dinamico e historial auditoria")]:::db
+    subgraph Almacenamiento [Capa de Persistencia Relacional]
+        postgres[("PostgreSQL 16 Relacional<br>(muni_licencias_db :5432)<br>• 8 scripts SQL aditivos (01..08)<br>• Restricciones UNIQUE y ON DELETE RESTRICT<br>• Binarios PDF inmutables en BYTEA")]:::db
     end
 
-    subgraph Externos [Servicios y Entidades Externas]
-        smtpServer["Servidor SMTP / JavaMail<br>(Notificaciones Electronicas Async)<br>Alertas de Registro, Aprobacion con PDF y Rechazo"]:::ext
-        satExt["SAT Huamanga<br>(Recaudacion Tributaria)"]:::ext
-        dcExt["Subgerencia de Defensa Civil<br>(Inspeccion ITSE Presencial)"]:::ext
+    subgraph Externos [Servicios Externos de Soporte]
+        smtp["Servidor SMTP / JavaMail<br>[IMPLEMENTADO - Alertas asíncronas]"]:::ext
+        satManual["Ventanilla SAT Huamanga<br>[PROCESO MANUAL]"]:::ext
     end
 
-    landing -->|"Navegacion"| portalCiudadano
-    landing -->|"Navegacion"| portalInterno
-    landing -->|"Navegacion"| portalVerificacion
+    landing --> pCiudadano
+    landing --> pInterno
+    landing --> pVerif
+    landing --> pAnexo1
 
-    portalCiudadano -->|"REST JSON / Descarga directa PDFs"| monolito
-    portalInterno -->|"REST JSON con Bearer JWT / Formatos PDF"| monolito
-    portalVerificacion -->|"GET /api/public/licencias/{codigo}"| monolito
+    pCiudadano -->|"HTTP REST / JSON"| app
+    pInterno -->|"HTTP REST / Bearer JWT"| app
+    pVerif -->|"HTTP REST / Rate Limiter (60/min)"| app
+    pAnexo1 -->|"HTTP REST / Descarga PDF"| app
 
-    monolito -->|"Spring Data JPA / Transaccionalidad ACID"| postgres
-    monolito -->|"SMTP / JavaMail asincrono"| smtpServer
-    monolito -.->|"SatPort / Conciliacion de vouchers"| satExt
-    monolito -.->|"DefensaCivilPort / Dictamenes ITSE"| dcExt
+    app -->|"Spring Data JPA / HikariCP / Transacciones ACID"| postgres
+    app -->|"JavaMail asíncrono"| smtp
+    app -.->|"Validación manual por cajero"| satManual
 ```
 
 ---
 
-## 3. Nivel 3 — Diagrama de Componentes: Monolito Modular (:8081)
+## 4. Nivel 3 — Diagrama de Componentes: Monolito Modular
 
-Detalla la arquitectura interna basada en **Clean Architecture** (Arquitectura Limpia y Hexagonal / Ports & Adapters) dentro del contenedor unificado:
+Detalla los componentes internos organizados según Clean Architecture dentro del backend `servicio-expedientes`:
 
 ```mermaid
 graph TD
     classDef comp fill:#63a0e2,stroke:#3b7abf,color:#fff;
-    classDef pdf fill:#d4a017,stroke:#a07812,color:#fff;
-    classDef sec fill:#d9534f,stroke:#b52b27,color:#fff;
-    classDef port fill:#2e7d32,stroke:#1b5e20,color:#fff;
+    classDef sec fill:#e53e3e,stroke:#c53030,color:#fff;
+    classDef pdf fill:#d69e2e,stroke:#b7791f,color:#fff;
+    classDef port fill:#38a169,stroke:#276749,color:#fff;
     classDef db fill:#23527c,stroke:#173752,color:#fff;
-    classDef frontend fill:#2d9e6b,stroke:#1f7048,color:#fff;
 
-    subgraph ClientesWeb [Clientes Web Frontales]
-        wizardCiudadano["Portal Ciudadano (Wizard 3 pasos + Mesa de Ayuda)"]:::frontend
-        dashboardInterno["Portal Interno (Dashboard KPI + RBAC)"]:::frontend
+    subgraph CapaPresentacion [Capa 4: Controladores REST y Seguridad]
+        authCtrl["AuthController<br>(POST /api/auth/login)"]:::sec
+        cuentaCtrl["CuentaController<br>(/api/cuentas)"]:::comp
+        borradorCtrl["SolicitudBorradorController<br>(/api/borradores)"]:::comp
+        expCtrl["ExpedienteController<br>(/api/expedientes)"]:::comp
+        pagoCtrl["PagoExpedienteController<br>(/api/pagos)"]:::comp
+        zonifCtrl["EvaluacionZonificacionController<br>(/api/zonificacion)"]:::comp
+        evalCtrl["EvaluacionAdministrativaController<br>(/api/evaluaciones)"]:::comp
+        resCtrl["ResolucionAdministrativaController<br>(/api/resoluciones)"]:::comp
+        licCtrl["LicenciaController<br>(/api/licencias)"]:::comp
+        inspCtrl["InspectorLicenciasController<br>(/api/inspector/licencias)"]:::comp
+        secConfig["SecurityConfig / JwtFilter / BOLA Evaluators"]:::sec
     end
 
-    subgraph MonolitoModular [Monolito Modular - servicio-expedientes]
-        subgraph CapaPresentacionDelivery [Capa de Presentacion / Web Delivery]
-            expController["ExpedienteController<br>(REST Controller)"]:::comp
-            authController["AuthController<br>(POST /api/auth/login)"]:::sec
-            tupaController["TarifaTupaController<br>(REST Controller)"]:::comp
-            publicController["PublicLicenciasController<br>(REST Verificacion QR)"]:::comp
-            docController["DocumentosFormulariosController<br>(REST /api/formularios)"]:::comp
-            adaptController["AdaptadorController<br>(REST /api/integraciones)"]:::comp
-        end
-
-        subgraph CapaSeguridad [Capa de Seguridad Spring Security 6]
-            secConfig["SecurityConfig (Stateless FilterChain)"]:::sec
-            jwtFilter["JwtAuthenticationFilter"]:::sec
-            jwtProvider["JwtTokenProvider (JJWT 0.12.6)"]:::sec
-        end
-
-        subgraph CapaAplicacion [Capa de Aplicacion / Casos de Uso]
-            expService["ExpedienteService (Maquina de 5 Estados)"]:::comp
-            tupaService["TarifaTupaService (Tarifario TUPA)"]:::comp
-            calculadora["CalculadoraDeTasa (Calculo dinamico)"]:::comp
-            auditoria["AuditoriaService (Trazabilidad inmutable)"]:::comp
-            emailService["NotificacionEmailService (@Async)"]:::comp
-            validator["EstadoExpedienteValidator / MesaPartesValidator"]:::comp
-            pdfService["DocumentoPdfService (Coordinador PDF)"]:::pdf
-        end
-
-        subgraph CapaPuertosAdaptadores [Capa de Integracion / Ports & Adapters]
-            satPort["SatPort (Interface)"]:::port
-            dcPort["DefensaCivilPort (Interface)"]:::port
-            edifPort["EdificacionesPort (Interface)"]:::port
-            fiscPort["FiscalizacionPort (Interface)"]:::port
-
-            satAdapter["SatAdapterService"]:::comp
-            dcAdapter["DefensaCivilAdapterService"]:::comp
-            edifAdapter["EdificacionesAdapterService"]:::comp
-            fiscAdapter["FiscalizacionAdapterService"]:::comp
-        end
-
-        subgraph MotorPDF [Motor de Renderizado PDF OpenPDF / ZXing]
-            a1Gen["Anexo1PdfGenerator (2 paginas)"]:::pdf
-            a3Gen["Anexo3PdfGenerator (2 paginas Matriz ITSE)"]:::pdf
-            a4Gen["Anexo4PdfGenerator (4 paginas Condiciones Seguridad)"]:::pdf
-            licGen["LicenciaPdfGenerator (Certificado con QR ZXing)"]:::pdf
-        end
-
-        subgraph CapaPersistencia [Capa de Persistencia JPA]
-            expRepo["ExpedienteRepository"]:::comp
-            tupaRepo["TarifaTupaRepository"]:::comp
-            histRepo["HistorialRepository"]:::comp
-            userRepo["UsuarioRepository"]:::comp
-        end
+    subgraph CapaAplicacion [Capa 2: Servicios de Casos de Uso]
+        cuentaSvc["CuentaService<br>[IMPLEMENTADO]"]:::comp
+        borradorSvc["SolicitudBorradorService<br>[IMPLEMENTADO]"]:::comp
+        presentaSvc["PresentacionFormalService<br>[IMPLEMENTADO]"]:::comp
+        expSvc["ExpedienteService<br>[IMPLEMENTADO]"]:::comp
+        pagoSvc["PagoExpedienteService<br>[IMPLEMENTADO]"]:::comp
+        zonifSvc["EvaluacionZonificacionService<br>[IMPLEMENTADO]"]:::comp
+        evalSvc["InformeAdministrativoService<br>[IMPLEMENTADO]"]:::comp
+        checklistSvc["ChecklistAdministrativoService<br>[IMPLEMENTADO]"]:::comp
+        resSvc["ResolucionAdministrativaService<br>[IMPLEMENTADO]"]:::comp
+        licSvc["LicenciaService<br>[IMPLEMENTADO]"]:::comp
+        rateLimiter["RateLimiterService<br>[IMPLEMENTADO]"]:::comp
+        auditoriaSvc["AuditoriaService<br>[IMPLEMENTADO]"]:::comp
     end
 
-    postgres[("PostgreSQL 15 / H2")]:::db
+    subgraph CapaPuertos [Puertos Hexagonales e Interfaces]
+        firmaPort["FirmaDigitalPort<br>(Interface de Salida)"]:::port
+        firmaAdapter["FirmaDigitalAdapterService<br>(Fail-Closed Adapter)"]:::comp
+    end
 
-    wizardCiudadano --> expController
-    wizardCiudadano --> docController
-    dashboardInterno --> authController
-    dashboardInterno --> expController
-    dashboardInterno --> tupaController
+    subgraph CapaAdaptadores [Capa 3: Generadores Documentales y Persistencia]
+        anexo1Gen["Anexo1PdfGenerator (OpenPDF)"]:::pdf
+        licPdfGen["LicenciaPdfGenerator (OpenPDF + ZXing)"]:::pdf
+        jpas["Repositorios Spring Data JPA<br>(Expediente, Resolucion, Licencia, Pago, etc.)"]:::db
+    end
 
-    jwtFilter --> expController
-    jwtFilter --> tupaController
+    expCtrl --> expSvc
+    cuentaCtrl --> cuentaSvc
+    borradorCtrl --> borradorSvc
+    borradorCtrl --> presentaSvc
+    pagoCtrl --> pagoSvc
+    zonifCtrl --> zonifSvc
+    evalCtrl --> evalSvc
+    evalCtrl --> checklistSvc
+    resCtrl --> resSvc
+    licCtrl --> licSvc
+    inspCtrl --> licSvc
+    licCtrl --> rateLimiter
 
-    expController --> expService
-    expController --> pdfService
-    docController --> pdfService
-    tupaController --> tupaService
-    adaptController --> satPort
-    adaptController --> dcPort
-    adaptController --> edifPort
-    adaptController --> fiscPort
+    resSvc --> firmaPort
+    firmaPort --> firmaAdapter
+    licSvc --> licPdfGen
+    expSvc --> anexo1Gen
+    expSvc --> auditoriaSvc
 
-    expService --> validator
-    expService --> calculadora
-    expService --> auditoria
-    expService --> emailService
-    expService --> expRepo
-    tupaService --> tupaRepo
-    tupaService --> calculadora
-
-    pdfService --> a1Gen
-    pdfService --> a3Gen
-    pdfService --> a4Gen
-    pdfService --> licGen
-
-    satAdapter --> satPort
-    dcAdapter --> dcPort
-    edifAdapter --> edifPort
-    fiscAdapter --> fiscPort
-
-    expRepo --> postgres
-    tupaRepo --> postgres
-    histRepo --> postgres
-    userRepo --> postgres
+    cuentaSvc --> jpas
+    borradorSvc --> jpas
+    expSvc --> jpas
+    pagoSvc --> jpas
+    evalSvc --> jpas
+    resSvc --> jpas
+    licSvc --> jpas
 ```
 
 ---
 
----
+## 4. Nivel 4 — Diagramas de Código y Flujos Críticos
 
-## 5. Diagrama de Clases del Dominio — Actualizado Fase 04
-
-Estructura completa de entidades JPA, objetos embebidos (`@Embeddable`), enums normativos, DTOs y servicios:
+### 4.1. Flujo Crítico de Emisión Oficial de Licencia (M08 -> M09 -> M10)
+Demuestra el principio *fail-closed* donde ninguna licencia adquiere carácter oficial ni genera QR válido sin la firma digital de la resolución administrativa previa:
 
 ```mermaid
-classDiagram
-    class Expediente {
-        - UUID id
-        - String numeroTramite
-        - UUID solicitanteId
-        - ModalidadTramite modalidadTramite
-        - Integer plazoTemporalMeses
-        - String tipoAnuncio
-        - String numeroLicenciaPrincipal
-        - TipoPersona tipoPersona
-        - TipoDocumento tipoDocumento
-        - String nombreTitular
-        - String documentoIdentidad
-        - String razonSocial
-        - String correoElectronico
-        - String telefono
-        - Boolean autorizaNotificacion
-        - String partidaSunarp
-        - String asientoSunarp
-        - String dniRepresentante
-        - String nombreRepresentante
-        - String poderSunarp
-        - String nombreComercial
-        - String ciiuCodigo
-        - String giroNegocio
-        - String actividadDetallada
-        - String zonificacion
-        - FuncionEdificacion funcionEdificacion
-        - String direccionEstablecimiento
-        - String tipoVia
-        - String nombreVia
-        - String numeroVivienda
-        - String interior
-        - String manzana
-        - String lote
-        - String urbanizacion
-        - String distrito
-        - String provincia
-        - String departamento
-        - String referenciaUbicacion
-        - BigDecimal areaMetrosCuadrados
-        - BigDecimal areaTerreno
-        - BigDecimal areaTechadaTotal
-        - BigDecimal areaOcupadaTotal
-        - Integer aforoPersonas
-        - Integer numeroPisos
-        - Integer antiguedadEdificacion
-        - Integer antiguedadGiro
-        - Boolean requiereAutorizacionSectorial
-        - String sectorEntidad
-        - String sectorDenominacion
-        - String sectorFecha
-        - String sectorNumero
-        - EstadoExpediente estado
-        - NivelRiesgo nivelRiesgo
-        - BigDecimal montoTasa
-        - String voucherId
-        - String licenciaQrCode
-        - String numeroLicencia
-        - String categoriaEstablecimiento
-        - String horaInicio
-        - String horaFin
-        - LocalDateTime fechaAprobacion
-        - String numeroInformeItse
-        - LocalDateTime fechaInformeItse
-        - String numeroOperacionSat
-        - LocalDateTime fechaPagoSat
-        - Anexo4Condiciones anexo4Condiciones
-        - LocalDateTime fechaCreacion
-        - LocalDateTime fechaLimite
-        + getTipoItse() String
-        + cambiarEstado(EstadoExpediente) void
-    }
+sequenceDiagram
+    autonumber
+    actor A as Autoridad Competente (ROLE_ADMIN)
+    participant RC as ResolucionAdministrativaController
+    participant RS as ResolucionAdministrativaService
+    participant FP as FirmaDigitalPort
+    participant LC as LicenciaController
+    participant LS as LicenciaService
+    participant DB as PostgreSQL 16
 
-    class TarifaTupa {
-        - Long id
-        - NivelRiesgo nivelRiesgo
-        - BigDecimal monto
-        - String descripcion
-        - LocalDateTime fechaActualizacion
-    }
+    A->>RC: POST /api/resoluciones/{id}/firmar
+    RC->>RS: firmarResolucionAdministrativa(id, firmanteDni, nombre, cargo)
+    RS->>FP: firmarDocumento(pdfBytes, dni, nombre, cargo)
+    alt Proveedor de firma no habilitado / Falla técnica
+        FP-->>RS: ResultadoFirmaDigital.error("Servicio no configurado")
+        RS->>DB: Actualiza estado = ERROR_FIRMA
+        RS-->>RC: HTTP 422 Unprocessable Entity
+        RC-->>A: Emisión bloqueada: Resolución pendiente de firma oficial
+    else Firma digital exitosa
+        FP-->>RS: ResultadoFirmaDigital.exito(pdfFirmadoBytes, hashSha256)
+        RS->>DB: Actualiza estado = FIRMADA, archivo_pdf = pdfFirmadoBytes
+        RS-->>RC: HTTP 200 OK (Resolución Oficial Firme)
 
-    class Usuario {
-        - Long id
-        - String username
-        - String password
-        - String nombreCompleto
-        - RolUsuario rol
-        - Boolean activo
-    }
-
-    class Anexo4Condiciones {
-        - BigDecimal areaTerreno
-        - BigDecimal areaTechadaTotal
-        - BigDecimal areaOcupadaTotal
-        - Integer aforoPersonas
-        - Integer antiguedadEdificacionAnios
-        - Integer antiguedadGiroAnios
-        - Boolean noEnProcesoConstruccion
-        - Boolean cuentaServiciosBasicos
-        - Boolean cuentaMobiliarioBasico
-        - Boolean tieneEquiposInstalados
-        - Boolean mediosEvacuacionLibres
-        - Boolean senalizacionSeguridad
-        - Boolean lucesEmergenciaOperativas
-        - Boolean tableroElectricoProtegido
-        - Boolean interruptoresDiferenciales
-        - Boolean pozoTierraVigente
-        - Boolean extintoresOperativos
-        - Boolean estructurasSinRiesgoColapso
-        - Boolean cablesProtegidosTubosPvc
-    }
-
-    class HistorialEstado {
-        - UUID id
-        - UUID expedienteId
-        - EstadoExpediente estadoAnterior
-        - EstadoExpediente estadoNuevo
-        - String usuario
-        - String motivo
-        - LocalDateTime fecha
-    }
-
-    class EstadoExpediente {
-        <<enum>>
-        FORMATOS_GENERADOS
-        DOCUMENTOS_VALIDADOS
-        EN_EVALUACION_FINAL
-        APROBADO
-        RECHAZADO
-    }
-
-    class NivelRiesgo {
-        <<enum>>
-        BAJO
-        MEDIO
-        ALTO
-        MUY_ALTO
-    }
-
-    class RolUsuario {
-        <<enum>>
-        ROLE_ADMIN
-        ROLE_EVALUADOR
-        ROLE_CAJERO
-    }
-
-    class TipoPersona {
-        <<enum>>
-        NATURAL
-        JURIDICA
-    }
-
-    class TipoDocumento {
-        <<enum>>
-        DNI
-        RUC
-        CARNET_EXTRANJERIA
-    }
-
-    class ModalidadTramite {
-        <<enum>>
-        LICENCIA_INDETERMINADA
-        LICENCIA_TEMPORAL
-        LICENCIA_CON_ANUNCIO
-        LICENCIA_CESIONARIO
-        LICENCIA_MERCADOS_GALERIAS
-        CAMBIO_DENOMINACION
-        TRANSFERENCIA_LICENCIA
-        CESE_ACTIVIDADES
-        OTROS
-    }
-
-    class FuncionEdificacion {
-        <<enum>>
-        SALUD
-        ENCUENTRO
-        HOSPEDAJE
-        EDUCACION
-        INDUSTRIAL
-        OFICINAS_ADMINISTRATIVAS
-        COMERCIO
-        ALMACEN
-    }
-
-    class ExpedienteService {
-        + crearExpediente(CrearExpedienteDto) Expediente
-        + registrarClasificacionRiesgo(UUID, NivelRiesgo, String, String) void
-        + generarVoucher(UUID) VoucherDto
-        + registrarPago(UUID, String, String) void
-        + aprobar(UUID) void
-        + rechazar(UUID, String) void
-        + verificarLicencia(String) VerificacionLicenciaDto
-        + obtenerPorId(UUID) Expediente
-        + obtenerPorNumeroTramite(String) Expediente
-    }
-
-    class CalculadoraDeTasa {
-        + calcularTasa(NivelRiesgo) BigDecimal
-        + calcularDesglose(NivelRiesgo) Map
-    }
-
-    class DocumentoPdfService {
-        + generarAnexo1DeclaracionJurada(ExpedienteResponseDto) byte[]
-        + generarAnexo3MatrizRiesgoItse(ExpedienteResponseDto) byte[]
-        + generarAnexo4CondicionesSeguridad(ExpedienteResponseDto) byte[]
-        + generarDeclaracionJurada(ExpedienteResponseDto) byte[]
-        + generarVoucherSatPdf(VoucherDto) byte[]
-        + generarLicenciaPdf(ExpedienteResponseDto) byte[]
-        + generarImagenQr(String, int, int) byte[]
-    }
-
-    ExpedienteService --> Expediente : orquesta
-    ExpedienteService --> CalculadoraDeTasa : calcula tasa TUPA
-    Expediente *-- Anexo4Condiciones : contiene embebido
-    Expediente --> EstadoExpediente : estado actual
-    Expediente --> NivelRiesgo : nivelRiesgo
-    Expediente --> TipoPersona : tipoPersona
-    Expediente --> TipoDocumento : tipoDocumento
-    Expediente --> ModalidadTramite : modalidadTramite
-    Expediente --> FuncionEdificacion : funcionEdificacion
-    Expediente --> HistorialEstado : tiene historial
-    HistorialEstado --> EstadoExpediente : estadoAnterior
-    HistorialEstado --> EstadoExpediente : estadoNuevo
-    Usuario --> RolUsuario : asignado
-    TarifaTupa --> NivelRiesgo : nivelRiesgo
-    CalculadoraDeTasa --> TarifaTupa : consulta tasa en BD
-    DocumentoPdfService ..> Expediente : lee para generar PDF
-```
-
----
-
-## 6. Máquina de Estados — Normativa, Actores y Documentos
-
-| Estado C4 | Actor Responsable | Documentos Generados | Precondición Legal para Transicionar |
-|-----------|-------------------|----------------------|--------------------------------------|
-| **`FORMATOS_GENERADOS`** | Administrado -> Mesa de Partes | Anexo 1 (DJ) + Anexo 4 (Cond. Seguridad) + Anexo 3 (Riesgo) | Validación DNI/RUC y presunción de veracidad (Ley N° 27444 Art. 42°) |
-| **`DOCUMENTOS_VALIDADOS`** | Subgerencia de Defensa Civil | Dictamen ITSE + Informe Técnico Nro. | Clasificación de riesgo asignada; tasa TUPA calculada automáticamente |
-| **`EN_EVALUACION_FINAL`** | SAT Huamanga / Tesorería | Voucher SAT con Code 128 | Constancia de pago registrada con número de operación bancaria |
-| **`APROBADO`** | Gerencia de Licencias | Certificado Oficial con QR + Firma Digital | Dictámenes ITSE y zonificación favorables; pago verificado |
-| **`RECHAZADO`** | Gerencia de Licencias | Resolución de Denegatoria | Dictamen desfavorable o zonificación no compatible |
-
----
-
-## 7. Diagrama de Flujo del Wizard Ciudadano (Fase 3 y 4)
-
-```mermaid
-graph TD
-    A["Ciudadano accede a<br>portal-ciudadano.html"] --> B
-
-    subgraph Wizard [Wizard 3 Pasos - Mesa de Partes Virtual]
-        B["PASO 1: Datos del Solicitante<br>Nombre Titular<br>DNI/RUC validado<br>Telefono celular<br>Correo electronico"] -->|"irPaso(2) - validarPaso(1)"| C
-        C["PASO 2: Datos del Establecimiento<br>Nombre comercial y Giro CIIU<br>Direccion completa<br>Area m2 determina riesgo ITSE<br>N de pisos"] -->|"irPaso(3) - validarPaso(2)"| D
-        D["PASO 3: Confirmacion<br>Resumen de 10 campos<br>Declaracion Jurada checkbox<br>Boton Enviar con spinner"] -->|"registrarSolicitud() - POST /api/expedientes"| E
+        A->>LC: POST /api/licencias/emitir
+        LC->>LS: emitirLicencia(resolucionId, tipoVigencia)
+        LS->>DB: Verifica resolucion.estado == FIRMADA
+        LS->>LS: Genera token QR criptográfico no enumerable (SecureRandom)
+        LS->>LS: Renderiza Licencia Oficial OpenPDF con QR ZXing
+        LS->>DB: Guarda LicenciaEmitida (LIC-YYYY-XXXXX, archivo_pdf, hashSha256)
+        LS->>DB: Transiciona Expediente -> APROBADO (licenciaQrCode)
+        LS-->>LC: LicenciaEmitidaDto
+        LC-->>A: HTTP 201 Created (Licencia Oficial Emitida)
     end
-
-    E["Banner de Exito<br>EXP-2026-XXXXX generado"] --> F
-    E --> G
-    E --> H
-
-    F["Descargar Anexo 1<br>GET /api/expedientes/:id/documentos/declaracion-jurada"]
-    G["Descargar Anexo 3<br>POST /api/formularios/anexo3-matriz-riesgo-itse"]
-    H["Descargar Anexo 4<br>POST /api/formularios/anexo4-condiciones-seguridad"]
-
-    E --> I["Ir a Seguimiento<br>Consultar estado por N tramite"]
 ```
 
 ---
 
-## 8. Stack Tecnológico Completo
+## 5. Resumen de Estados de Implementación
 
-| Capa | Tecnología | Versión | Justificación |
-|------|-----------|---------|---------------|
-| **Lenguaje** | Java | 21 LTS | Records, sealed classes, virtual threads |
-| **Framework Backend** | Spring Boot | 3.3.4 | Estabilidad enterprise, soporte largo plazo |
-| **Seguridad & RBAC** | Spring Security + JJWT | 6.3 / 0.12.6 | Autenticación sin estado, RBAC por endpoint |
-| **Email Asíncrono** | Spring JavaMail + Thymeleaf | 3.3.4 | Plantillas HTML dinámicas, hilo pool desacoplado |
-| **ORM / Persistencia** | Spring Data JPA + Hibernate | 6.5 | Portabilidad, validaciones de integridad |
-| **Base de Datos** | PostgreSQL / H2 | 15 / In-Memory | Confiabilidad, soporte JSON, tests portables |
-| **Generación PDF** | OpenPDF (LibrePDF fork) | 2.0.3 | Open source, formatos oficiales idénticos |
-| **Códigos QR** | ZXing | 3.5.3 | Estándar de facto para QR y Code 128 |
-| **Mapeo DTO-Entity** | MapStruct | 1.5.5 | Generación en tiempo de compilación |
-| **Reducción boilerplate** | Lombok | Latest SB | Builders, getters, @Slf4j |
-| **API Docs** | SpringDoc OpenAPI (Swagger UI) | 2.6.0 | Integración nativa Spring Boot 3 |
-| **Gateway** | Spring Cloud Gateway | 2023.0.3 | Enrutamiento reactivo, filtros |
-| **Frontend** | HTML5 + CSS3 + Vanilla JS | — | Sin dependencias: máxima portabilidad |
-| **Contenedores** | Docker + Docker Compose | v2 | Reproducibilidad del entorno |
-| **CI/CD** | GitHub (repositorio) | — | Control de versiones + auditoría de ramas |
-
----
-
-*Versión del Documento: Fase 04 — Completada el 2026-10-02*  
-*Municipalidad Provincial de Huamanga — Gerencia de Licencias y Autorizaciones*
+| Componente | Estado Arquitectónico | Evidencia en el Código |
+| :--- | :---: | :--- |
+| **M01: Cuentas y Operadores** | **IMPLEMENTADO** | `CuentaController`, `CuentaService`, `Cuenta`, `OperadorCuenta` (13 tests). |
+| **M02: Establecimientos** | **IMPLEMENTADO** | `EstablecimientoController`, `EstablecimientoService`, `CatalogoCiiu` (11 tests). |
+| **M03: Borradores** | **IMPLEMENTADO** | `SolicitudBorradorController`, `SolicitudBorradorService` (15 tests). |
+| **M04: Documentación ITSE** | **IMPLEMENTADO** | `DocumentoVersionadoController`, generadores de Anexos 1, 3 y 4 (43 tests). |
+| **M05: Pagos SAT** | **IMPLEMENTADO** | `PagoExpedienteController`, `PagoExpedienteService` (22 tests). |
+| **M06: Expedientes** | **IMPLEMENTADO** | `ExpedienteController`, `ExpedienteService`, 10 estados (33 tests). |
+| **M07: Zonificación** | **IMPLEMENTADO** | `EvaluacionZonificacionController`, `SolicitudRectificacionController` (17 tests). |
+| **M08: Evaluación e Informes** | **IMPLEMENTADO** | `EvaluacionAdministrativaController`, `InformeAdministrativoService` (27 tests). |
+| **M09: Resoluciones y Licencias** | **IMPLEMENTADO** | `ResolucionAdministrativaController`, `LicenciaService`, `FirmaDigitalPort` (22 tests). |
+| **M10: Verificación QR e Inspector** | **IMPLEMENTADO** | `LicenciaController`, `InspectorLicenciasController`, Leaflet JS (17 tests). |
+| **M11: Notificaciones** | **PARCIAL** | Solo JavaMail SMTP activo; WhatsApp pendiente de integración institucional. |
+| **M12: Administración** | **PARCIAL** | Tarifas TUPA dinámicas implementadas; catálogos PDU pendientes de pantalla UI. |

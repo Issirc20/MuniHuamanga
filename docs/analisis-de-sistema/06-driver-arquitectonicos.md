@@ -1,19 +1,16 @@
 # 06. Drivers Arquitectónicos (Architectural Drivers)
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
-### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
+### Municipalidad Provincial de Huamanga (Ayacucho, Perú) — Versión 2.0
 
-> **Marco Metodológico:** ADD (Attribute-Driven Design - SEI) / ISO/IEC 25010  
+> **Marco Metodológico:** ADD (Attribute-Driven Design - SEI) / ISO/IEC 25010
 > **Ubicación:** `docs/analisis-de-sistema/06-driver-arquitectonicos.md`
+> **Estado:** Documento Canónico Vigente V2
 
 ---
 
 ## 1. Introducción y Concepto
 
-Los **Drivers Arquitectónicos** (o Fuerzas Arquitectónicas) son los factores clave que condicionan, moldean y justifican las decisiones de diseño estructural del sistema de software. 
-
-Un driver arquitectónico no es simplemente un requisito más; es un requisito funcional, atributo de calidad, objetivo de negocio o restricción técnica que tiene un **impacto desproporcionado en la arquitectura**, de modo que cambiarlo obligaría a rediseñar componentes estructurales del sistema.
-
-En el Sistema de Licencias de la Municipalidad Provincial de Huamanga, los drivers arquitectónicos se estructuran en cuatro dimensiones interconectadas:
+Los **Drivers Arquitectónicos** son los factores determinantes que condicionan, moldean y justifican las decisiones estructurales del sistema MuniHuamanga V2. Representan fuerzas clave de negocio, técnicas, de calidad y restricciones que influyen directamente en la topología de monolito modular, la segregación de puertos y adaptadores y la estrategia de seguridad institucional.
 
 ```mermaid
 graph TD
@@ -21,51 +18,49 @@ graph TD
     classDef catNode fill:#2B6CB0,stroke:#1A365D,color:#ffffff,stroke-width:1px;
     classDef leafNode fill:#EDF2F7,stroke:#CBD5E0,color:#2D3748;
 
-    ROOT["🎯 Drivers Arquitectónicos"]:::rootNode
+    ROOT["🎯 Drivers Arquitectónicos V2"]:::rootNode
 
     BIZ["🏢 1. Drivers de Negocio"]:::catNode
     ROOT --> BIZ
     BIZ --> B1["Cumplimiento TUO Ley 28976"]:::leafNode
-    BIZ --> B2["Cero Papel en Mesa de Partes"]:::leafNode
-    BIZ --> B3["Celeridad: Reducción de 45 a 1-15 días"]:::leafNode
-    BIZ --> B4["Erradicación de Licencias Falsas con QR"]:::leafNode
-    BIZ --> B5["Transparencia Tributaria SAT"]:::leafNode
+    BIZ --> B2["Cero Emisión de Licencias Falsas (Firma IOFE)"]:::leafNode
+    BIZ --> B3["Celeridad: 1 a 15 días hábiles"]:::leafNode
+    BIZ --> B4["Protección de Datos Personales (Ley 29733)"]:::leafNode
 
     TECH["⚙️ 2. Drivers Técnicos"]:::catNode
     ROOT --> TECH
     TECH --> T1["Java 21 LTS y Spring Boot 3.3.4"]:::leafNode
     TECH --> T2["Clean Architecture y Ports & Adapters"]:::leafNode
-    TECH --> T3["Renderizado In-Memory OpenPDF y ZXing"]:::leafNode
-    TECH --> T4["Persistencia Relacional ACID PostgreSQL"]:::leafNode
-    TECH --> T5["Seguridad Stateless JWT RBAC"]:::leafNode
-    TECH --> T6["Envío Asíncrono de Correos"]:::leafNode
+    TECH --> T3["FirmaDigitalPort Fail-Closed (ADR-04)"]:::leafNode
+    TECH --> T4["Persistencia PostgreSQL 16 con ACID y Secuencias Atómicas"]:::leafNode
+    TECH --> T5["Autorización Backend IDOR/BOLA (ADR-02)"]:::leafNode
 
     QUAL["⭐ 3. Drivers de Calidad"]:::catNode
     ROOT --> QUAL
-    QUAL --> Q1["Latencia P95 ≤ 200 ms en Verificación"]:::leafNode
-    QUAL --> Q2["Alta Concurrencia 150 usuarios"]:::leafNode
-    QUAL --> Q3["Mantenibilidad y TUPA en Caliente"]:::leafNode
-    QUAL --> Q4["Auditabilidad Legal Inmutable"]:::leafNode
+    QUAL --> Q1["Latencia P95 ≤ 200 ms en Verificación QR"]:::leafNode
+    QUAL --> Q2["Concurrencia ≥ 150 usuarios simultáneos"]:::leafNode
+    QUAL --> Q3["Mantenibilidad: 301 tests automatizados"]:::leafNode
+    QUAL --> Q4["Inmutabilidad Documental con SHA-256"]:::leafNode
 
-    CONST["🔒 4. Restricciones Primarias"]:::catNode
+    CONST["🔒 4. Restricciones Institucionales"]:::catNode
     ROOT --> CONST
-    CONST --> C1["Infraestructura On-Premise Modesta"]:::leafNode
-    CONST --> C2["Equipo de TI Municipal Reducido"]:::leafNode
-    CONST --> C3["Firma Presencial de Anexos ITSE"]:::leafNode
+    CONST --> C1["Monolito Modular (Proceso JVM único)"]:::leafNode
+    CONST --> C2["Procesos Manuales SAT y Defensa Civil (ADR-06)"]:::leafNode
+    CONST --> C3["Exclusión de Fiscalización Sancionadora (ADR-06)"]:::leafNode
 ```
 
 ---
 
-## 2. Clasificación Exhaustiva de Drivers Arquitectónicos
+## 2. Clasificación Exhaustiva de Drivers Arquitectónicos V2
 
 ### 2.1. Drivers de Negocio (Business Drivers)
 
 | ID | Driver de Negocio | Descripción y Motivación | Impacto en la Arquitectura |
 |---|---|---|---|
-| **DB-01** | **Cumplimiento Vinculante de la Ley N° 28976 y D.S. N° 046-2017-PCM** | La municipalidad debe emitir licencias estandarizadas a nivel nacional con vigencia indeterminada y bajo plazos no negociables. | Modela el ciclo de vida del expediente mediante una máquina de estados finita que hace cumplir los plazos máximos por ley (1 a 15 días hábiles). |
-| **DB-02** | **Cero Papel y Digitalización Ciudadana** | Sustituir las colas físicas en mesa de partes por una experiencia virtual accesible desde cualquier dispositivo. | Diseño de un Wizard ciudadano de 3 pasos y renderizado automático de los formatos PDF oficiales prellenados. |
-| **DB-03** | **Erradicación de Falsificaciones de Licencias** | En la provincia de Huamanga existía un alto índice de licencias apócrifas o adulteradas en locales de alto riesgo. | Incorporación obligatoria de código QR de alta resolución con validación pública en tiempo real (`GET /api/public/licencias/{id}`). |
-| **DB-04** | **Transparencia Tributaria y Liquidación SAT** | Asegurar que ningún expediente avance a la fase de inspección o emisión sin haber conciliado el pago exacto de la tasa TUPA. | Integración desacoplada con el SAT mediante el puerto `SatPort` y transición automática condicionada al pago. |
+| **DB-01** | **Cumplimiento Vinculante de la Ley N° 28976** | La municipalidad debe emitir licencias con vigencia indeterminada bajo plazos perentorios de 1 a 15 días hábiles. | Máquina de estados de 10 transiciones que controla plazos y alertas de silencio administrativo. |
+| **DB-02** | **Erradicación Total de Licencias Falsas** | Evitar la falsificación o clonación de licencias mediante firma digital institucional y código QR dinámico. | Implementación de `FirmaDigitalPort` con bloqueo *fail-closed* y verificación QR diferenciada (ADR-04, ADR-05, ADR-07). |
+| **DB-03** | **Protección de Datos Personales (Ley N° 29733)** | Prohibición de exponer DNI, teléfonos o geolocalización exacta a cualquier persona que escanee el QR comercial. | Minimización estricta de datos en la consulta pública y vista ampliada protegida para inspectores (ADR-05). |
+| **DB-04** | **Transparencia Tributaria y Recaudación SAT** | Asegurar que ningún trámite avance sin la validación documental y manual del abono de la tasa TUPA. | Módulo de pagos desacoplado con estados `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO` y `RECHAZADO` (ADR-06). |
 
 ---
 
@@ -73,62 +68,44 @@ graph TD
 
 | ID | Driver Técnico | Justificación Técnica | Decisión Arquitectónica Asociada |
 |---|---|---|---|
-| **DT-01** | **Ecosistema Java 21 LTS y Spring Boot 3.3.4** | Soporte de largo plazo, rendimiento mejorado de la máquina virtual (JVM), Virtual Threads preparados y librerías empresariales estables. | Estandarización de todo el backend sobre Java 21 y Spring Boot 3.3.4 empaquetado con Maven multi-módulo. |
-| **DT-02** | **Desacoplamiento mediante Clean Architecture y Hexagonal** | Las reglas del negocio municipal no deben depender de librerías externas ni de sistemas de otras gerencias (SAT, Defensa Civil). | Separación estricta en 4 capas concéntricas con regla de dependencias unidireccionales y puertos de salida (`*Port`). |
-| **DT-03** | **Renderizado Documental In-Memory sin I/O en Disco** | Guardar archivos temporales en disco generaría cuellos de botella de I/O, fragmentación y riesgos de seguridad. | Uso de OpenPDF 2.0.3 y ZXing trabajando enteramente con streams de bytes en memoria volátil de la JVM. |
-| **DT-04** | **Transaccionalidad ACID en PostgreSQL 15** | El expediente y sus tablas anexas (pagos, tasas y auditoría) deben mantener consistencia absoluta en todo momento. | Persistencia relacional con Spring Data JPA y transacciones locales relacionales (`@Transactional`). |
-| **DT-05** | **Seguridad Stateless mediante JJWT y Spring Security 6** | Evitar almacenamiento de sesiones en memoria del servidor para facilitar escalabilidad y consumo por clientes heterogéneos. | Autenticación basada en Bearer Tokens JWT firmados con HMAC-SHA256 y roles RBAC estrictos. |
+| **DT-01** | **Java 21 LTS y Spring Boot 3.3.4** | Soporte empresarial a largo plazo, Virtual Threads y modernización sobre Jakarta EE 10. | Estandarización unificada del backend multi-módulo Maven (`common-domain` y `servicio-expedientes`). |
+| **DT-02** | **Puertos y Adaptadores Hexagonales** | Desacoplamiento de la lógica de negocio respecto a infraestructura externa cambiante. | `FirmaDigitalPort`, `SatPort`, `DefensaCivilPort`, `EdificacionesPort` (ADR-01, ADR-04). |
+| **DT-03** | **Política Fail-Closed de Firma Digital** | Si el proveedor IOFE falla, no emitir documentos con sellos apócrifos ni habilitar el QR. | Estado `ERROR_FIRMA` y bloqueo preventivo de emisión oficial de licencias (ADR-04, ADR-07). |
+| **DT-04** | **Transaccionalidad y Secuencias Atómicas en PostgreSQL 16** | Generación de resoluciones (`RES-YYYY-XXXXX`) y licencias (`LIC-YYYY-XXXXX`) sin duplicados ni colisiones concurrentes. | Bloqueo pesimista `PESSIMISTIC_WRITE` en tablas de secuencias anuales dedicadas (ADR-07). |
+| **DT-05** | **Autorización Centralizada en Backend (Anti IDOR/BOLA)** | Cero confianza en controles visuales de frontends estáticos. | Anotaciones `@PreAuthorize("@expedienteSecurity.isOwner(...)")` en todos los métodos de consulta y mutación (ADR-02). |
+| **DT-06** | **Inmutabilidad y Versionado Documental con SHA-256** | Valor probatorio y trazabilidad de recaudos subsanados. | Tabla `documentos_adjuntos` versionada con cálculo de hash SHA-256 (ADR-03). |
 
 ---
 
 ### 2.3. Drivers de Calidad (Quality Attribute Drivers - ISO/IEC 25010)
 
-| ID | Atributo de Calidad | Meta / Medida Cuantitativa | Decisión Arquitectónica Asociada |
+| ID | Atributo de Calidad | Meta Cuantitativa | Decisión Arquitectónica Asociada |
 |---|---|---|---|
-| **DQ-01** | **Eficiencia de Desempeño (Latencia QR)** | $P_{95} \le 200\text{ ms}$ en la consulta pública de autenticidad. | Endpoint público optimizado de solo lectura con consulta indexada por código QR o número de licencia. |
-| **DQ-02** | **Concurrencia Simultánea** | Soportar $\ge 150$ peticiones simultáneas sin bloqueos ni caídas. | Configuración afinada del pool de conexiones HikariCP y eliminación de saltos de red interservicios (Monolito Modular). |
-| **DQ-03** | **Mantenibilidad y Modificabilidad (TUPA en Caliente)** | Actualizar tarifas municipales en menos de 1 segundo sin reiniciar el backend. | Entidad `TarifaTupa` con CRUD REST (`PUT /api/tupa/tarifas/{id}`) y fallback de seguridad en `application.yml`. |
-| **DQ-04** | **Auditabilidad Legal Inmutable** | Registro del 100% de las mutaciones de estado con timestamp, IP y usuario. | Tabla `auditoria_expedientes` con política exclusiva de inserción gobernada por `AuditoriaService`. |
+| **DQ-01** | **Eficiencia de Desempeño (Latencia QR)** | $P_{95} \le 200\text{ ms}$ en la consulta pública de licencias. | Consulta indexada por token QR aleatorio no enumerable y minimización de payload JSON. |
+| **DQ-02** | **Concurrencia Simultánea** | Soportar $\ge 150$ transacciones simultáneas sin deadlocks. | Optimización de HikariCP y eliminación de saltos de red interservicios (Monolito Modular). |
+| **DQ-03** | **Mantenibilidad y Calidad de Código** | Suite de **301 pruebas automatizadas** en verde. | Pruebas unitarias de dominio, integración MockMvc, seguridad y generación documental. |
+| **DQ-04** | **TUPA Dinámico en Caliente** | Modificación de tarifas en $< 1$ segundo sin reinicio del servidor. | Servicio `TarifaTupaService` con actualización en caliente y fallback a `application.yml`. |
 
 ---
 
-### 2.4. Restricciones y Supuestos Operativos (Constraints)
+### 2.4. Restricciones Institucionales (Constraints)
 
-| ID | Restricción / Supuesto | Realidad Operativa Municipal | Impacto en el Diseño |
+| ID | Restricción Institucional | Realidad Operativa Municipal | Impacto en el Diseño |
 |---|---|---|---|
-| **CO-01** | **Infraestructura de Servidores Modesta** | La municipalidad dispone de servidores on-premise con recursos moderados (4 a 8 GB RAM totales). | Descarte de arquitecturas pesadas de múltiples microservicios; adopción de **Monolito Modular** en un solo proceso JVM (< 500 MB RAM). |
-| **CO-02** | **Equipo de TI Municipal Reducido** | El equipo de sistemas de la municipalidad es compacto y no cuenta con especialistas dedicados en orquestación de Kubernetes. | Despliegue en un único archivo ejecutable (`servicio-expedientes.jar`) con scripts Docker Compose simples. |
-| **CO-03** | **Firma y Revisión Presencial de Anexos ITSE** | Exigencia legal de presentar físicamente los Anexos 3 y 4 suscritos ante Defensa Civil para inspección ocular. | Generación digital inmediata para descarga e impresión, acompañada de un módulo de "Mesa de Ayuda" instructivo en el portal web. |
+| **CO-01** | **Infraestructura de Servidores Modesta** | Servidores municipales con 4 a 8 GB de RAM disponibles. | Descarte de microservicios distribuidos; adopción de Monolito Modular en un único proceso JVM. |
+| **CO-02** | **Procesos Manuales SAT y Defensa Civil** | SAT opera en ventanillas físicas y Defensa Civil requiere inspección ocular presencial. | Prohibición de acoplamientos automáticos no probados; soporte de flujos de validación manual (ADR-06). |
+| **CO-03** | **Exclusión de Fiscalización Sancionadora** | El sistema de licencias no debe invadir competencias sancionadoras. | Herramienta móvil limitada a consulta y geolocalización, sin módulos de sanciones ni clausuras (ADR-06). |
 
 ---
 
-## 3. Matriz de Impacto de Drivers sobre Decisiones Arquitectónicas
+## 3. Matriz de Trazabilidad Drivers ➡️ Decisiones Arquitectónicas V2
 
-La siguiente matriz cruza los principales drivers con las decisiones técnicas adoptadas en la arquitectura:
-
-```text
-┌────────────────────────────────────────┬─────────────────────────────────────────────────────────────┐
-│ DRIVER ARQUITECTÓNICO                  │ DECISIÓN ARQUITECTÓNICA RESULTANTE                          │
-├────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ CO-01 (Hardware Modesto) +             │ Adopción de MONOLITO MODULAR en lugar de microservicios     │
-│ DQ-01 (Latencia < 200 ms)              │ dispersos, eliminando la sobrecarga de red y procesos JVM.   │
-├────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ DT-02 (Desacoplamiento) +              │ Implementación de CLEAN ARCHITECTURE y PUERTOS HEXAGONALES   │
-│ DB-04 (Interoperabilidad SAT/DC)       │ (SatPort, DefensaCivilPort, EdificacionesPort).             │
-├────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ DT-03 (Generación rápida de PDFs) +    │ Renderizado in-memory con OpenPDF y ZXing QR, sin persistir │
-│ DB-02 (Cero Papel)                     │ archivos en disco ni depender de utilitarios nativos del SO.│
-├────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ DQ-03 (Mantenibilidad TUPA) +          │ Servicio de TARIFARIO DINÁMICO en base de datos con         │
-│ DB-01 (Cumplimiento de Tasas)          │ endpoints protegidos y fallback a archivo YAML.             │
-├────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
-│ DT-05 (Seguridad Stateless) +          │ SPRING SECURITY 6 con JJWT y RBAC estricto                  │
-│ DQ-04 (Auditabilidad Inmutable)        │ (ROLE_ADMIN, ROLE_EVALUADOR, ROLE_CAJERO) + AuditoriaService│
-└────────────────────────────────────────┴─────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 4. Conclusión
-
-Los **Drivers Arquitectónicos** han sido el hilo conductor para definir una arquitectura sólida, pragmática y plenamente ajustada a la realidad de la Municipalidad Provincial de Huamanga. Gracias a ellos, el sistema no solo cumple con las exigencias del marco legal, sino que optimiza el consumo de recursos de infraestructura y garantiza un rendimiento sobresaliente para el administrado.
+| Driver Primario | Fuerza Condicionante | Decisión Canónica Vinculante |
+|---|---|---|
+| **CO-01 + DQ-02** | Servidores modestos y alta concurrencia | **ADR-01:** Monolito Modular con Clean Architecture |
+| **DT-05 + DB-03** | Prevención de fuga de datos personales e IDOR/BOLA | **ADR-02:** Autorización Centralizada en Backend |
+| **DT-06 + DB-01** | Multi-establecimientos e inmutabilidad probatoria | **ADR-03:** Cuentas, Establecimientos y Documentos Inmutables |
+| **DB-02 + DT-03** | Erradicación de firmas falsas y política fail-closed | **ADR-04:** Firma Digital Port y Bloqueo de Emisión Falsa |
+| **DB-03 + DQ-01** | Privacidad ciudadana y geolocalización para inspectores | **ADR-05:** Verificación QR con Minimización de Datos |
+| **CO-02 + CO-03** | Operatividad municipal y delimitación institucional | **ADR-06:** Procesos Externos Manuales SAT / Defensa Civil |
+| **DT-04 + DB-02** | Validez jurídica resolutiva y correlativos atómicos | **ADR-07:** Acto Administrativo Resolutivo y Secuencias Atómicas |

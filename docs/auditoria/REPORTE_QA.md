@@ -1,15 +1,15 @@
 # INFORME FORMAL DE ASEGURAMIENTO DE CALIDAD Y PRUEBAS (QA)
 ## Sistema de Gestión Digital de Licencias de Funcionamiento — MuniHuamanga
-**Versión del Producto:** `v0.9.0-rc1` (Post-Fase 4: Automatización y Ejecución de Pruebas)  
-**Fecha de Emisión:** 09 de Octubre de 2026  
-**Responsable Técnico:** Especialista de QA Automatización, Ciberseguridad & Arquitectura de Software  
+**Versión del Producto:** `v0.9.0-rc1` (Post-Fase 4: Automatización y Ejecución de Pruebas)
+**Fecha de Emisión:** 09 de Octubre de 2026
+**Responsable Técnico:** Especialista de QA Automatización, Ciberseguridad & Arquitectura de Software
 **Normativa Evaluada:** Ley N° 28976, D.S. N° 002-2018-PCM, Ley N° 27444 (LPAG) y Ley N° 29733 (Protección de Datos Personales).
 
 ---
 
 ## 1. RESUMEN EJECUTIVO
 
-En cumplimiento de la **Fase 4 del Plan de Auditoría Integral**, se ha completado la ejecución y automatización integral de la suite de pruebas del sistema **MuniHuamanga**. 
+En cumplimiento de la **Fase 4 del Plan de Auditoría Integral**, se ha completado la ejecución y automatización integral de la suite de pruebas del sistema **MuniHuamanga**.
 
 Se resolvieron las deficiencias identificadas en el hallazgo **H13** (*Pruebas de concurrencia e integración desacopladas del entorno real de base de datos*), sustituyendo las simulaciones en memoria por pruebas acopladas al ciclo de vida completo de Spring Boot, pool de conexiones HikariCP y persistencia JPA/SQL en modo compatible PostgreSQL. Asimismo, se ejecutaron pruebas de estrés y carga sobre el servidor en ejecución simulando **150 usuarios virtuales concurrentes** en escenarios reales de uso ciudadano e institucional.
 

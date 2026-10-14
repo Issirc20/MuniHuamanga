@@ -18,8 +18,10 @@ import java.util.Map;
 
 /**
  * Adaptador de Integración (Patrón Ports & Adapters / Clean Architecture).
- * En MuniHuamanga V2, SAT y Edificaciones operan mediante procesos desacoplados y manuales.
- * Se eliminaron las simulaciones ficticias de dictámenes ITSE y actas de fiscalización (ERS-1.3 / RF-VER-008).
+ * En MuniHuamanga V2 (Corrección I02.1), se eliminaron y deshabilitaron todas las simulaciones
+ * que puedan interpretarse como validaciones oficiales o actos administrativos (ERS-1.3 / RF-EVA-003).
+ * Las consultas al SAT y a Edificaciones son de carácter referencial y no sustituyen
+ * la conciliación manual en ventanilla ni el informe técnico motivado del evaluador.
  */
 @Slf4j
 @RestController

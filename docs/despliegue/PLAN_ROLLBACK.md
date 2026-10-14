@@ -1,6 +1,6 @@
 # PLAN DE CONTINGENCIA Y ROLLBACK DE DESPLIEGUE
 ## Sistema de Gestión Digital de Licencias de Funcionamiento — MuniHuamanga
-**Versión:** `v0.9.0-rc1`  
+**Versión:** `v0.9.0-rc1`
 **Objetivo:** Procedimiento operativo estandarizado para revertir un despliegue defectuoso en producción a una versión estable anterior sin pérdida de integridad de datos ni afectación a los trámites ciudadanos.
 
 ---

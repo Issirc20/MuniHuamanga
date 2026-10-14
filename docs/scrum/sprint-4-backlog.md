@@ -1,6 +1,6 @@
 # Sprint 4 Backlog — Integración Fase 2, Métricas Prometheus y Pruebas de Carga
 
-**Objetivo del Sprint:**  
+**Objetivo del Sprint:**
 Completar el desacoplamiento de la Fase 2 mediante el patrón Puertos y Adaptadores (Hexagonal Architecture) para SAT, Defensa Civil, Edificaciones y Fiscalización; instrumentar observabilidad y métricas de rendimiento en tiempo real con Spring Boot Actuator y Micrometer Prometheus (RNF-02); y validar empíricamente la capacidad de atención concurrente de $\ge 150$ usuarios simultáneos con latencia $< 3$ segundos (RNF-01, RNF-02).
 
 ---
@@ -11,7 +11,7 @@ Completar el desacoplamiento de la Fase 2 mediante el patrón Puertos y Adaptado
 - **US-14:** Monitoreo y Métricas de Rendimiento con Micrometer Prometheus (5 SP) — **Completada**
 - **US-15:** Validación de Capacidad de Concurrencia $\ge 150$ Usuarios Concurrentes (5 SP) — **Completada**
 
-**Total Story Points del Sprint 4:** 18 SP  
+**Total Story Points del Sprint 4:** 18 SP
 **Story Points Totales del Proyecto:** 78 SP (100% Completado)
 
 ---

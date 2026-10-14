@@ -1,7 +1,7 @@
 # Plan de Implementación por Incrementos — MuniHuamanga V2
 
-Municipalidad Provincial de Huamanga — Gerencia de Licencias  
-**Fecha:** 13 de octubre de 2026  
+Municipalidad Provincial de Huamanga — Gerencia de Licencias
+**Fecha:** 13 de octubre de 2026
 **Documentos Rectores:** [ERS-MH-V2-001 v1.0] y [DAS-MH-V2-001 v1.0]
 
 ---
@@ -126,25 +126,28 @@ graph TD
 
 ---
 
-### Incremento 08: M09 Firma Digital Institucional y Licencias
-- **Requisitos ERS/DAS:** RF-LIC-003 a 007, RNF-SEG-006, DA-04, CA-07, CA-14.
+### Incremento 08: M09 Resoluciones Administrativas, Firma Digital Institucional y Licencias [IMPLEMENTADO]
+- **Requisitos ERS/DAS:** RF-LIC-003 a 007, RNF-SEG-006, DA-04, ADR-07, CA-07, CA-14.
 - **Acciones Técnicas:**
-  - Definir puerto desacoplado `FirmaDigitalPort` y adaptador para servicio institucional de firma.
-  - Política de salvaguarda: si el servicio de firma institucional aún no está contratado/habilitado, mantener el expediente en estado aprobado y bloquear la emisión formal sin simular firmas criptográficas falsas.
-  - Renderizado inmutable del PDF oficial de la Licencia con identificador único, código QR no enumerable y hash criptográfico.
-  - Habilitar descarga ciudadana de la licencia oficial y registro de constancia de entrega física.
-- **Criterio de Salida:** Licencia inmutable con trazabilidad criptográfica; cero custodia de claves privadas en la aplicación.
+  - Separación entre acto de instrucción (informe técnico M08) y acto resolutivo (`ResolucionAdministrativa`).
+  - Secuencias anuales atómicas con bloqueo pesimista en BD para `RES-YYYY-XXXXX` y `LIC-YYYY-XXXXX`.
+  - Definir puerto desacoplado `FirmaDigitalPort` y adaptador institucional configurable (`munihuamanga.firma-digital.enabled`).
+  - Política de salvaguarda legal: si el servicio de firma institucional no está configurado, mantener el expediente en estado de espera y bloquear la emisión formal sin simular firmas criptográficas falsas.
+  - Renderizado inmutable OpenPDF vectorial de la Licencia con identificador único, código QR aleatorio criptográfico y hash SHA-256.
+  - Emisión transaccional e idempotente con prevención de doble emisión ante concurrencia.
+  - Habilitar descarga de la licencia oficial exclusivamente tras firma digital válida.
+- **Criterio de Salida:** Licencia inmutable con trazabilidad criptográfica; cero custodia de claves privadas en la aplicación; 281 pruebas automatizadas exitosas (0 fallos).
 
 ---
 
-### Incremento 09: M10 Verificación QR y Consulta de Ubicación
+### Incremento 09: M10 Verificación QR y Consulta de Ubicación [IMPLEMENTADO]
 - **Requisitos ERS/DAS:** RF-VER-005 a 008, RNF-SEG-007, CA-09, CA-10, CA-11.
 - **Acciones Técnicas:**
-  - Reestructurar el portal público de verificación QR con diseño responsivo móvil.
-  - Vista pública ciudadana: Consulta de vigencia, número de licencia, nombre comercial, giro y dirección oficial sin exponer datos privados (DNI/RUC o teléfonos).
-  - Vista ampliada autorizada para inspectores municipales con georreferenciación en mapa para comparación en campo.
-  - Confirmación de exclusión estricta de actas de infracción o procesos sancionadores en esta vista.
-- **Criterio de Salida:** Vista pública protegida y vista de inspector operativa con mapa móvil.
+  - Reestructurar el portal público de verificación QR con diseño responsivo móvil (`verificar-licencia.html`, `verificar-licencia.js`).
+  - Vista pública ciudadana: Consulta de vigencia, número de licencia, nombre comercial, giro y dirección oficial con minimización estricta de datos personales según Ley 29733 (sin DNI/RUC, sin UUIDs internos), cabeceras anti-caché (`no-store, must-revalidate`) y Rate Limiting por IP (HTTP 429).
+  - Vista ampliada autorizada para inspectores municipales (`ROLE_INSPECTOR`, `ROLE_ADMIN`) con georreferenciación oficial en mapa interactivo Leaflet sobre OpenStreetMap, distinción de coordenadas `DECLARADA_OFICIAL` vs `RECTIFICADA_APROBADA`, enlace de navegación GPS externa, cálculo local de distancia Haversine y registro inmutable en tabla relacional `auditoria_consultas_inspeccion`.
+  - Confirmación de exclusión estricta de actas de infracción, procesos sancionadores, permisos de edición o descarga de expedientes internos en esta vista.
+- **Criterio de Salida:** Vista pública protegida y vista de inspector operativa con mapa móvil; 301 pruebas automatizadas exitosas (0 fallos, 0 errores, 0 omitidas).
 
 ---
 

@@ -16,6 +16,7 @@ import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
 import pe.gob.munihuamanga.licencias.common.exception.RecursoNoEncontradoException;
+import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort;
 import pe.gob.munihuamanga.licencias.expedientes.model.Anexo4Condiciones;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
@@ -45,6 +46,7 @@ public class ExpedienteService {
     private final AuditoriaService auditoriaService;
     private final MetricasExpedienteService metricasExpedienteService;
     private final NotificacionEmailService notificacionEmailService;
+    private final FirmaDigitalPort firmaDigitalPort;
 
     /**
      * Registra un nuevo expediente en el sistema e inicia en estado FORMATOS_GENERADOS.
@@ -91,6 +93,8 @@ public class ExpedienteService {
                 .id(expedienteId)
                 .numeroTramite(numeroTramite)
                 .solicitanteId(dto.getSolicitanteId())
+                .cuentaId(dto.getCuentaId())
+                .establecimientoId(dto.getEstablecimientoId())
                 // Sección I: Modalidad
                 .modalidadTramite(dto.getModalidadTramite() != null ? dto.getModalidadTramite() : ModalidadTramite.LICENCIA_INDETERMINADA)
                 .plazoTemporalMeses(dto.getPlazoTemporalMeses())
@@ -300,7 +304,13 @@ public class ExpedienteService {
     /**
      * Dictamen final favorable por parte de la Gerencia de Licencias: transiciona a APROBADO
      * y genera el código QR único para la licencia digital.
-     * Valida precondiciones legales antes de emitir la licencia.
+    /**
+     * Dictamen final favorable por parte de la Gerencia de Licencias: transiciona a APROBADO.
+     * En conformidad con la Corrección I02.1 / DAS DA-06:
+     * "Impide que una aprobación produzca una licencia oficialmente emitida o un QR activo sin firma digital válida.
+     * No simules firmas institucionales."
+     * Si no se dispone de firma digital válida, el expediente queda APROBADO administrativamente
+     * pero la emisión del documento oficial y el QR activo quedan bloqueados hasta la firma digital (I08).
      */
     @Transactional
     public void aprobar(UUID id) {
@@ -312,21 +322,37 @@ public class ExpedienteService {
         EstadoExpediente actual = expediente.getEstado();
         EstadoExpediente nuevo = EstadoExpediente.APROBADO;
 
-        String qrCodeUnico = "LIC-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        expediente.setLicenciaQrCode(qrCodeUnico);
         expediente.cambiarEstado(nuevo);
+        expediente.setFechaAprobacion(LocalDateTime.now());
+
+        if (firmaDigitalPort != null && firmaDigitalPort.estaDisponible()) {
+            String qrCodeUnico = "LIC-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            expediente.setLicenciaQrCode(qrCodeUnico);
+            expediente.setFirmaDigitalValida(true);
+
+            auditoriaService.registrarTransicion(
+                    id,
+                    actual,
+                    nuevo,
+                    "GERENCIA_LICENCIAS",
+                    "Expediente evaluado conforme y APROBADO. Licencia emitida con firma digital y QR activo: " + qrCodeUnico
+            );
+            log.info("Expediente {} APROBADO exitosamente con firma digital válida y QR: {}", id, qrCodeUnico);
+        } else {
+            expediente.setLicenciaQrCode(null);
+            expediente.setFirmaDigitalValida(false);
+
+            auditoriaService.registrarTransicion(
+                    id,
+                    actual,
+                    nuevo,
+                    "GERENCIA_LICENCIAS",
+                    "Expediente evaluado conforme y APROBADO administrativamente. Emisión oficial de licencia y QR suspendida: Requiere firma digital válida de la autoridad municipal (FirmaDigitalPort no integrado/no simulado)."
+            );
+            log.info("Expediente {} APROBADO administrativamente. Emisión oficial de licencia y QR suspendidos por falta de firma digital institucional.", id);
+        }
 
         expedienteRepository.save(expediente);
-
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                "GERENCIA_LICENCIAS",
-                "Expediente evaluado conforme y APROBADO. Licencia emitida con QR: " + qrCodeUnico
-        );
-
-        log.info("Expediente {} APROBADO exitosamente con código QR: {}", id, qrCodeUnico);
         metricasExpedienteService.registrarAprobacion();
 
         // Fase 04 Sprint 4-B: Notificación asíncrona de aprobación al ciudadano
@@ -511,8 +537,10 @@ public class ExpedienteService {
     }
 
     /**
-     * US-11 / RNF-20 / RNF-SEG-007 / CA-09: Consulta pública de autenticidad y estado de licencia.
-     * Aplica minimización de datos protegiendo el documento de identidad completo según la Ley N° 29733.
+     * US-11 / RNF-20 / RNF-SEG-007 / CA-09 / Corrección I02.1: Consulta pública de autenticidad y estado de licencia.
+     * En conformidad con la directriz de seguridad:
+     * - Elimina el DNI/RUC de la respuesta pública de verificación QR (Ley N° 29733 de Protección de Datos Personales).
+     * - Impide que una aprobación sin firma digital válida figure como licencia válidamente emitida o vigente.
      */
     @Transactional(readOnly = true)
     public VerificacionLicenciaDto verificarLicencia(String codigoLicencia) {
@@ -528,22 +556,36 @@ public class ExpedienteService {
         return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
                 .map(exp -> {
                     boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
+                    boolean tieneFirmaValida = Boolean.TRUE.equals(exp.getFirmaDigitalValida());
+                    boolean esValida = esAprobado && tieneFirmaValida;
+
+                    String estadoTexto;
+                    String mensaje;
+
+                    if (!esAprobado) {
+                        estadoTexto = "NO VIGENTE (" + exp.getEstado() + ")";
+                        mensaje = "El trámite asociado a este código no se encuentra en estado APROBADO.";
+                    } else if (!tieneFirmaValida) {
+                        estadoTexto = "PENDIENTE DE FIRMA DIGITAL";
+                        mensaje = "El expediente cuenta con evaluación aprobatoria conforme, pero la licencia definitiva se encuentra pendiente de suscripción con firma digital institucional.";
+                    } else {
+                        estadoTexto = "VIGENTE / AUTORIZADA";
+                        mensaje = "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga (Vigencia Indeterminada - Art. 11 Ley N° 28976).";
+                    }
+
                     return VerificacionLicenciaDto.builder()
                             .numeroLicencia(exp.getLicenciaQrCode())
                             .numeroTramite(exp.getNumeroTramite())
                             .titular(exp.getNombreTitular())
-                            .documentoIdentidad(ofuscarDocumento(exp.getDocumentoIdentidad()))
                             .razonSocial(exp.getRazonSocial())
                             .nombreComercial(exp.getNombreComercial())
                             .giro(exp.getGiroNegocio())
                             .direccion(exp.getDireccionEstablecimiento())
                             .nivelRiesgo(exp.getNivelRiesgo())
-                            .estado(esAprobado ? "VIGENTE / AUTORIZADA" : "NO VIGENTE (" + exp.getEstado() + ")")
+                            .estado(estadoTexto)
                             .fechaEmision(exp.getFechaCreacion())
-                            .valida(esAprobado)
-                            .mensajeVerificacion(esAprobado
-                                    ? "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga (Vigencia Indeterminada - Art. 11 Ley N° 28976)."
-                                    : "El trámite asociado a este código no se encuentra en estado APROBADO.")
+                            .valida(esValida)
+                            .mensajeVerificacion(mensaje)
                             .build();
                 })
                 .orElseGet(() -> VerificacionLicenciaDto.builder()
@@ -556,7 +598,7 @@ public class ExpedienteService {
 
     /**
      * RF-VER-007 / DAS DA-05 / CA-10: Consulta ampliada de licencia para inspectores municipales
-     * y evaluadores autorizados. Incluye geolocalización para cotejo en campo sin facultades sancionadoras.
+     * y evaluadores autorizados. Incluye geolocalización y documento de identidad exclusivo para funcionarios.
      */
     @Transactional(readOnly = true)
     public VerificacionAmpliadaDto verificarLicenciaAmpliada(String codigoLicencia) {
@@ -572,9 +614,25 @@ public class ExpedienteService {
         return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
                 .map(exp -> {
                     boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
+                    boolean tieneFirmaValida = Boolean.TRUE.equals(exp.getFirmaDigitalValida());
+                    boolean esValida = esAprobado && tieneFirmaValida;
+
                     String horario = (exp.getHoraInicio() != null && exp.getHoraFin() != null)
                             ? exp.getHoraInicio() + " - " + exp.getHoraFin()
                             : "08:00 - 20:00 (Estándar)";
+
+                    String estadoTexto;
+                    String mensaje;
+                    if (!esAprobado) {
+                        estadoTexto = "NO VIGENTE (" + exp.getEstado() + ")";
+                        mensaje = "El trámite asociado a este código no se encuentra en estado APROBADO.";
+                    } else if (!tieneFirmaValida) {
+                        estadoTexto = "PENDIENTE DE FIRMA DIGITAL";
+                        mensaje = "Expediente con dictamen favorable. Pendiente de suscripción mediante servicio institucional de firma digital.";
+                    } else {
+                        estadoTexto = "VIGENTE / AUTORIZADA";
+                        mensaje = "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga.";
+                    }
 
                     return VerificacionAmpliadaDto.builder()
                             .numeroLicencia(exp.getLicenciaQrCode())
@@ -594,15 +652,13 @@ public class ExpedienteService {
                             .areaMetrosCuadrados(exp.getAreaMetrosCuadrados())
                             .aforoPersonas(exp.getAforoPersonas())
                             .nivelRiesgo(exp.getNivelRiesgo())
-                            .estado(esAprobado ? "VIGENTE / AUTORIZADA" : "NO VIGENTE (" + exp.getEstado() + ")")
+                            .estado(estadoTexto)
                             .fechaEmision(exp.getFechaCreacion())
                             .fechaAprobacion(exp.getFechaAprobacion())
                             .categoriaEstablecimiento(exp.getCategoriaEstablecimiento())
                             .horarioFuncionamiento(horario)
-                            .valida(esAprobado)
-                            .mensajeVerificacion(esAprobado
-                                    ? "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga."
-                                    : "El trámite asociado a este código no se encuentra en estado APROBADO.")
+                            .valida(esValida)
+                            .mensajeVerificacion(mensaje)
                             .latitud(-13.1631)
                             .longitud(-74.2236)
                             .build();

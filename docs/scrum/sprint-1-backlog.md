@@ -1,6 +1,6 @@
 # Sprint 1 Backlog — Mesa de Partes Virtual y Flujo Integral del Expediente
 
-**Objetivo del Sprint:**  
+**Objetivo del Sprint:**
 Digitalizar la captura de solicitudes en Mesa de Partes Virtual con validación legal rigurosa de identidad (DNI/RUC), implementar el flujo normativo de la Ley N° 28976 distinguiendo ITSE Previa e ITSE Posterior, auditoría inmutable de trazabilidad y proveer interfaces de usuario interactivas para administrados y funcionarios.
 
 ---

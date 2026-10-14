@@ -1,6 +1,6 @@
 # Sprint 0 Backlog — Setup del Entorno y Arquitectura Base
 
-**Objetivo del Sprint:**  
+**Objetivo del Sprint:**
 Establecer los cimientos arquitecturales, la configuración del repositorio, la infraestructura de contenedores y los módulos iniciales para habilitar el desarrollo ágil en sprints posteriores.
 
 ---
