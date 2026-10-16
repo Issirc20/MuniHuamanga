@@ -308,9 +308,10 @@ public class ExpedienteController {
         return ResponseEntity.noContent().build();
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PostMapping("/{id}/emision-licencia")
     @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
-    @Operation(summary = "Ruta heredada V1: Emisión directa bloqueada por mandato de I08 (requiere resolución y firma digital)")
+    @Operation(summary = "Ruta heredada V1 obsoleta: Emisión directa bloqueada por mandato de I08 (requiere resolución y firma digital)")
     public ResponseEntity<Map<String, Object>> emisionLicenciaHeredada(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(Map.of(
                 "error", "EMISION_DIRECTA_DESHABILITADA",

@@ -27,36 +27,68 @@ Describe las interacciones entre los usuarios (administrados, operadores, funcio
 
 ```mermaid
 graph TD
-    classDef person fill:#08427b,stroke:#073b6f,color:#fff;
-    classDef system fill:#1168bd,stroke:#0b4884,color:#fff;
-    classDef extManual fill:#718096,stroke:#4a5568,color:#fff;
-    classDef extPendiente fill:#d69e2e,stroke:#b7791f,color:#fff;
+    %% ==========================================
+    %% ESTILOS VISUALES
+    %% ==========================================
+    classDef actorExt fill:#1A365D,stroke:#0F2942,color:#FFFFFF,stroke-width:1.5px;
+    classDef actorInt fill:#2B6CB0,stroke:#1A365D,color:#FFFFFF,stroke-width:1.5px;
+    classDef coreSys  fill:#0D9488,stroke:#042F2E,color:#FFFFFF,stroke-width:2.5px;
+    classDef extOff   fill:#4A5568,stroke:#2D3748,color:#FFFFFF,stroke-dasharray: 4 2;
+    classDef extPend  fill:#B45309,stroke:#78350F,color:#FFFFFF,stroke-dasharray: 4 2;
 
-    ciudadano["Ciudadano / Administrado<br>[Persona]<br>Registra cuenta DNI/RUC, elabora borradores,<br>presenta formalmente su solicitud y subsana observaciones"]:::person
-    operador["Operador Delegado<br>[Persona]<br>Persona autorizada con permisos específicos<br>para gestionar trámites de una persona jurídica"]:::person
-    cajeroSat["Cajero SAT Huamanga<br>[Persona]<br>Recauda tasas TUPA presencialmente<br>y valida comprobantes de pago"]:::person
-    evaluador["Funcionario Evaluador<br>[Persona]<br>Evalúa zonificación PDU, verifica requisitos,<br>elabora informes técnicos y registra observaciones"]:::person
-    autoridad["Autoridad Competente (Subgerente)<br>[Persona]<br>Aprueba informes técnicos, emite resoluciones<br>administrativas y autoriza licencias de funcionamiento"]:::person
-    inspector["Inspector Municipal<br>[Persona]<br>Fiscaliza en campo, escanea QR y verifica<br>vigencia y georreferenciación oficial en mapa"]:::person
+    %% ==========================================
+    %% ACTORES EXTERNOS
+    %% ==========================================
+    subgraph G_EXT["Administrados y Representantes"]
+        direction LR
+        ciudadano["<b>Ciudadano / Administrado</b><br/><i>[Persona]</i><br/>Registro DNI/RUC, solicitud y subsanación"]:::actorExt
+        operador["<b>Operador Delegado</b><br/><i>[Persona]</i><br/>Gestión bajo representación legal"]:::actorExt
+    end
 
-    sistema["MuniHuamanga V2<br>[Sistema de Software - Monolito Modular]<br>Gestión integral del trámite de licencias, 10 estados normativos,<br>cálculo TUPA, verificación QR y trazabilidad inmutable"]:::system
+    %% ==========================================
+    %% ÁMBITO MUNICIPAL
+    %% ==========================================
+    subgraph G_MUN["Ámbito Municipal - Huamanga"]
+        sistema["<b>MuniHuamanga V2</b><br/><i>[Sistema Software - Monolito Modular]</i><br/>Gestión de licencias (10 estados TUPA),<br/>trazabilidad inmutable y verificación QR"]:::coreSys
 
-    sat["SAT Huamanga<br>[Sistema Externo - Proceso Manual / Ventanilla]<br>Recaudación física de tasas TUPA y emisión de comprobantes"]:::extManual
-    defensaCivil["Subgerencia de Defensa Civil<br>[Entidad Externa - Trámite Presencial]<br>Inspección técnica de seguridad en edificaciones (ITSE)"]:::extManual
-    iofe["Proveedor de Firma Digital IOFE<br>[Sistema Externo - Pendiente Activación]<br>Infraestructura Oficial de Firma Electrónica (Ley 27269)"]:::extPendiente
-    pide["Plataforma PIDE (SUNAT / RENIEC / SUNARP)<br>[Sistema Externo - Pendiente Integración]<br>Validación automática de identidad y vigencia de poder"]:::extPendiente
+        subgraph G_STAFF["Personal Operativo y Fiscalización"]
+            evaluador["<b>Funcionario Evaluador</b><br/><i>[Revisión Técnica]</i><br/>Zonificación PDU e informe técnico"]:::actorInt
+            autoridad["<b>Autoridad Competente</b><br/><i>[Subgerente]</i><br/>Aprobación y resolución administrativa"]:::actorInt
+            inspector["<b>Inspector Municipal</b><br/><i>[Fiscalización en Campo]</i><br/>Lectura QR y georreferenciación"]:::actorInt
+            cajeroSat["<b>Cajero SAT Huamanga</b><br/><i>[Ventanilla]</i><br/>Validación física de pagos TUPA"]:::actorInt
+        end
+    end
 
-    ciudadano -->|"Registra solicitud, carga documentos y subsana"| sistema
-    operador -->|"Gestiona trámites autorizados"| sistema
-    cajeroSat -->|"Valida comprobante de pago manualmente"| sistema
-    evaluador -->|"Evalúa zonificación y elabora informe técnico"| sistema
-    autoridad -->|"Aprueba informe y emite resolución"| sistema
-    inspector -->|"Consulta autenticidad y ubicación en campo"| sistema
+    %% ==========================================
+    %% INTEGRACIONES Y SISTEMAS EXTERNOS
+    %% ==========================================
+    subgraph G_INT["Dependencias e Interoperabilidad"]
+        subgraph G_MANUAL["Canal Presencial / Manual"]
+            sat["<b>SAT Huamanga</b><br/><i>[Sistema Externo]</i><br/>Recaudación física y comprobantes"]:::extOff
+            defensaCivil["<b>Subgerencia de Defensa Civil</b><br/><i>[Entidad Externa]</i><br/>Inspección técnica de seguridad (ITSE)"]:::extOff
+        end
 
-    sistema -.->|"Cotejo manual de comprobante de pago"| sat
+        subgraph G_SERVICES["Servicios Digitales Externos"]
+            pide["<b>Plataforma PIDE (PCM)</b><br/><i>[Pendiente Integración]</i><br/>Consultas RENIEC, SUNAT y SUNARP"]:::extPend
+            iofe["<b>Proveedor IOFE</b><br/><i>[Pendiente Activación]</i><br/>Firma digital oficial (Ley 27269)"]:::extPend
+        end
+    end
+
+    %% ==========================================
+    %% RELACIONES
+    %% ==========================================
+    ciudadano   -->|"Registra solicitud y subsana"| sistema
+    operador    -->|"Gestiona trámites delegados"| sistema
+
+    evaluador   -->|"Evalúa zonificación y genera informe"| sistema
+    autoridad   -->|"Aprueba resolución y emite licencia"| sistema
+    inspector   -->|"Audita vigencia y ubicación en campo"| sistema
+    cajeroSat   -->|"Valida comprobante en sistema"| sistema
+
+    sistema -.->|"Cotejo manual de pagos"| sat
     sistema -.->|"Presentación física de Anexos 3 y 4"| defensaCivil
-    sistema -.->|"FirmaDigitalPort (Fail-closed si no está activo)"| iofe
-    sistema -.->|"Verificación registral y de personería"| pide
+    sistema -.->|"Consulta registral y personería"| pide
+    sistema -.->|"FirmaDigitalPort (fail-closed)"| iofe
 ```
 
 ---
@@ -67,45 +99,98 @@ Ilustra la arquitectura técnica consolidada: clientes web ligeros, el contenedo
 
 ```mermaid
 graph TD
-    classDef frontend fill:#63a0e2,stroke:#3b7abf,color:#fff;
-    classDef container fill:#438dd5,stroke:#2e6295,color:#fff;
-    classDef db fill:#23527c,stroke:#173752,color:#fff;
-    classDef ext fill:#718096,stroke:#4a5568,color:#fff;
+    %% ==========================================
+    %% ESTILOS VISUALES C4
+    %% ==========================================
+    classDef person fill:#08427B,stroke:#052A4F,color:#FFFFFF,stroke-width:1.5px;
+    classDef container fill:#1168BD,stroke:#0B4884,color:#FFFFFF,stroke-width:1.5px;
+    classDef db fill:#1A5276,stroke:#113850,color:#FFFFFF,stroke-width:1.5px;
+    classDef extManual fill:#718096,stroke:#4A5568,color:#FFFFFF,stroke-dasharray: 4 2;
+    classDef extService fill:#D69E2E,stroke:#B7791F,color:#FFFFFF,stroke-dasharray: 4 2;
 
-    subgraph ClientesWeb [Capa de Presentación: Interfaces Web Ligeras]
-        landing["Portal Principal / Hub<br>(index.html)<br>[IMPLEMENTADO]"]:::frontend
-        pCiudadano["Portal Ciudadano<br>(portal-ciudadano.html / js)<br>[PARCIAL - Pendiente enlace V2]"]:::frontend
-        pInterno["Portal Interno Municipal<br>(portal-interno.html / js)<br>[IMPLEMENTADO - RBAC JWT]"]:::frontend
-        pVerif["Verificación QR e Inspectores<br>(verificar-licencia.html / js)<br>[IMPLEMENTADO - Leaflet OpenStreetMap]"]:::frontend
-        pAnexo1["Formato Anexo 1 Oficial<br>(formato-anexo1.html / js)<br>[IMPLEMENTADO]"]:::frontend
+    %% ==========================================
+    %% USUARIOS / ROLES
+    %% ==========================================
+    subgraph G_USERS["Usuarios e Interesados"]
+        direction LR
+        ciudadano["<b>Ciudadano / Operador</b><br/><i>[Persona]</i>"]:::person
+        funcionario["<b>Personal Municipal</b><br/><i>[Evaluador / Subgerente / Cajero]</i>"]:::person
+        inspector["<b>Inspector de Campo</b><br/><i>[Fiscalizador]</i>"]:::person
     end
 
-    subgraph BackendApp [Contenedor de Aplicación: servicio-expedientes :8081]
-        app["MuniHuamanga Monolito Modular<br>(Java 21 LTS / Spring Boot 3.3.4)<br>• M01 a M10 Bounded Contexts implementados<br>• Spring Security 6 Stateless (JWT)<br>• Generadores OpenPDF y ZXing QR en memoria<br>• FirmaDigitalPort con salvaguarda fail-closed"]:::container
+    %% ==========================================
+    %% LÍMITE DEL SISTEMA: MUNIHUAMANGA V2
+    %% ==========================================
+    subgraph B_SYSTEM["Límite de Sistema: MuniHuamanga V2"]
+        direction TB
+
+        subgraph G_CLIENTS["Capa de Presentación (Frontend)"]
+            spaPortal["<b>Portal Ciudadano Web</b><br/><i>[Contenedor: SPA Web]</i><br/>Registro de trámites, carga de Anexos TUPA y subsanaciones"]:::container
+            spaAdmin["<b>Portal Administrativo / Backoffice</b><br/><i>[Contenedor: SPA Web]</i><br/>Evaluación técnica, emisión de resoluciones y caja"]:::container
+            pwaInspector["<b>Aplicación Móvil Inspector</b><br/><i>[Contenedor: PWA / Mobile]</i><br/>Escaneo de QR, cotejo offline-first y geolocalización"]:::container
+        end
+
+        apiGateway["<b>API Gateway / Reverse Proxy</b><br/><i>[Contenedor: Reverse Proxy / YARP]</i><br/>Enrutamiento, TLS termination, Rate Limiting y validación JWT"]:::container
+
+        subgraph G_BACKEND["Capa de Aplicación y Lógica de Negocio"]
+            backend["<b>MuniHuamanga Core API</b><br/><i>[Contenedor: Monolito Modular - .NET 10 / ASP.NET Core]</i><br/>Módulos: Licencias, Zonificación PDU, TUPA, Auditoría, Notificaciones y Trazabilidad"]:::container
+            workerService["<b>Background Worker Service</b><br/><i>[Contenedor: Background Service]</i><br/>Generación asíncrona de expedientes en PDF, códigos QR y sincronización de eventos"]:::container
+        end
+
+        subgraph G_STORAGE["Capa de Persistencia y Almacenamiento"]
+            sqlDb[("<b>Base de Datos Principal</b><br/><i>[Contenedor: SQL Server]</i><br/>Esquemas relacionales, estados normativos, expedientes y auditoría inmutable")]:::db
+            cacheDb[("<b>Caché Distribuida</b><br/><i>[Contenedor: Redis]</i><br/>Sesiones de usuario, revocación de tokens y datos maestros PDU")]:::db
+            blobStorage[("<b>Almacén de Archivos</b><br/><i>[Contenedor: Blob Storage]</i><br/>PDFs de expedientes, resoluciones firmadas y sustentos escaneados")]:::db
+        end
     end
 
-    subgraph Almacenamiento [Capa de Persistencia Relacional]
-        postgres[("PostgreSQL 16 Relacional<br>(muni_licencias_db :5432)<br>• 8 scripts SQL aditivos (01..08)<br>• Restricciones UNIQUE y ON DELETE RESTRICT<br>• Binarios PDF inmutables en BYTEA")]:::db
+    %% ==========================================
+    %% SISTEMAS EXTERNOS E INTEROPERABILIDAD
+    %% ==========================================
+    subgraph G_EXT["Sistemas e Integraciones Externas"]
+        sat["<b>SAT Huamanga</b><br/><i>[Sistema Externo / Presencial]</i><br/>Ventanilla de pagos y liquidaciones"]:::extManual
+        defensaCivil["<b>Subgerencia de Defensa Civil</b><br/><i>[Entidad Externa]</i><br/>Cotejo de inspección ITSE"]:::extManual
+        pide["<b>Plataforma PIDE (PCM)</b><br/><i>[Servicio REST / SOAP]</i><br/>Validación RENIEC, SUNAT y SUNARP"]:::extService
+        iofe["<b>Proveedor IOFE</b><br/><i>[Servicio PKI - Ley 27269]</i><br/>Firma digital y sellado de tiempo"]:::extService
     end
 
-    subgraph Externos [Servicios Externos de Soporte]
-        smtp["Servidor SMTP / JavaMail<br>[IMPLEMENTADO - Alertas asíncronas]"]:::ext
-        satManual["Ventanilla SAT Huamanga<br>[PROCESO MANUAL]"]:::ext
-    end
+    %% ==========================================
+    %% RELACIONES: USUARIOS A FRONTENDS
+    %% ==========================================
+    ciudadano   -->|"HTTPS"| spaPortal
+    funcionario -->|"HTTPS"| spaAdmin
+    inspector   -->|"HTTPS"| pwaInspector
 
-    landing --> pCiudadano
-    landing --> pInterno
-    landing --> pVerif
-    landing --> pAnexo1
+    %% ==========================================
+    %% RELACIONES: FRONTENDS AL GATEWAY
+    %% ==========================================
+    spaPortal    -->|"HTTPS / JSON REST"| apiGateway
+    spaAdmin     -->|"HTTPS / JSON REST"| apiGateway
+    pwaInspector -->|"HTTPS / JSON REST"| apiGateway
 
-    pCiudadano -->|"HTTP REST / JSON"| app
-    pInterno -->|"HTTP REST / Bearer JWT"| app
-    pVerif -->|"HTTP REST / Rate Limiter (60/min)"| app
-    pAnexo1 -->|"HTTP REST / Descarga PDF"| app
+    %% ==========================================
+    %% RELACIONES: GATEWAY A SERVICIOS INTERNOS
+    %% ==========================================
+    apiGateway -->|"HTTP / gRPC"| backend
 
-    app -->|"Spring Data JPA / HikariCP / Transacciones ACID"| postgres
-    app -->|"JavaMail asíncrono"| smtp
-    app -.->|"Validación manual por cajero"| satManual
+    %% ==========================================
+    %% RELACIONES: BACKEND A PERSISTENCIA Y ASÍNCRONO
+    %% ==========================================
+    backend -->|"TCP / EF Core"| sqlDb
+    backend -->|"TCP / RESP"| cacheDb
+    backend -->|"HTTPS / SDK"| blobStorage
+    backend -.->|"Encola eventos / PubSub"| cacheDb
+    workerService -.->|"Consume colas / eventos"| cacheDb
+    workerService -->|"Actualiza estados y metadatos"| sqlDb
+    workerService -->|"Almacena reportes generados"| blobStorage
+
+    %% ==========================================
+    %% RELACIONES: INTEROPERABILIDAD EXTERNA
+    %% ==========================================
+    backend -.->|"Consulta registros (FirmaDigitalPort / fail-closed)"| iofe
+    backend -.->|"Cotejo de personería y RUC"| pide
+    spaAdmin -.->|"Validación manual de comprobante físico"| sat
+    backend -.->|"Copia informativa de expediente"| defensaCivil
 ```
 
 ---
@@ -116,78 +201,137 @@ Detalla los componentes internos organizados según Clean Architecture dentro de
 
 ```mermaid
 graph TD
-    classDef comp fill:#63a0e2,stroke:#3b7abf,color:#fff;
-    classDef sec fill:#e53e3e,stroke:#c53030,color:#fff;
-    classDef pdf fill:#d69e2e,stroke:#b7791f,color:#fff;
-    classDef port fill:#38a169,stroke:#276749,color:#fff;
-    classDef db fill:#23527c,stroke:#173752,color:#fff;
+    %% ==========================================
+    %% ESTILOS VISUALES C4
+    %% ==========================================
+    classDef boundary fill:#F8FAFC,stroke:#94A3B8,color:#0F172A,stroke-width:1.5px;
+    classDef controller fill:#1E293B,stroke:#0F172A,color:#FFFFFF,stroke-width:1.5px;
+    classDef usecase fill:#0284C7,stroke:#0369A1,color:#FFFFFF,stroke-width:1.5px;
+    classDef domain fill:#0369A1,stroke:#075985,color:#FFFFFF,stroke-width:2px;
+    classDef port fill:#0D9488,stroke:#115E59,color:#FFFFFF,stroke-width:1.5px;
+    classDef adapter fill:#475569,stroke:#334155,color:#FFFFFF,stroke-width:1.5px;
+    classDef external fill:#B45309,stroke:#78350F,color:#FFFFFF,stroke-dasharray: 4 2;
+    classDef storage fill:#1E3A8A,stroke:#172554,color:#FFFFFF,stroke-width:1.5px;
 
-    subgraph CapaPresentacion [Capa 4: Controladores REST y Seguridad]
-        authCtrl["AuthController<br>(POST /api/auth/login)"]:::sec
-        cuentaCtrl["CuentaController<br>(/api/cuentas)"]:::comp
-        borradorCtrl["SolicitudBorradorController<br>(/api/borradores)"]:::comp
-        expCtrl["ExpedienteController<br>(/api/expedientes)"]:::comp
-        pagoCtrl["PagoExpedienteController<br>(/api/pagos)"]:::comp
-        zonifCtrl["EvaluacionZonificacionController<br>(/api/zonificacion)"]:::comp
-        evalCtrl["EvaluacionAdministrativaController<br>(/api/evaluaciones)"]:::comp
-        resCtrl["ResolucionAdministrativaController<br>(/api/resoluciones)"]:::comp
-        licCtrl["LicenciaController<br>(/api/licencias)"]:::comp
-        inspCtrl["InspectorLicenciasController<br>(/api/inspector/licencias)"]:::comp
-        secConfig["SecurityConfig / JwtFilter / BOLA Evaluators"]:::sec
+    %% ==========================================
+    %% ENTRADAS EXTERNAS AL CONTENEDOR
+    %% ==========================================
+    gateway["<b>API Gateway / Reverse Proxy</b><br/><i>[HTTP Requests / Bearer JWT]</i>"]:::controller
+
+    %% ==========================================
+    %% LÍMITE: CORE API (MONOLITO MODULAR)
+    %% ==========================================
+    subgraph B_CORE["Contenedor: MuniHuamanga Core API (.NET 10 / ASP.NET Core)"]
+        direction TB
+
+        %% ADAPTADORES CONDUCTORES (PRIMARY ADAPTERS)
+        subgraph MOD_WEB["Capa de Entrada (Primary Adapters)"]
+            licenciasCtrl["<b>LicenciasController</b><br/><i>[API Endpoint]</i><br/>Maneja POST, PUT y transiciones"]:::controller
+            zonificacionCtrl["<b>ZonificacionController</b><br/><i>[API Endpoint]</i><br/>Consulta compatibilidad PDU"]:::controller
+            inspeccionCtrl["<b>InspeccionController</b><br/><i>[API Endpoint]</i><br/>Lectura QR y actas de campo"]:::controller
+        end
+
+        %% ==========================================
+        %% MÓDULO 1: TRÁMITE Y LICENCIAS (CORE DOMAIN)
+        %% ==========================================
+        subgraph MOD_LICENCIAS["Módulo: Trámites y Licencias de Funcionamiento"]
+            subgraph APP_LIC["Capa de Aplicación (Use Cases)"]
+                tramiteHandler["<b>ExpedienteCommandHandler</b><br/><i>[MediatR Handler]</i><br/>Orquesta registro, validación y transiciones"]:::usecase
+            end
+
+            subgraph DOM_LIC["Capa de Dominio"]
+                licenciaAggregate["<b>ExpedienteLicencia</b><br/><i>[Aggregate Root]</i><br/>Máquina de 10 estados TUPA, reglas de negocio"]:::domain
+            end
+
+            subgraph PORTS_LIC["Puertos Secundarios (Outbound Interfaces)"]
+                iExpedienteRepo["<b>IExpedienteRepository</b><br/><i>[Output Port]</i>"]:::port
+                iFirmaDigitalPort["<b>IFirmaDigitalPort</b><br/><i>[Output Port - Fail Closed]</i>"]:::port
+                iPidePort["<b>IPideIntegrationPort</b><br/><i>[Output Port]</i>"]:::port
+                iUnitOfWork["<b>IUnitOfWork</b><br/><i>[Output Port]</i>"]:::port
+            end
+        end
+
+        %% ==========================================
+        %% MÓDULO 2: ZONIFICACIÓN Y PDU
+        %% ==========================================
+        subgraph MOD_ZONIFICACION["Módulo: Zonificación PDU"]
+            evaluadorZonif["<b>ZonificacionQueryHandler</b><br/><i>[MediatR Handler]</i><br/>Evalúa compatibilidad de uso"]:::usecase
+            reglaZonif["<b>MatrizCompatibilidadPDU</b><br/><i>[Domain Service]</i>"]:::domain
+            iZonificacionRepo["<b>IZonificacionRepository</b><br/><i>[Output Port]</i>"]:::port
+        end
+
+        %% ==========================================
+        %% MÓDULO 3: FISCALIZACIÓN Y TRAZABILIDAD
+        %% ==========================================
+        subgraph MOD_FISCALIZACION["Módulo: Fiscalización y Auditoría Inmutable"]
+            qrService["<b>QrVerificationHandler</b><br/><i>[Use Case]</i><br/>Verifica hash criptográfico y token QR"]:::usecase
+            iAuditTrailPort["<b>IAuditTrailPort</b><br/><i>[Output Port]</i>"]:::port
+            iBlobStoragePort["<b>IBlobStoragePort</b><br/><i>[Output Port]</i>"]:::port
+        end
+
+        %% ==========================================
+        %% ADAPTADORES GUIADOS (SECONDARY ADAPTERS)
+        %% ==========================================
+        subgraph MOD_INFRA["Capa de Infraestructura (Secondary Adapters)"]
+            direction LR
+            efCoreAdapter["<b>EfCoreExpedienteAdapter</b><br/><i>[EF Core / SQL Server]</i>"]:::adapter
+            iofeAdapter["<b>IofeClientAdapter</b><br/><i>[PKI Client - Ley 27269]</i>"]:::adapter
+            pideAdapter["<b>PideSoapRestClient</b><br/><i>[SUNAT / RENIEC Client]</i>"]:::adapter
+            blobAdapter["<b>AzureBlobOrDiskAdapter</b><br/><i>[Storage Client]</i>"]:::adapter
+            auditAdapter["<b>ImmutableAuditAdapter</b><br/><i>[Append-only Log]</i>"]:::adapter
+        end
     end
 
-    subgraph CapaAplicacion [Capa 2: Servicios de Casos de Uso]
-        cuentaSvc["CuentaService<br>[IMPLEMENTADO]"]:::comp
-        borradorSvc["SolicitudBorradorService<br>[IMPLEMENTADO]"]:::comp
-        presentaSvc["PresentacionFormalService<br>[IMPLEMENTADO]"]:::comp
-        expSvc["ExpedienteService<br>[IMPLEMENTADO]"]:::comp
-        pagoSvc["PagoExpedienteService<br>[IMPLEMENTADO]"]:::comp
-        zonifSvc["EvaluacionZonificacionService<br>[IMPLEMENTADO]"]:::comp
-        evalSvc["InformeAdministrativoService<br>[IMPLEMENTADO]"]:::comp
-        checklistSvc["ChecklistAdministrativoService<br>[IMPLEMENTADO]"]:::comp
-        resSvc["ResolucionAdministrativaService<br>[IMPLEMENTADO]"]:::comp
-        licSvc["LicenciaService<br>[IMPLEMENTADO]"]:::comp
-        rateLimiter["RateLimiterService<br>[IMPLEMENTADO]"]:::comp
-        auditoriaSvc["AuditoriaService<br>[IMPLEMENTADO]"]:::comp
-    end
+    %% ==========================================
+    %% PERSISTENCIA Y SERVICIOS EXTERNOS
+    %% ==========================================
+    sqlDb[("<b>SQL Server</b><br/><i>[Base de Datos Relacional]</i>")]:::storage
+    blobDb[("<b>Blob Storage</b><br/><i>[Almacén de Documentos]</i>")]:::storage
+    pideExt["<b>Plataforma PIDE (PCM)</b><br/><i>[Servicio Externo]</i>"]:::external
+    iofeExt["<b>Servicio IOFE</b><br/><i>[Servicio PKI Externo]</i>"]:::external
 
-    subgraph CapaPuertos [Puertos Hexagonales e Interfaces]
-        firmaPort["FirmaDigitalPort<br>(Interface de Salida)"]:::port
-        firmaAdapter["FirmaDigitalAdapterService<br>(Fail-Closed Adapter)"]:::comp
-    end
+    %% ==========================================
+    %% CONEXIONES Y FLUJOS
+    %% ==========================================
+    %% Entrada al Controller
+    gateway -->|"HTTP POST /licencias"| licenciasCtrl
+    gateway -->|"HTTP GET /zonificacion"| zonificacionCtrl
+    gateway -->|"HTTP POST /inspeccion/qr"| inspeccionCtrl
 
-    subgraph CapaAdaptadores [Capa 3: Generadores Documentales y Persistencia]
-        anexo1Gen["Anexo1PdfGenerator (OpenPDF)"]:::pdf
-        licPdfGen["LicenciaPdfGenerator (OpenPDF + ZXing)"]:::pdf
-        jpas["Repositorios Spring Data JPA<br>(Expediente, Resolucion, Licencia, Pago, etc.)"]:::db
-    end
+    %% Controladores a Casos de Uso
+    licenciasCtrl -->|"Envía Command"| tramiteHandler
+    zonificacionCtrl -->|"Envía Query"| evaluadorZonif
+    inspeccionCtrl -->|"Envía Command"| qrService
 
-    expCtrl --> expSvc
-    cuentaCtrl --> cuentaSvc
-    borradorCtrl --> borradorSvc
-    borradorCtrl --> presentaSvc
-    pagoCtrl --> pagoSvc
-    zonifCtrl --> zonifSvc
-    evalCtrl --> evalSvc
-    evalCtrl --> checklistSvc
-    resCtrl --> resSvc
-    licCtrl --> licSvc
-    inspCtrl --> licSvc
-    licCtrl --> rateLimiter
+    %% Casos de Uso a Dominio
+    tramiteHandler -->|"Invoca reglas de transición"| licenciaAggregate
+    evaluadorZonif -->|"Aplica matriz"| reglaZonif
 
-    resSvc --> firmaPort
-    firmaPort --> firmaAdapter
-    licSvc --> licPdfGen
-    expSvc --> anexo1Gen
-    expSvc --> auditoriaSvc
+    %% Casos de Uso a Puertos Secundarios
+    tramiteHandler -->|"Usa"| iExpedienteRepo
+    tramiteHandler -->|"Invoca firma en emisión"| iFirmaDigitalPort
+    tramiteHandler -->|"Consulta personería"| iPidePort
+    tramiteHandler -->|"Confirma transacción"| iUnitOfWork
+    tramiteHandler -->|"Registra evento inmutable"| iAuditTrailPort
 
-    cuentaSvc --> jpas
-    borradorSvc --> jpas
-    expSvc --> jpas
-    pagoSvc --> jpas
-    evalSvc --> jpas
-    resSvc --> jpas
-    licSvc --> jpas
+    evaluadorZonif -->|"Consulta parámetros"| iZonificacionRepo
+    qrService -->|"Verifica archivo y acta"| iBlobStoragePort
+
+    %% Implementación de Puertos por los Adaptadores (Realization)
+    efCoreAdapter -.->|"Implementa"| iExpedienteRepo
+    efCoreAdapter -.->|"Implementa"| iZonificacionRepo
+    efCoreAdapter -.->|"Implementa"| iUnitOfWork
+    iofeAdapter -.->|"Implementa"| iFirmaDigitalPort
+    pideAdapter -.->|"Implementa"| iPidePort
+    blobAdapter -.->|"Implementa"| iBlobStoragePort
+    auditAdapter -.->|"Implementa"| iAuditTrailPort
+
+    %% Adaptadores a Recursos Externos
+    efCoreAdapter -->|"TCP / SQL Queries"| sqlDb
+    auditAdapter -->|"Append-only Writes"| sqlDb
+    blobAdapter -->|"HTTPS / File Upload"| blobDb
+    pideAdapter -.->|"HTTPS / SOAP-REST"| pideExt
+    iofeAdapter -.->|"HTTPS / MTLS (Fail-closed)"| iofeExt
 ```
 
 ---

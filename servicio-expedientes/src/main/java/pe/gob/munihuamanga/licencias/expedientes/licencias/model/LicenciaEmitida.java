@@ -111,7 +111,7 @@ public class LicenciaEmitida {
     @Column(name = "hash_pdf", nullable = false, length = 64)
     private String hashPdf;
 
-    @Column(name = "archivo_pdf")
+    @Column(name = "archivo_pdf", columnDefinition = "BYTEA")
     private byte[] archivoPdf;
 
     @Enumerated(EnumType.STRING)
@@ -120,6 +120,9 @@ public class LicenciaEmitida {
 
     @Column(name = "observaciones_emision", columnDefinition = "TEXT")
     private String observacionesEmision;
+
+    @Column(name = "es_simulada")
+    private Boolean esSimulada;
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;

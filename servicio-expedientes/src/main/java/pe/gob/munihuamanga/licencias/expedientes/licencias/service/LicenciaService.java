@@ -128,10 +128,12 @@ public class LicenciaService {
         // Generar QR bytes y PDF oficial de la licencia
         byte[] qrBytes = documentoPdfService.generarImagenQr(codigoVerificacionQr, 180, 180);
 
+        boolean esSimulada = Boolean.TRUE.equals(res.getEsSimulada());
+
         ExpedienteResponseDto expDto = expedienteMapper.toDto(exp);
         expDto.setNumeroLicencia(numeroLicencia);
         expDto.setLicenciaQrCode(codigoVerificacionQr);
-        expDto.setFirmaDigitalValida(true);
+        expDto.setFirmaDigitalValida(!esSimulada);
         expDto.setFechaAprobacion(fechaEmision.atStartOfDay());
 
         byte[] pdfLicencia = licenciaPdfGenerator.generarLicencia(expDto, qrBytes);
@@ -162,7 +164,10 @@ public class LicenciaService {
                 .hashPdf(hashPdf)
                 .archivoPdf(pdfLicencia)
                 .estado(EstadoLicencia.EMITIDA)
-                .observacionesEmision(dto.getObservacionesEmision())
+                .esSimulada(esSimulada)
+                .observacionesEmision(esSimulada
+                        ? "LICENCIA EMITIDA EN MODO DEMOSTRACIÓN — SIN VALIDEZ OFICIAL (LEY N° 27269)"
+                        : dto.getObservacionesEmision())
                 .fechaCreacion(LocalDateTime.now())
                 .creadoPor(actor)
                 .build();
@@ -269,43 +274,52 @@ public class LicenciaService {
                 .or(() -> licenciaRepository.findByCodigoVerificacionQr(cod.toUpperCase()))
                 .orElseThrow(() -> new IllegalArgumentException("El código QR proporcionado no corresponde a ninguna Licencia de Funcionamiento oficial emitida."));
 
-        boolean firmaDigitalValida = lic.getResolucion() != null
+        boolean esSimulada = Boolean.TRUE.equals(lic.getEsSimulada())
+                || (lic.getResolucion() != null && Boolean.TRUE.equals(lic.getResolucion().getEsSimulada()));
+
+        boolean firmaDigitalValida = !esSimulada
+                && lic.getResolucion() != null
                 && lic.getResolucion().getEstado() == EstadoResolucion.FIRMADA
                 && lic.getArchivoPdf() != null && lic.getArchivoPdf().length > 0;
 
         boolean valida = false;
         String mensaje;
 
-        switch (lic.getEstado()) {
-            case SUSPENDIDA -> {
-                valida = false;
-                mensaje = "LICENCIA SUSPENDIDA TEMPORALMENTE - Acto administrativo vigente de suspensión";
-            }
-            case REVOCADA -> {
-                valida = false;
-                mensaje = "LICENCIA REVOCADA - El título habilitante ha sido revocado y carece de eficacia legal";
-            }
-            case VENCIDA -> {
-                valida = false;
-                mensaje = "LICENCIA VENCIDA - La autorización temporal ha caducado formalmente";
-            }
-            case EMITIDA -> {
-                if (!firmaDigitalValida) {
+        if (esSimulada) {
+            valida = false;
+            mensaje = "LICENCIA DE DEMOSTRACIÓN — SIN VALIDEZ OFICIAL: Emitida en entorno de pruebas controlado (Ley N° 27269).";
+        } else {
+            switch (lic.getEstado()) {
+                case SUSPENDIDA -> {
                     valida = false;
-                    mensaje = "DOCUMENTO SIN VALIDEZ OFICIAL: Pendiente de firma digital institucional acreditada.";
-                } else if (lic.getTipoVigencia() == TipoVigenciaLicencia.TEMPORAL
-                        && lic.getFechaCaducidad() != null
-                        && lic.getFechaCaducidad().isBefore(LocalDate.now())) {
-                    valida = false;
-                    mensaje = "LICENCIA VENCIDA - La vigencia temporal de esta autorización caducó el " + lic.getFechaCaducidad();
-                } else {
-                    valida = true;
-                    mensaje = "LICENCIA OFICIAL VÁLIDA Y VIGENTE - Municipalidad Provincial de Huamanga";
+                    mensaje = "LICENCIA SUSPENDIDA TEMPORALMENTE - Acto administrativo vigente de suspensión";
                 }
-            }
-            default -> {
-                valida = false;
-                mensaje = "ESTADO DE LICENCIA: " + lic.getEstado();
+                case REVOCADA -> {
+                    valida = false;
+                    mensaje = "LICENCIA REVOCADA - El título habilitante ha sido revocado y carece de eficacia legal";
+                }
+                case VENCIDA -> {
+                    valida = false;
+                    mensaje = "LICENCIA VENCIDA - La autorización temporal ha caducado formalmente";
+                }
+                case EMITIDA -> {
+                    if (!firmaDigitalValida) {
+                        valida = false;
+                        mensaje = "DOCUMENTO SIN VALIDEZ OFICIAL: Pendiente de firma digital institucional acreditada.";
+                    } else if (lic.getTipoVigencia() == TipoVigenciaLicencia.TEMPORAL
+                            && lic.getFechaCaducidad() != null
+                            && lic.getFechaCaducidad().isBefore(LocalDate.now())) {
+                        valida = false;
+                        mensaje = "LICENCIA VENCIDA - La vigencia temporal de esta autorización caducó el " + lic.getFechaCaducidad();
+                    } else {
+                        valida = true;
+                        mensaje = "LICENCIA OFICIAL VÁLIDA Y VIGENTE - Municipalidad Provincial de Huamanga";
+                    }
+                }
+                default -> {
+                    valida = false;
+                    mensaje = "ESTADO DE LICENCIA: " + lic.getEstado();
+                }
             }
         }
 
@@ -326,6 +340,7 @@ public class LicenciaService {
                 .estadoLicencia(lic.getEstado())
                 .firmaDigitalValida(firmaDigitalValida)
                 .valida(valida)
+                .esSimulada(esSimulada)
                 .mensajeVerificacion(mensaje)
                 .fechaConsulta(LocalDateTime.now())
                 .build();
@@ -370,19 +385,28 @@ public class LicenciaService {
                 ? "https://www.google.com/maps/search/?api=1&query=" + latitud + "," + longitud
                 : null;
 
-        boolean firmaDigitalValida = lic.getResolucion() != null
+        boolean esSimulada = Boolean.TRUE.equals(lic.getEsSimulada())
+                || (lic.getResolucion() != null && Boolean.TRUE.equals(lic.getResolucion().getEsSimulada()));
+
+        boolean firmaDigitalValida = !esSimulada
+                && lic.getResolucion() != null
                 && lic.getResolucion().getEstado() == EstadoResolucion.FIRMADA
                 && lic.getArchivoPdf() != null && lic.getArchivoPdf().length > 0;
 
-        boolean valida = firmaDigitalValida && lic.getEstado() == EstadoLicencia.EMITIDA;
+        boolean valida = !esSimulada && firmaDigitalValida && lic.getEstado() == EstadoLicencia.EMITIDA;
         if (valida && lic.getTipoVigencia() == TipoVigenciaLicencia.TEMPORAL
                 && lic.getFechaCaducidad() != null && lic.getFechaCaducidad().isBefore(LocalDate.now())) {
             valida = false;
         }
 
-        String mensaje = valida
-                ? "LICENCIA OFICIAL VÁLIDA Y VIGENTE - Verificada para fiscalización en campo"
-                : "LICENCIA NO VÁLIDA O INACTIVA (" + lic.getEstado() + ")";
+        String mensaje;
+        if (esSimulada) {
+            mensaje = "LICENCIA DE DEMOSTRACIÓN — SIN VALIDEZ OFICIAL (ENTORNO DE PRUEBAS - LEY N° 27269)";
+        } else if (valida) {
+            mensaje = "LICENCIA OFICIAL VÁLIDA Y VIGENTE - Verificada para fiscalización en campo";
+        } else {
+            mensaje = "LICENCIA NO VÁLIDA O INACTIVA (" + lic.getEstado() + ")";
+        }
 
         // Registro de auditoría inmutable de la consulta del inspector
         AuditoriaConsultaInspeccion audit = AuditoriaConsultaInspeccion.builder()
@@ -393,7 +417,7 @@ public class LicenciaService {
                 .fechaConsulta(LocalDateTime.now())
                 .ipOrigen(ipOrigen)
                 .userAgent(userAgent)
-                .resultado(valida ? "CONSULTA_EXITOSA" : "LICENCIA_INACTIVA_" + lic.getEstado())
+                .resultado(valida ? "CONSULTA_EXITOSA" : (esSimulada ? "CONSULTA_DEMOSTRACION" : "LICENCIA_INACTIVA_" + lic.getEstado()))
                 .build();
         auditoriaConsultaInspeccionRepository.save(audit);
 
@@ -426,6 +450,7 @@ public class LicenciaService {
                 .estadoLicencia(lic.getEstado())
                 .firmaDigitalValida(firmaDigitalValida)
                 .valida(valida)
+                .esSimulada(esSimulada)
                 .mensajeVerificacion(mensaje)
                 .inspectorConsultante(inspectorUsername)
                 .fechaConsulta(LocalDateTime.now())

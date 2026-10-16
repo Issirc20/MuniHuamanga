@@ -92,7 +92,7 @@ public class DataInitializer implements CommandLineRunner {
 
             auditoriaService.registrarTransicion(
                     id2,
-                    EstadoExpediente.EN_EVALUACION_FINAL,
+                    EstadoExpediente.EN_EVALUACION,
                     EstadoExpediente.APROBADO,
                     "GERENCIA_LICENCIAS",
                     "Expediente evaluado conforme y APROBADO. Licencia emitida con QR: " + codLicencia

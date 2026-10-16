@@ -316,7 +316,12 @@ public class ResolucionAdministrativaService {
             res.setFirmanteEntidad(resultado.getEntidadCertificadora() != null ? resultado.getEntidadCertificadora() : "Municipalidad Provincial de Huamanga");
             res.setHashDocumento(resultado.getHashSha256());
             res.setArchivoPdf(resultado.getPdfFirmado() != null ? resultado.getPdfFirmado() : pdfOriginal);
-            res.setObservacionesFirma("Firma digital institucional verificada conforme a la Ley N° 27269");
+            res.setEsSimulada(resultado.isEsSimulada());
+            if (resultado.isEsSimulada()) {
+                res.setObservacionesFirma("FIRMA DIGITAL SIMULADA EN ENTORNO DE DEMOSTRACIÓN (SIN EFICACIA LEGAL - LEY N° 27269)");
+            } else {
+                res.setObservacionesFirma("Firma digital institucional verificada conforme a la Ley N° 27269");
+            }
 
             ResolucionAdministrativa guardada = resolucionRepository.save(res);
 

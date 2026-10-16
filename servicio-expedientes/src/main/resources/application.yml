@@ -44,6 +44,13 @@ tupa:
     alto: 345.20
     muy-alto: 480.00
 
+# Configuración Firma Digital Institucional (Modo Demostración / Piloto)
+munihuamanga:
+  firma-digital:
+    enabled: ${FIRMA_DIGITAL_ENABLED:true}
+    proveedor: ${FIRMA_DIGITAL_PROVEEDOR:RENIEC_REFIRMA_DEMO}
+    modo-dev-simulado: ${FIRMA_DIGITAL_SIMULADA:true}
+
 
 # Observabilidad (RNF-21)
 management:

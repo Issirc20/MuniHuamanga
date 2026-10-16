@@ -6,6 +6,99 @@
   <meta name="description" content="Portal Ciudadano para el trámite digital de Licencia de Funcionamiento — Municipalidad Provincial de Huamanga. Ley N° 28976.">
   <title>Portal Ciudadano — Licencia de Funcionamiento | MuniHuamanga</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet Map CSS para geolocalización de establecimientos (M02) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    /* Estilos específicos para autenticación, mapa y dropzone en Portal Ciudadano */
+    .user-auth-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .user-auth-bar strong {
+      color: #93c5fd;
+    }
+    .map-container-box {
+      width: 100%;
+      height: 300px;
+      border-radius: 8px;
+      border: 2px solid #cbd5e1;
+      margin-top: 0.75rem;
+      z-index: 1;
+    }
+    .map-coords-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+      margin-top: 0.5rem;
+    }
+    .dropzone-box {
+      border: 2px dashed #93c5fd;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 1.5rem;
+    }
+    .dropzone-box:hover, .dropzone-box.dragover {
+      background: #eff6ff;
+      border-color: #2563eb;
+      transform: translateY(-2px);
+    }
+    .dropzone-icon {
+      font-size: 2.5rem;
+      color: #3b82f6;
+      margin-bottom: 0.5rem;
+    }
+    .doc-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .doc-hash-pill {
+      font-family: monospace;
+      font-size: 0.75rem;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .auth-alert-box {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body>
 
@@ -15,88 +108,136 @@
       <div class="shield-icon"><img src="img/escudo-huamanga.png" alt="Escudo de Huamanga"></div>
       <div>
         <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
-        <p>Portal Ciudadano — Trámite Digital de Licencia de Funcionamiento (Ley N° 28976)</p>
+        <p>Portal del Administrado — Licencias de Funcionamiento (Ley N° 28976)</p>
       </div>
     </div>
     <nav class="app-nav">
+      <a href="index.html">Inicio</a>
       <a href="portal-ciudadano.html" class="active">Portal Ciudadano</a>
-      <a href="formato-anexo1.html">📋 Anexo 1 (Formato DJ)</a>
-      <a href="portal-interno.html">Gestión Interna</a>
-      <a href="/swagger-ui.html" target="_blank">Swagger API</a>
+      <a href="verificar-licencia.html">Verificar Licencia</a>
     </nav>
+    <!-- Barra de Sesión Ciudadana -->
+    <div id="ciudadanoAuthBox" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+      <div id="anonimoControls" style="display: flex; gap: 0.5rem;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalLoginCiudadano()" style="font-size: 0.82rem; font-weight: 700;">
+          Iniciar Sesión
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalRegistroCuenta()" style="font-size: 0.82rem; font-weight: 700; background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4);">
+          Registrarse
+        </button>
+      </div>
+      <div id="autenticadoControls" style="display: none; align-items: center; gap: 0.5rem;">
+        <div class="user-auth-bar">
+          <span><strong id="lblCiudadanoNombre">Ciudadano</strong> (<span id="lblCiudadanoDoc">--</span>)</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="mostrarPestana('mis-tramites')" style="font-size: 0.8rem; background: #059669; border-color: #047857; color: white; font-weight: 600;">
+          Mis Trámites
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarSesionCiudadana()" style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: white;">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
   </header>
 
   <main class="container">
 
-    <!-- Navegación por pestañas principales -->
-    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    <!-- Navegación por las 3 macro-tareas ciudadanas -->
+    <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap;">
       <button id="tabBtnRegistro" class="btn btn-primary" onclick="mostrarPestana('registro')">
-        📝 Mesa de Partes Virtual (Nueva Solicitud)
+        1. Iniciar Solicitud
+      </button>
+      <button id="tabBtnMisTramites" class="btn btn-secondary" onclick="mostrarPestana('mis-tramites')">
+        2. Mis Solicitudes y Borradores
       </button>
       <button id="tabBtnSeguimiento" class="btn btn-secondary" onclick="mostrarPestana('seguimiento')">
-        🔍 Seguimiento en Línea de Expediente
+        3. Seguimiento de Expediente
       </button>
-      <a href="formato-anexo1.html" class="btn btn-secondary" style="background: #fffde7; color: #854d0e; border: 1.5px solid #fde047; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
-        📋 Abrir Formato Oficial Anexo 1 (Imprimir / Descargar PDF) →
-      </a>
     </div>
 
     <!-- ======================================================
-         SECCIÓN 1: FORMULARIO WIZARD MULTIPASO
+         SECCIÓN 1: FORMULARIO WIZARD MULTIPASO V2 (4 PASOS)
          ====================================================== -->
     <section id="secRegistro" class="card">
       <div class="card-header">
         <div>
-          <h2 class="card-title">Mesa de Partes Virtual: Registro de Solicitud</h2>
-          <p class="hint">Complete los 3 pasos del formulario conforme a la Ley Marco de Licencia de Funcionamiento (TUO D.S. N° 046-2017-PCM).</p>
+          <h2 class="card-title">Solicitud de Licencia de Funcionamiento</h2>
+          <p class="hint">Procedimiento administrativo formal conforme a la Ley N° 28976 y TUO D.S. N° 046-2017-PCM.</p>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="llenarDatosDemo()" style="background: #eef2ff; color: #4338ca; border-color: #c7d2fe; font-weight: 600;">
-            🪄 Cargar Datos Demo
-          </button>
-          <span class="badge badge-formatos">Procedimiento Digital</span>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <span id="badgeBorradorEstado" class="badge" style="background: #e2e8f0; color: #334155;">Sin borrador activo</span>
         </div>
       </div>
 
-      <!-- Stepper de pasos -->
+      <!-- Alerta si no está autenticado -->
+      <div id="alertaSesionRequerida" class="auth-alert-box">
+        <div>
+          <strong style="color: #92400e;">⚠️ Autenticación Requerida:</strong>
+          <span style="color: #78350f; font-size: 0.9rem;"> Para iniciar un borrador oficial y vincular sus locales, debe iniciar sesión con su DNI o RUC.</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalLoginCiudadano()" style="background: #d97706; border-color: #b45309;">
+            🔐 Iniciar Sesión Ahora
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalRegistroCuenta()">
+            Registrarme
+          </button>
+        </div>
+      </div>
+
+      <!-- Stepper de 4 pasos -->
       <div class="wizard-stepper" id="wizardStepper">
         <div class="wizard-step active" id="wizStep1">
           <div class="wizard-step-node">1</div>
-          <div class="wizard-step-label">Datos del Solicitante</div>
+          <div class="wizard-step-label">1. Identidad y Titular</div>
         </div>
         <div class="wizard-step" id="wizStep2">
           <div class="wizard-step-node">2</div>
-          <div class="wizard-step-label">Datos del Establecimiento</div>
+          <div class="wizard-step-label">2. Establecimiento y Mapa</div>
         </div>
         <div class="wizard-step" id="wizStep3">
           <div class="wizard-step-node">3</div>
-          <div class="wizard-step-label">Confirmación y Formatos</div>
+          <div class="wizard-step-label">3. Documentos y Requisitos</div>
+        </div>
+        <div class="wizard-step" id="wizStep4">
+          <div class="wizard-step-node">4</div>
+          <div class="wizard-step-label">4. Revisión y Presentación</div>
         </div>
       </div>
 
       <!-- Barra de progreso -->
       <div class="wizard-progress-bar">
-        <div class="wizard-progress-fill" id="wizProgressFill" style="width: 16.67%;"></div>
+        <div class="wizard-progress-fill" id="wizProgressFill" style="width: 25%;"></div>
       </div>
 
-      <!-- ── PANEL 1: Datos del Solicitante ── -->
+      <!-- ── PANEL 1: Datos del Titular y Solicitud ── -->
       <div class="wizard-panel active" id="wizPanel1">
-        <p class="section-title">👤 Paso 1 de 3 — Datos del Solicitante o Representante Legal</p>
+        <p class="section-title">👤 Paso 1 de 4 — Identidad del Administrado y Modalidad de Trámite</p>
+        
         <div class="form-grid">
           <div class="form-group">
-            <label for="nombreTitular">Nombres y Apellidos del Titular *</label>
-            <input type="text" id="nombreTitular" placeholder="Ej: Juan Carlos Perez Quispe">
+            <label for="nombreTitular">Nombres y Apellidos / Razón Social *</label>
+            <input type="text" id="nombreTitular" placeholder="Ej: María Quispe Huamán">
           </div>
 
           <div class="form-group">
             <label for="documentoIdentidad">Documento de Identidad (DNI o RUC) *</label>
             <input type="text" id="documentoIdentidad" maxlength="11" placeholder="DNI (8 dígitos) o RUC (11 dígitos)">
-            <span class="hint">Ej: 45879632 (DNI) o 20601234567 (RUC)</span>
+            <span class="hint">Ej: 42567891 (DNI) o 20601234567 (RUC)</span>
           </div>
 
           <div class="form-group">
-            <label for="razonSocial">Razón Social (solo personas jurídicas)</label>
-            <input type="text" id="razonSocial" placeholder="Ej: INVERSIONES HUAMANGA S.A.C.">
+            <label for="razonSocial">Razón Social Complementaria</label>
+            <input type="text" id="razonSocial" placeholder="Ej: BOTICA HUAMANGA S.A.C.">
+          </div>
+
+          <div class="form-group">
+            <label for="selModalidadTramite">Modalidad del Trámite *</label>
+            <select id="selModalidadTramite">
+              <option value="LICENCIA_INDETERMINADA" selected>Licencia Indeterminada (Ley N° 28976 / D.S. N° 046-2017-PCM)</option>
+              <option value="LICENCIA_TEMPORAL">Licencia de Funcionamiento Temporal</option>
+              <option value="LICENCIA_CESIONARIO">Licencia para Cesionarios de Uso</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -104,190 +245,362 @@
             <input type="tel" id="telefono" maxlength="9" placeholder="9XXXXXXXX">
           </div>
 
-          <div class="form-group full-width">
+          <div class="form-group">
             <label for="correoElectronico">Correo Electrónico para Notificaciones *</label>
             <input type="email" id="correoElectronico" placeholder="correo@ejemplo.com">
-            <span class="hint">Se le notificará cada avance y resolución de su trámite.</span>
-          </div>
-        </div>
-
-        <div class="alerta-legal">
-          ⚖️ <span>Conforme al <strong>Art. 42° de la Ley N° 27444</strong>, los datos ingresados están sujetos al principio de presunción de veracidad. La falsedad declarada conlleva responsabilidad penal y administrativa.</span>
-        </div>
-
-        <div class="wizard-nav">
-          <span class="wizard-nav-indicator">Paso 1 de 3</span>
-          <button class="btn btn-primary" onclick="irPaso(2)" id="btnSiguiente1">
-            Siguiente: Datos del Establecimiento →
-          </button>
-        </div>
-      </div>
-
-      <!-- ── PANEL 2: Datos del Establecimiento ── -->
-      <div class="wizard-panel" id="wizPanel2">
-        <p class="section-title">🏪 Paso 2 de 3 — Datos del Establecimiento Comercial</p>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="nombreComercial">Nombre Comercial del Negocio *</label>
-            <input type="text" id="nombreComercial" placeholder="Ej: Cafetería y Panadería El Huamanguino">
-          </div>
-
-          <div class="form-group">
-            <label for="giroNegocio">Giro o Actividad Económica (CIIU) *</label>
-            <input type="text" id="giroNegocio" placeholder="Ej: Venta de abarrotes, bazar o artesanía">
-          </div>
-
-          <div class="form-group full-width">
-            <label for="direccionEstablecimiento">Dirección del Establecimiento en Huamanga *</label>
-            <input type="text" id="direccionEstablecimiento" placeholder="Ej: Jr. 28 de Julio N° 340, Ayacucho">
-          </div>
-
-          <div class="form-group">
-            <label for="areaMetrosCuadrados">Área Total en Metros Cuadrados (m²) *</label>
-            <input type="number" id="areaMetrosCuadrados" min="1" step="0.01" placeholder="Ej: 45.00">
-            <span class="hint">⚠️ El área determina el nivel de riesgo ITSE según CENEPRED</span>
-          </div>
-
-          <div class="form-group">
-            <label for="selNumPisos">N° de Pisos del Local</label>
-            <select id="selNumPisos">
-              <option value="1">1 piso</option>
-              <option value="2">2 pisos</option>
-              <option value="3">3 pisos</option>
-              <option value="4+">4 o más pisos</option>
-            </select>
           </div>
         </div>
 
         <div class="alerta-legal" style="margin-top: 1rem;">
-          🛡️ <span>El área declarada determina el tipo de <strong>Inspección Técnica de Seguridad en Edificaciones (ITSE)</strong>: &lt;500 m² = Riesgo Bajo/Medio (Ex Post); ≥500 m² = Riesgo Alto/Muy Alto (Previa). <em>D.S. N° 002-2018-PCM / CENEPRED.</em></span>
+          ⚖️ <span>Conforme al <strong>Art. 42° de la Ley N° 27444</strong>, los datos ingresados están amparados bajo presunción de veracidad. Toda declaración inexacta genera responsabilidad administrativa y penal.</span>
         </div>
 
         <div class="wizard-nav">
-          <button class="btn btn-secondary" onclick="irPaso(1)">← Anterior</button>
-          <span class="wizard-nav-indicator">Paso 2 de 3</span>
-          <button class="btn btn-primary" onclick="irPaso(3)" id="btnSiguiente2">
-            Siguiente: Revisión y Formatos →
+          <span class="wizard-nav-indicator">Paso 1 de 4</span>
+          <button class="btn btn-primary" onclick="irPaso(2)" id="btnSiguiente1">
+            Siguiente: Establecimiento y Ubicación →
           </button>
         </div>
       </div>
 
-      <!-- ── PANEL 3: Confirmación, Registro y Descarga de Formatos ── -->
-      <div class="wizard-panel" id="wizPanel3">
-        <p class="section-title">✅ Paso 3 de 3 — Confirmación, Declaración Jurada y Formatos Oficiales</p>
+      <!-- ── PANEL 2: Establecimiento Comercial y Geolocalización (Leaflet) ── -->
+      <div class="wizard-panel" id="wizPanel2">
+        <p class="section-title">🏪 Paso 2 de 4 — Datos del Establecimiento Comercial y Geolocalización Oficial</p>
+        
+        <!-- Selector de locales previos vs nuevo -->
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem;">
+          <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">
+            Origen del Establecimiento Comercial:
+          </label>
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <select id="selEstablecimientoExistente" onchange="alCambiarEstablecimientoExistente()" style="flex: 1; min-width: 260px; padding: 0.45rem 0.75rem;">
+              <option value="NUEVO">➕ Registrar un nuevo establecimiento comercial</option>
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="cargarEstablecimientosDeCuenta()">
+              🔄 Recargar Locales
+            </button>
+          </div>
+        </div>
 
-        <!-- Resumen de datos ingresados -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombreComercial">Nombre Comercial del Negocio *</label>
+            <input type="text" id="nombreComercial" placeholder="Ej: Farmacia San Juan Bautista V2">
+          </div>
+
+          <div class="form-group">
+            <label for="ciiuCodigo">Código CIIU / Actividad Económica *</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="ciiuCodigo" value="G4772" placeholder="Ej: G4772" style="max-width: 120px;">
+              <input type="text" id="giroNegocio" placeholder="Ej: Venta de productos farmacéuticos" style="flex: 1;">
+            </div>
+            <span class="hint">Código CIIU de 4 dígitos o descripción de la actividad principal.</span>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="direccionEstablecimiento">Dirección del Establecimiento en Huamanga *</label>
+            <input type="text" id="direccionEstablecimiento" placeholder="Ej: Jr. 28 de Julio N° 450, Centro Histórico">
+          </div>
+
+          <div class="form-group">
+            <label for="referenciaEstablecimiento">Referencia Urbana</label>
+            <input type="text" id="referenciaEstablecimiento" placeholder="Ej: A media cuadra del Templo de San Juan de Dios">
+          </div>
+
+          <div class="form-group">
+            <label for="areaMetrosCuadrados">Área Total en Metros Cuadrados (m²) *</label>
+            <input type="number" id="areaMetrosCuadrados" min="1" step="0.01" value="85.50" oninput="alCambiarArea()" placeholder="Ej: 85.50">
+            <span class="hint" id="hintNivelRiesgoEstimado">🟡 Riesgo Bajo / Medio estimado (Inspección posterior)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="selNumPisos">N° de Pisos</label>
+            <select id="selNumPisos">
+              <option value="1" selected>1 piso</option>
+              <option value="2">2 pisos</option>
+              <option value="3">3 pisos</option>
+              <option value="4">4 o más pisos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Componente Leaflet de Geolocalización -->
+        <div style="margin-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <label style="font-weight: 700; color: var(--primary); font-size: 0.95rem;">
+              📍 Ubicación Geográfica en el Mapa Provincial (Haga clic o mueva el marcador)
+            </label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="solicitarGeolocalizacionDispositivo()" style="font-size: 0.8rem; background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8;">
+              🧭 Usar GPS de mi dispositivo
+            </button>
+          </div>
+          
+          <div id="mapaEstablecimiento" class="map-container-box"></div>
+
+          <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem;">
+            <div class="map-coords-badge">
+              <span>Latitud: <strong id="lblLatitud">-13.16315</strong></span>
+              <span>Longitud: <strong id="lblLongitud">-74.22389</strong></span>
+            </div>
+            <input type="hidden" id="geoLatitud" value="-13.16315">
+            <input type="hidden" id="geoLongitud" value="-74.22389">
+            <span class="hint" style="font-size: 0.78rem;">ℹ️ Ubicación declarada para verificación en campo por inspectores municipales.</span>
+          </div>
+        </div>
+
+        <div class="wizard-nav" style="margin-top: 1.5rem;">
+          <button class="btn btn-secondary" onclick="irPaso(1)">← Anterior</button>
+          <span class="wizard-nav-indicator">Paso 2 de 4</span>
+          <button class="btn btn-primary" onclick="irPaso(3)" id="btnSiguiente2">
+            Siguiente: Documentación y Requisitos →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PANEL 3: Carga Documental Segura y Requisitos (M04 / M06) ── -->
+      <div class="wizard-panel" id="wizPanel3">
+        <p class="section-title">📂 Paso 3 de 4 — Carga Digital de Requisitos y Formatos Oficiales</p>
+
+        <!-- Banner de estado del borrador -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Identificador del Borrador Activo:</span>
+            <div id="lblBorradorId" style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: #1e3a8a;">-</div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="guardarAvanceBorrador(true)">
+              💾 Guardar Avance Parcial
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="validarRequisitosBorrador()" style="background: #ecfdf5; color: #065f46; border-color: #a7f3d0; font-weight: 600;">
+              🔍 Verificar Requisitos
+            </button>
+          </div>
+        </div>
+
+        <!-- Descarga de plantillas oficiales obligatorias -->
+        <div style="margin-bottom: 1.5rem;">
+          <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">
+            1. Formatos Oficiales que debe completar y firmar:
+          </label>
+          <div class="doc-cards-grid">
+            <div class="doc-card anexo1" style="padding: 1rem;">
+              <span class="doc-card-badge obligatorio">Obligatorio</span>
+              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 1 — Declaración Jurada</div>
+              <div style="display: flex; gap: 0.5rem; flex-direction: column; margin-top: 0.75rem;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="abrirAnexo1ConBorrador()">
+                  ✏️ Llenar / Adjuntar Interactivo →
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-1')">
+                  ⬇️ Descargar PDF Oficial
+                </button>
+              </div>
+            </div>
+
+            <div class="doc-card anexo3" style="padding: 1rem;">
+              <span class="doc-card-badge automatico">Auto-generado</span>
+              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 3 — Matriz de Riesgo ITSE</div>
+              <div style="margin-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-3')" style="width: 100%;">
+                  ⬇️ Descargar Anexo 3 (PDF)
+                </button>
+              </div>
+            </div>
+
+            <div class="doc-card anexo4" style="padding: 1rem;">
+              <span class="doc-card-badge obligatorio">Obligatorio</span>
+              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 4 — Condiciones de Seguridad</div>
+              <div style="margin-top: 0.75rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-4')" style="width: 100%;">
+                  ⬇️ Descargar Anexo 4 (PDF)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona de Carga Drag & Drop -->
+        <div style="margin-top: 1.5rem;">
+          <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">
+            2. Adjuntar Documentos Digitalizados al Trámite (PDF, JPG, PNG — Máx 10 MB):
+          </label>
+          
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; align-items: start; margin-bottom: 1rem;">
+            <div class="form-group">
+              <label for="selTipoDocumentoUpload">Tipo de Documento *</label>
+              <select id="selTipoDocumentoUpload">
+                <option value="DECLARACION_JURADA_ANEXO1">Anexo 1 - Declaración Jurada Firmada</option>
+                <option value="COMPROBANTE_PAGO_SAT">Comprobante de Pago SAT Huamanga</option>
+                <option value="EVIDENCIA_RIESGO_ITSE">Evidencias / Formatos de Seguridad ITSE</option>
+                <option value="CERTIFICADO_ITSE_PREVIO">Certificado ITSE Previo (Si aplica)</option>
+                <option value="DNI_REPRESENTANTE">Copia de DNI / Poder Representante</option>
+                <option value="CROQUIS_UBICACION">Croquis o Plano de Distribución</option>
+                <option value="OTRO">Otro Documento Sustentatorio</option>
+              </select>
+            </div>
+            
+            <div class="dropzone-box" id="dropzoneBox" onclick="document.getElementById('inputArchivoUpload').click()">
+              <div class="dropzone-icon">☁️</div>
+              <p style="margin: 0; font-weight: 700; color: #1e3a8a;">Haga clic o arrastre su archivo aquí</p>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Soporta PDF, PNG, JPG (Se valida integridad SHA-256)</span>
+              <input type="file" id="inputArchivoUpload" style="display: none;" onchange="procesarArchivoSeleccionado(this)" accept=".pdf,image/png,image/jpeg">
+            </div>
+          </div>
+
+          <!-- Barra de progreso de carga -->
+          <div id="progresoUploadBox" style="display: none; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.25rem;">
+              <span id="txtProgresoArchivo">Subiendo documento...</span>
+              <span id="txtPorcentajeUpload">0%</span>
+            </div>
+            <div style="height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+              <div id="barProgresoUpload" style="width: 0%; height: 100%; background: #2563eb; transition: width 0.2s;"></div>
+            </div>
+          </div>
+
+          <!-- Listado de documentos cargados en vivo -->
+          <div style="margin-top: 1.25rem;">
+            <label style="font-weight: 700; font-size: 0.85rem; color: #334155; display: block; margin-bottom: 0.5rem;">
+              Documentos Adjuntos al Borrador:
+            </label>
+            <div id="listaDocumentosBorrador">
+              <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">No hay documentos adjuntos aún.</p>
+            </div>
+          </div>
+
+          <!-- Checklist de Requisitos Validados -->
+          <div id="boxChecklistRequisitos" style="margin-top: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem;">
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary); margin-bottom: 0.5rem;">
+              Estado de Requisitos para Presentación Formal:
+            </div>
+            <ul id="listaRequisitosPendientes" style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: #475569;">
+              <li>Cargue los documentos obligatorios para validar aptitud.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="wizard-nav" style="margin-top: 1.5rem;">
+          <button class="btn btn-secondary" onclick="irPaso(2)">← Anterior</button>
+          <span class="wizard-nav-indicator">Paso 3 de 4</span>
+          <button class="btn btn-primary" onclick="irPaso(4)" id="btnSiguiente3">
+            Siguiente: Revisión y Presentación →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PANEL 4: Revisión, Declaración Jurada y Presentación Formal (M06) ── -->
+      <div class="wizard-panel" id="wizPanel4">
+        <p class="section-title">✅ Paso 4 de 4 — Revisión General, Declaración Jurada y Envío Formal</p>
+
+        <!-- Resumen de datos -->
         <div id="resumenDatos" class="resumen-grid">
-          <!-- Llenado dinámicamente por JS -->
+          <!-- Construido dinámicamente por JS -->
+        </div>
+
+        <!-- Tasa TUPA estimada -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <span style="font-size: 0.85rem; color: #166534; font-weight: 600;">Derecho de Trámite TUPA e Inspección ITSE:</span>
+            <div id="txtMontoTupaEstimado" style="font-size: 1.35rem; font-weight: 800; color: #15803d;">S/. 154.50</div>
+          </div>
+          <span class="hint" style="color: #166534;">Tasa calculada automáticamente según área y matriz de riesgo CENEPRED.</span>
         </div>
 
         <!-- Checkbox declaración jurada -->
-        <div style="background: #f0f4ff; border: 1px solid #c7d7ff; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
           <label style="display: flex; gap: 0.75rem; align-items: flex-start; cursor: pointer;">
             <input type="checkbox" id="chkVeracidad" style="width: auto; margin-top: 3px; flex-shrink: 0;">
             <span style="font-size: 0.875rem; color: #1e3a8a; line-height: 1.5;">
-              <strong>Declaración Jurada de Veracidad:</strong> Declaro bajo juramento que todos los datos ingresados son auténticos, verídicos y exactos, sujetándome al principio de presunción de veracidad establecido en el Art. 42° de la Ley N° 27444 — Ley del Procedimiento Administrativo General.
+              <strong>Declaración Jurada de Veracidad (Art. 42° Ley N° 27444):</strong> Declaro bajo juramento que toda la información consignada y los documentos adjuntos son auténticos y verídicos, asumiendo plena responsabilidad administrativa y penal ante cualquier falsedad declarada.
             </span>
           </label>
         </div>
 
-        <!-- Botón de envío -->
-        <div id="zonaBtnEnviar" style="text-align: right; margin-bottom: 2rem;">
-          <button type="button" class="btn btn-primary" id="btnEnviar" onclick="registrarSolicitud()" style="font-size: 1rem; padding: 0.9rem 2rem;">
-            🚀 Enviar Solicitud a Mesa de Partes Digitales
+        <!-- Botón de envío formal con control de idempotencia -->
+        <div id="zonaBtnEnviar" style="text-align: right; margin-bottom: 1.5rem;">
+          <button type="button" class="btn btn-primary" id="btnEnviar" onclick="presentarSolicitudFormal()" style="font-size: 1.05rem; padding: 0.9rem 2.2rem; background: #16a34a; border-color: #15803d; font-weight: 700;">
+            🚀 Formalizar y Presentar Solicitud a Mesa de Partes
           </button>
         </div>
 
-        <!-- ══ Banner de Éxito + Descarga de Formatos (se muestra tras registro) ══ -->
+        <!-- Banner de Éxito al presentar -->
         <div id="bannerExito" style="display: none;">
           <div class="success-banner">
             <span class="success-icon">🎉</span>
-            <h3>¡Solicitud Registrada Exitosamente!</h3>
-            <p style="color: #047857; font-size: 0.9rem;">Su expediente ha sido ingresado a la Mesa de Partes Virtual.</p>
+            <h3>¡Expediente Registrado con Éxito!</h3>
+            <p style="color: #047857; font-size: 0.95rem;">Su solicitud ha sido ingresada formally a la Mesa de Partes Virtual de la Municipalidad de Huamanga.</p>
             <div class="numero-tramite" id="txtNumeroTramiteGenerado">EXP-2026-XXXXX</div>
-            <p style="color: #065f46; font-size: 0.8rem;">Plazo máximo de resolución: <strong>15 días hábiles</strong> (Art. 7° Ley N° 28976)</p>
+            <p style="color: #065f46; font-size: 0.85rem;">Plazo máximo de resolución legal: <strong>15 días hábiles</strong> (Ley Marco N° 28976)</p>
           </div>
 
-          <!-- Formatos Oficiales Generados -->
-          <p class="section-title">📑 Formatos Oficiales Generados — Descargue sus documentos</p>
-          <div class="doc-cards-grid">
-
-            <!-- Anexo 1 -->
-            <div class="doc-card anexo1">
-              <div class="doc-card-icon">📋</div>
-              <span class="doc-card-badge obligatorio">Obligatorio</span>
-              <div class="doc-card-title">Anexo 1 — Declaración Jurada de Licencia</div>
-              <div class="doc-card-desc">
-                Formulario de 2 páginas. Declaración jurada del solicitante conforme al D.S. N° 046-2017-PCM para el trámite de licencia de funcionamiento.
-              </div>
-              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                <button class="btn btn-primary" id="btnAnexo1" onclick="descargarAnexo('declaracion-jurada')">
-                  ⬇ Descargar Anexo 1 (PDF)
-                </button>
-                <a href="#" id="linkVerAnexo1" class="btn btn-secondary btn-sm" onclick="verAnexo1Interactivo(event)" style="text-align: center; text-decoration: none; background: #fffde7; border-color: #fde047; color: #854d0e; font-weight: 700;">
-                  📄 Ver / Imprimir Formato Llenado →
-                </a>
-              </div>
-            </div>
-
-            <!-- Anexo 3 -->
-            <div class="doc-card anexo3">
-              <div class="doc-card-icon">🛡️</div>
-              <span class="doc-card-badge automatico">Auto-generado</span>
-              <div class="doc-card-title">Anexo 3 — Matriz de Riesgo ITSE</div>
-              <div class="doc-card-desc">
-                Formulario de 2 páginas. Clasificación de riesgo ITSE. <strong>Imprima este PDF</strong> para presentarlo ante la <strong>Subgerencia de Defensa Civil</strong> para firma y dictamen del inspector CENEPRED.
-              </div>
-              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                <button class="btn btn-secondary" id="btnAnexo3" onclick="descargarAnexo('anexo3-matriz-riesgo-itse')" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
-                  ⬇ Descargar Formato PDF (Imprimir)
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="abrirMesaAyuda('anexo3')" style="background: #f8fafc; font-size: 0.8rem; border: 1px dashed #cbd5e1;">
-                  💡 Mesa de Ayuda / ¿Cómo se tramita?
-                </button>
-              </div>
-            </div>
-
-            <!-- Anexo 4 -->
-            <div class="doc-card anexo4">
-              <div class="doc-card-icon">🔒</div>
-              <span class="doc-card-badge obligatorio">Obligatorio</span>
-              <div class="doc-card-title">Anexo 4 — Condiciones de Seguridad</div>
-              <div class="doc-card-desc">
-                Formulario de 4 páginas. Declaración Jurada de Condiciones de Seguridad. <strong>Imprima y firme físicamente</strong> para llevarlo a la gerencia correspondiente según su nivel de riesgo.
-              </div>
-              <div style="display: flex; gap: 0.5rem; flex-direction: column;">
-                <button class="btn btn-success" id="btnAnexo4" onclick="descargarAnexo('anexo4-condiciones-seguridad')">
-                  ⬇ Descargar Formato PDF (Imprimir y Firmar)
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="abrirMesaAyuda('anexo4')" style="background: #f8fafc; font-size: 0.8rem; border: 1px dashed #cbd5e1;">
-                  💡 Mesa de Ayuda / Instrucciones de Llenado
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Alerta de plazos -->
-          <div class="alerta-legal" style="margin-top: 0.5rem;">
-            📅 <span>Conserve todos los formatos descargados. Si su establecimiento requiere <strong>ITSE Previa</strong> (área ≥ 500 m²), presente el Informe Técnico Favorable de Defensa Civil antes de la inspección municipal. <em>Art. 5° D.S. N° 002-2018-PCM.</em></span>
-          </div>
-
-          <!-- Botón para ir a seguimiento -->
           <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="irASeguimiento()">
-              🔍 Consultar Estado de mi Trámite →
+            <button type="button" class="btn btn-primary" onclick="irASeguimientoDesdeExito()">
+              🔍 Consultar Estado en Seguimiento en Línea →
             </button>
-            <button class="btn btn-secondary" onclick="nuevaSolicitud()">
-              ➕ Registrar Otra Solicitud
+            <button type="button" class="btn btn-secondary" onclick="iniciarNuevoTramite()">
+              ➕ Iniciar Nuevo Trámite
             </button>
           </div>
         </div>
 
-        <div class="wizard-nav" id="wizNavPaso3">
-          <button class="btn btn-secondary" onclick="irPaso(2)">← Anterior</button>
-          <span class="wizard-nav-indicator">Paso 3 de 3 — Envío final</span>
+        <div class="wizard-nav" id="wizNavPaso4">
+          <button class="btn btn-secondary" onclick="irPaso(3)">← Anterior</button>
+          <span class="wizard-nav-indicator">Paso 4 de 4 — Envío formal</span>
           <span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================
+         SECCIÓN 1.5: MIS TRÁMITES Y BORRADORES (CIUDADANO)
+         ====================================================== -->
+    <section id="secMisTramites" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Mis Trámites, Borradores y Locales Comerciales</h2>
+          <p class="hint">Panel de autogestión de solicitudes de licencia y establecimientos de su cuenta titular.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" onclick="mostrarPestana('registro')">
+          ➕ Nueva Solicitud
+        </button>
+      </div>
+
+      <div style="margin-bottom: 2rem;">
+        <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.75rem;">📋 Borradores en Edición (No presentados)</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID Borrador</th>
+                <th>Establecimiento</th>
+                <th>Fecha Modificación</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaBorradoresBody">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Cargando borradores...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 0.75rem;">🏪 Mis Establecimientos Registrados</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nombre Comercial</th>
+                <th>Dirección</th>
+                <th>Área (m²)</th>
+                <th>Giro</th>
+                <th>Coordenadas GPS</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMisEstablecimientosBody">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Cargando locales...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -309,19 +622,19 @@
       </div>
 
       <div id="resultadoConsulta" style="display: none;">
-        <!-- Línea de Tiempo de Estados C4 -->
+        <!-- Línea de Tiempo de Estados V2 Oficial -->
         <div class="timeline" id="timelinePasos">
-          <div class="timeline-step" id="step-FORMATOS_GENERADOS">
+          <div class="timeline-step" id="step-PRESENTADO">
             <div class="timeline-node">1</div>
-            <div class="timeline-label">Solicitud Ingresada</div>
+            <div class="timeline-label">Solicitud Presentada</div>
           </div>
-          <div class="timeline-step" id="step-DOCUMENTOS_VALIDADOS">
+          <div class="timeline-step" id="step-EN_EVALUACION">
             <div class="timeline-node">2</div>
-            <div class="timeline-label">ITSE &amp; Tasa Validada</div>
+            <div class="timeline-label">Evaluación &amp; Pago SAT</div>
           </div>
-          <div class="timeline-step" id="step-EN_EVALUACION_FINAL">
+          <div class="timeline-step" id="step-APTO_PARA_RESOLUCION">
             <div class="timeline-node">3</div>
-            <div class="timeline-label">Pago SAT &amp; Evaluación</div>
+            <div class="timeline-label">Apto para Resolución</div>
           </div>
           <div class="timeline-step" id="step-APROBADO">
             <div class="timeline-node">4</div>
@@ -433,20 +746,20 @@
       </div>
     </section>
 
-    <!-- Modal Mesa de Ayuda / Ventana de Ejemplo de Llenado (Etapa Final) -->
+    <!-- Modal Mesa de Ayuda / Ventana de Ejemplo de Llenado -->
     <div id="modalMesaAyuda" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px);">
       <div style="background: #ffffff; border-radius: 12px; max-width: 650px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; animation: fadeIn 0.2s ease-out;">
         <div style="background: #0f172a; color: #f8fafc; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
           <h3 id="mesaAyudaTitulo" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Mesa de Ayuda - Formatos Oficiales</h3>
           <button type="button" onclick="cerrarMesaAyuda()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1;">&times;</button>
         </div>
-        <div id="mesaAyudaContenido" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
-          <!-- Contenido inyectado dinámicamente -->
-        </div>
+        <div id="mesaAyudaContenido" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;"></div>
         <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; text-align: right;">
           <button type="button" class="btn btn-primary" onclick="cerrarMesaAyuda()">Entendido y Cerrar</button>
         </div>
       </div>
+    </div>
+
     <!-- Modal Subsanación Ciudadana (Ley N° 27444) -->
     <div id="modalSubsanarCiudadano" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px);">
       <div style="background: #ffffff; border-radius: 12px; max-width: 600px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
@@ -470,6 +783,99 @@
       </div>
     </div>
 
+    <!-- Modal Login Ciudadano -->
+    <div id="modalLoginCiudadano" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 10000; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px);">
+      <div style="background: #ffffff; border-radius: 12px; max-width: 440px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+        <div style="background: var(--primary); color: #ffffff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Iniciar Sesión Ciudadana</h3>
+          <button type="button" onclick="cerrarModalLoginCiudadano()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div style="padding: 1.5rem;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Ingrese con su número de documento de identidad (DNI o RUC) registrado en la Municipalidad Provincial de Huamanga.
+          </p>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="loginDocIdentidad">Número de DNI / RUC *</label>
+            <input type="text" id="loginDocIdentidad" value="" placeholder="Ej: 42567891" style="width: 100%;">
+          </div>
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="loginPassword">Contraseña *</label>
+            <input type="password" id="loginPassword" value="" placeholder="Contraseña de su cuenta" style="width: 100%;">
+          </div>
+          <button type="button" class="btn btn-primary" onclick="ejecutarLoginCiudadano()" style="width: 100%; padding: 0.75rem; font-weight: 700;">
+            Ingresar al Portal Ciudadano
+          </button>
+          <div style="text-align: center; margin-top: 1rem; font-size: 0.85rem;">
+            ¿No tiene cuenta aún? <a href="javascript:void(0)" onclick="abrirModalRegistroCuenta()" style="color: var(--primary); font-weight: 700;">Regístrese aquí</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Registro de Cuenta Ciudadana (M01) -->
+    <div id="modalRegistroCuenta" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); z-index: 10000; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px);">
+      <div style="background: #ffffff; border-radius: 12px; max-width: 580px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="background: var(--primary-dark); color: #ffffff; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Registro de Nueva Cuenta Ciudadana</h3>
+          <button type="button" onclick="cerrarModalRegistroCuenta()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div style="padding: 1.5rem; overflow-y: auto;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Cree su cuenta titular personal o empresarial para gestionar trámites de licencias conforme a la Ley N° 27444.
+          </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="regTipoPersona">Tipo de Persona *</label>
+              <select id="regTipoPersona" onchange="alCambiarTipoPersonaReg()">
+                <option value="NATURAL" selected>Persona Natural</option>
+                <option value="JURIDICA">Persona Jurídica (Empresa)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="regTipoDoc">Tipo de Documento *</label>
+              <select id="regTipoDoc">
+                <option value="DNI" selected>DNI (Documento Nacional de Identidad)</option>
+                <option value="RUC">RUC</option>
+                <option value="CE">Carnet de Extranjería</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="regNumDoc">Número de Documento *</label>
+              <input type="text" id="regNumDoc" maxlength="11" placeholder="Ej: 48991122">
+            </div>
+            <div class="form-group">
+              <label for="regRazonSocial">Nombres y Apellidos / Razón Social *</label>
+              <input type="text" id="regRazonSocial" placeholder="Ej: Carlos Gómez Mendoza">
+            </div>
+            <div class="form-group">
+              <label for="regEmail">Correo Electrónico *</label>
+              <input type="email" id="regEmail" placeholder="carlos.gomez@gmail.com">
+            </div>
+            <div class="form-group">
+              <label for="regTelefono">Teléfono Celular *</label>
+              <input type="tel" id="regTelefono" maxlength="9" placeholder="966123456">
+            </div>
+            <div class="form-group full-width">
+              <label for="regDireccion">Dirección Fiscal / Domicilio en Huamanga</label>
+              <input type="text" id="regDireccion" placeholder="Ej: Jr. Callao 120, Ayacucho">
+            </div>
+            <div class="form-group">
+              <label for="regPassword">Contraseña de Acceso *</label>
+              <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres">
+            </div>
+            <div class="form-group">
+              <label for="regPasswordConfirm">Confirmar Contraseña *</label>
+              <input type="password" id="regPasswordConfirm" placeholder="Repita la contraseña">
+            </div>
+          </div>
+        </div>
+        <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalRegistroCuenta()">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="ejecutarRegistroCuenta()">Crear Mi Cuenta</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <footer class="app-footer">
@@ -477,6 +883,8 @@
     <p style="font-size: 0.75rem; margin-top: 0.25rem;">Gerencia de Licencias y Autorizaciones | Ley N° 28976 / TUO D.S. N° 046-2017-PCM</p>
   </footer>
 
-  <script src="js/portal-ciudadano.js?v=4.1.0"></script>
+  <!-- Leaflet Map JS para geolocalización -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/portal-ciudadano.js?v=5.0.0"></script>
 </body>
 </html>

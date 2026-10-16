@@ -303,8 +303,10 @@ public class LicenciaPdfGenerator {
             cb.setColorFill(new Color(200, 30, 30));
             cb.beginText();
             BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, false);
-            cb.setFontAndSize(bf, 32f);
-            cb.showTextAligned(Element.ALIGN_CENTER, "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL", pw / 2f, ph / 2f, 45f);
+            cb.setFontAndSize(bf, 30f);
+            cb.showTextAligned(Element.ALIGN_CENTER, "NO OFICIAL — DEMOSTRACIÓN", pw / 2f, (ph / 2f) + 15f, 45f);
+            cb.setFontAndSize(bf, 16f);
+            cb.showTextAligned(Element.ALIGN_CENTER, "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL (LEY N° 27269)", pw / 2f, (ph / 2f) - 20f, 45f);
             cb.endText();
             cb.restoreState();
         } catch (Exception e) {

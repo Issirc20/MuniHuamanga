@@ -127,7 +127,7 @@ class InformeAdministrativoServiceTest {
 
         verify(historialRepository).save(any());
         verify(expedienteRepository).save(expediente);
-        assertThat(expediente.getEstado()).isEqualTo(EstadoExpediente.EN_EVALUACION_FINAL);
+        assertThat(expediente.getEstado()).isEqualTo(EstadoExpediente.EN_EVALUACION);
     }
 
     @Test

@@ -244,15 +244,8 @@ public class ObservacionExpedienteService {
             throw new IllegalStateException("Quedan observaciones pendientes por subsanar. No se puede transicionar el expediente a SUBSANADO hasta satisfacer la totalidad de observaciones.");
         }
 
-        // Determinar estado objetivo según grado de avance histórico
-        EstadoExpediente nuevo;
-        if (expediente.getFechaPagoSat() != null || (expediente.getVoucherId() != null && expediente.getNivelRiesgo() != null)) {
-            nuevo = EstadoExpediente.EN_EVALUACION_FINAL;
-        } else if (expediente.getNivelRiesgo() != null) {
-            nuevo = EstadoExpediente.DOCUMENTOS_VALIDADOS;
-        } else {
-            nuevo = EstadoExpediente.PRESENTADO;
-        }
+        // Determinar estado objetivo oficial V2
+        EstadoExpediente nuevo = EstadoExpediente.SUBSANADO;
 
         estadoValidator.validarTransicion(actual, nuevo);
 

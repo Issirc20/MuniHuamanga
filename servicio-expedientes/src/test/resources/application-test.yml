@@ -23,3 +23,9 @@ tupa:
     medio: 218.00
     alto: 345.20
     muy-alto: 480.00
+
+munihuamanga:
+  firma-digital:
+    enabled: false
+    modo-dev-simulado: false
+

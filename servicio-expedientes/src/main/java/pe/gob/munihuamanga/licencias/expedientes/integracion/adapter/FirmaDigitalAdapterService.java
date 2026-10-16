@@ -23,9 +23,19 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
     @Value("${munihuamanga.firma-digital.proveedor:RENIEC_REFIRMA}")
     private String proveedor;
 
+    @Value("${munihuamanga.firma-digital.modo-dev-simulado:false}")
+    private boolean modoDevSimulado;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.core.env.Environment environment;
+
     @Override
     public boolean estaDisponible() {
-        return habilitado;
+        if (modoDevSimulado && environment != null && environment.matchesProfiles("prod")) {
+            log.error("[SEGURIDAD-CRITICA] Intento de activar modo-dev-simulado de firma digital en entorno de producción. Bloqueado.");
+            return false;
+        }
+        return habilitado || (modoDevSimulado && (environment == null || !environment.matchesProfiles("prod")));
     }
 
     @Override
@@ -36,6 +46,10 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
                     "El servicio institucional de firma digital (" + proveedor + ") no se encuentra disponible o configurado. "
                     + "No está permitido simular firmas institucionales (Ley N° 27269)."
             );
+        }
+        if (modoDevSimulado && (environment == null || !environment.matchesProfiles("prod"))) {
+            log.warn("[FIRMA-DIGITAL-DEV] Entorno de desarrollo: firma simulada de documento para expediente {}", numeroExpediente);
+            return pdfOriginal;
         }
         log.warn("[FIRMA-DIGITAL] Invocación a proveedor {} sin infraestructura PKI conectada", proveedor);
         throw new IllegalStateException("Servicio institucional (" + proveedor + ") sin conexión activa a infraestructura PKI oficial (Ley N° 27269).");
@@ -49,6 +63,21 @@ public class FirmaDigitalAdapterService implements FirmaDigitalPort {
                     "El servicio institucional de firma digital (" + proveedor + ") no se encuentra disponible. "
                     + "La resolución permanecerá pendiente de firma y no se emitirá licencia oficial (Ley N° 27269)."
             );
+        }
+        if (modoDevSimulado && (environment == null || !environment.matchesProfiles("prod"))) {
+            log.warn("[FIRMA-DIGITAL-DEV] Entorno de desarrollo: firma simulada de resolución {} para demostración funcional (Ley N° 27269)", numeroResolucion);
+            String hash = pe.gob.munihuamanga.licencias.expedientes.resoluciones.service.ResolucionPdfGenerator.calcularHashSha256(pdfOriginal);
+            return ResultadoFirmaDigital.builder()
+                    .pdfFirmado(pdfOriginal)
+                    .hashSha256(hash)
+                    .nombreFirmante("GERENTE DE DESARROLLO ECONÓMICO (DEMO)")
+                    .cargoFirmante(cargoFirmante != null ? cargoFirmante : "Gerente de Desarrollo Económico")
+                    .entidadCertificadora("IOFE-DEMO-SIMULADO (SIN VALIDEZ LEGAL)")
+                    .fechaFirma(java.time.LocalDateTime.now())
+                    .esValida(true)
+                    .esSimulada(true)
+                    .detalle("FIRMA SIMULADA EN ENTORNO DE PRUEBAS - CARECE DE VALIDEZ LEGAL OFICIAL (LEY N° 27269)")
+                    .build();
         }
         log.warn("[FIRMA-DIGITAL] Intento de firmar resolución {} con proveedor {} sin infraestructura PKI oficial conectada", numeroResolucion, proveedor);
         throw new IllegalStateException(

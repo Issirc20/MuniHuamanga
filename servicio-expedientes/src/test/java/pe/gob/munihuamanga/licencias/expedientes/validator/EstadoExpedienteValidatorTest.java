@@ -98,4 +98,47 @@ class EstadoExpedienteValidatorTest {
                 validator.validarTransicion(EstadoExpediente.RECHAZADO, EstadoExpediente.OBSERVADO)
         );
     }
+
+    @Test
+    @DisplayName("ERS 3.1: Debe validar ciclo de vida completo de 10 estados institucionales")
+    void transicionesValidasCicloVidaOficialV2() {
+        // 1. BORRADOR -> PRESENTADO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.BORRADOR, EstadoExpediente.PRESENTADO));
+
+        // 2. PRESENTADO -> EN_EVALUACION
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.PRESENTADO, EstadoExpediente.EN_EVALUACION));
+
+        // 3. EN_EVALUACION -> OBSERVADO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.EN_EVALUACION, EstadoExpediente.OBSERVADO));
+
+        // 4. OBSERVADO -> SUBSANADO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.OBSERVADO, EstadoExpediente.SUBSANADO));
+
+        // 5. SUBSANADO -> EN_EVALUACION
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.SUBSANADO, EstadoExpediente.EN_EVALUACION));
+
+        // 6. EN_EVALUACION -> APTO_PARA_RESOLUCION
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.EN_EVALUACION, EstadoExpediente.APTO_PARA_RESOLUCION));
+
+        // 7. APTO_PARA_RESOLUCION -> APROBADO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.APTO_PARA_RESOLUCION, EstadoExpediente.APROBADO));
+
+        // 8. APROBADO -> EMITIDO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.APROBADO, EstadoExpediente.EMITIDO));
+
+        // 9. EMITIDO -> CONCLUIDO
+        assertDoesNotThrow(() -> validator.validarTransicion(EstadoExpediente.EMITIDO, EstadoExpediente.CONCLUIDO));
+    }
+
+    @Test
+    @DisplayName("ERS 3.1: Estados terminales DENEGADO y CONCLUIDO no admiten transiciones posteriores")
+    void transicionesInvalidasDesdeEstadosTerminalesV2() {
+        assertThrows(TransicionInvalidaException.class, () ->
+                validator.validarTransicion(EstadoExpediente.DENEGADO, EstadoExpediente.EN_EVALUACION)
+        );
+        assertThrows(TransicionInvalidaException.class, () ->
+                validator.validarTransicion(EstadoExpediente.CONCLUIDO, EstadoExpediente.EMITIDO)
+        );
+    }
 }
+

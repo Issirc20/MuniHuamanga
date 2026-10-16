@@ -25,4 +25,5 @@ public class ResultadoFirmaDigital {
     private LocalDateTime fechaFirma;
     private boolean esValida;
     private String detalle;
+    private boolean esSimulada;
 }
