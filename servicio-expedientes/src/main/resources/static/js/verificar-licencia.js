@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function obtenerTokenJwt() {
-    return localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    return localStorage.getItem('jwt_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   }
 
   btnConsultar.addEventListener('click', () => {
@@ -124,12 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderResultadoPublico(lic) {
-    const badgeClass = obtenerBadgeClass(lic.estadoLicencia, lic.valida);
-    const badgeTexto = obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
+    const badgeClass = lic.esSimulada ? 'badge-advertencia' : obtenerBadgeClass(lic.estadoLicencia, lic.valida);
+    const badgeTexto = lic.esSimulada ? '⚠ DEMOSTRACIÓN — SIN VALIDEZ OFICIAL' : obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
 
     resultadoBox.innerHTML = `
       <div class="verify-card">
-        <div class="verify-header">
+        <div class="verify-header" style="${lic.esSimulada ? 'background: linear-gradient(135deg, #78350f 0%, #d97706 100%);' : ''}">
           <img class="escudo-muni" src="img/escudo-huamanga.png" alt="Escudo de Huamanga" onerror="this.style.display='none'">
           <h1>Municipalidad Provincial de Huamanga</h1>
           <p>Constatación Oficial de Autenticidad en Tiempo Real (M10)</p>
@@ -139,8 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="verify-body">
-          <div class="alert-banner ${lic.valida ? 'alert-success' : 'alert-danger'}">
-            <span>${lic.mensajeVerificacion || 'Verificación procesada con el registro oficial de licencias.'}</span>
+          <div class="alert-banner ${lic.esSimulada ? 'alert-warning' : (lic.valida ? 'alert-success' : 'alert-danger')}" style="${lic.esSimulada ? 'background: #fffbeb; border: 1.5px solid #f59e0b; color: #92400e;' : ''}">
+            <span>${lic.esSimulada ? '⚠️ ATENCIÓN: Este documento fue emitido en entorno de DEMOSTRACIÓN / PRUEBAS. CARECE DE VALIDEZ LEGAL OFICIAL conforme a la Ley N° 27269.' : (lic.mensajeVerificacion || 'Verificación procesada con el registro oficial de licencias.')}</span>
           </div>
 
           <h3 style="color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">
@@ -202,12 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderResultadoInspector(lic) {
-    const badgeClass = obtenerBadgeClass(lic.estadoLicencia, lic.valida);
-    const badgeTexto = obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
+    const badgeClass = lic.esSimulada ? 'badge-advertencia' : obtenerBadgeClass(lic.estadoLicencia, lic.valida);
+    const badgeTexto = lic.esSimulada ? '⚠ DEMOSTRACIÓN — SIN VALIDEZ OFICIAL' : obtenerBadgeTexto(lic.estadoLicencia, lic.valida);
 
     resultadoBox.innerHTML = `
       <div class="verify-card">
-        <div class="verify-header" style="background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);">
+        <div class="verify-header" style="${lic.esSimulada ? 'background: linear-gradient(135deg, #78350f 0%, #d97706 100%);' : 'background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);'}">
           <img class="escudo-muni" src="img/escudo-huamanga.png" alt="Escudo de Huamanga" onerror="this.style.display='none'">
           <h1>Panel de Fiscalización en Campo</h1>
           <p>Módulo de Consulta Móvil para Inspectores Municipales (CA-10 / I09)</p>
@@ -217,8 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <div class="verify-body">
-          <div class="alert-banner ${lic.valida ? 'alert-success' : 'alert-danger'}">
-            <span>${lic.mensajeVerificacion || 'Licencia verificada para función inspectiva.'}</span>
+          <div class="alert-banner ${lic.esSimulada ? 'alert-warning' : (lic.valida ? 'alert-success' : 'alert-danger')}" style="${lic.esSimulada ? 'background: #fffbeb; border: 1.5px solid #f59e0b; color: #92400e;' : ''}">
+            <span>${lic.esSimulada ? '⚠️ ATENCIÓN FISCALIZADOR: Documento emitido en entorno de PRUEBAS/DEMOSTRACIÓN. No posee eficacia legal (Ley N° 27269).' : (lic.mensajeVerificacion || 'Licencia verificada para función inspectiva.')}</span>
           </div>
 
           <h3 style="color: #065f46; font-size: 1.1rem; border-bottom: 2px solid #bbf7d0; padding-bottom: 0.5rem; margin-bottom: 1rem;">

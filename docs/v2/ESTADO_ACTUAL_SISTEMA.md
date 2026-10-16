@@ -5,7 +5,7 @@
 **Entidad:** Municipalidad Provincial de Huamanga (Ayacucho, Perú)
 **Fecha de Corte:** 14 de octubre de 2026
 **Rama:** `develop/munihuamanga-v2`
-**Línea Base Automatizada:** 301 pruebas automatizadas exitosas (0 fallos, 0 errores, 0 skipped)
+**Línea Base Automatizada:** 310 pruebas automatizadas exitosas (0 fallos, 0 errores, 0 skipped)
 **Marco Normativo:** Ley N° 28976 / TUO D.S. N° 046-2017-PCM / D.S. N° 002-2018-PCM / Ley N° 27269 / Ley N° 29733
 
 ---
@@ -25,8 +25,8 @@ El desarrollo de MuniHuamanga V2 ha avanzado a través de una serie de increment
 | **I07 / I07.1** | Evaluación Administrativa e Informes Técnicos (M07) | Completado | Verificado | 281 tests |
 | **I08 / I08.1** | Resoluciones con Correlativo Atómico y Firma Fail-Closed (M08, M09) | Completado | Verificado | 289 tests |
 | **I09** | Verificación QR Pública y Móvil para Inspectores con Mapa (M10) | Completado | Verificado | 301 tests |
-| **I10 (Fase A)** | Diagnóstico Integral de Integración Visual y Ajustes Modulares | Completado | Auditado | 301 tests |
-| **I10 (Fase B)** | Demostración Funcional en Servidor Vivo y Pruebas E2E | *Pendiente (No autorizada en este turno)* | *Por ejecutar* | — |
+| **I10 (Fase C.1)** | Portal Ciudadano V2: Borradores, Cuentas, Locales y Carga SHA-256 | Completado | Verificado | 305 tests |
+| **I10 (Fase C.2)** | Portal Interno (Backoffice): Bandeja SAT, Historial, Estados V2 y Operadores | Completado | Verificado | 310 tests |
 
 > [!IMPORTANT]
 > **Aclaración sobre el Incremento I10:**
@@ -77,18 +77,25 @@ graph TD
 
 ---
 
-## 3. Brechas de Integración Detectadas en Fase A (I10)
+## 3. Estado de Brechas de Integración tras Fases C.1 y C.2
 
-Durante la auditoría visual y de código de la Fase A se identificaron las siguientes brechas operativas:
+### 3.1. Portal Ciudadano V2 (Fase C.1)
+1. **Integración Completa con Borradores V2:** Operación desacoplada con autenticación JWT, geolocalización Leaflet 1.9.4, autoguardado, carga drag & drop con verificación SHA-256 en cliente/servidor y presentación atómica idempotente (`EXP-YYYY-XXXXX`).
+2. **Sincronización Bidireccional con Formato Anexo 1:** Botón interactivo `[📎 Adjuntar a mi Borrador]` para inyección directa de la declaración jurada.
 
-1. **Desconexión del Portal Ciudadano respecto a Borradores V2:**
-   - El script `portal-ciudadano.js` y el formulario `formato-anexo1.js` todavía apuntan al endpoint legado directo `POST /api/expedientes`.
-   - No consumen la API de Borradores V2 (`POST /api/borradores` y `POST /api/borradores/{id}/presentar`).
-   - *Impacto:* Aunque el backend soporta plenamente el autoguardado en borrador y la presentación por checklist, el portal web público aún crea expedientes directamente en un solo paso.
-2. **Visualización de Estados en Portal Interno:**
-   - La tabla principal de expedientes en `portal-interno.js` fue actualizada para mostrar badges de los 10 estados de V2, pero requiere validación en vivo en navegador durante la Fase B.
-3. **Mapeo de Coordenadas en Verificación de Inspectores:**
-   - La interfaz `verificar-licencia.html` incluye la lógica de integración con Leaflet 1.9.4 para inspectores autenticados, pero depende de que el establecimiento cuente con latitud y longitud válidas en base de datos.
+### 3.2. Portal Interno (Backoffice) y Módulo SAT (Fase C.2)
+1. **Adaptación de Permisos y Segregación por Rol (RBAC):**
+   - El portal interno adapta dinámicamente sus botones y pestañas según el rol autenticado: `ROLE_CAJERO`, `ROLE_EVALUADOR`, `ROLE_ADMIN`, `ROLE_INSPECTOR`.
+   - El rol Cajero tiene acceso exclusivo a la bandeja de pagos SAT (`/api/pagos/bandeja`), denegando accesos no autorizados a resoluciones o emisión de licencias.
+2. **Bandeja de Pagos SAT y Trazabilidad Inmutable (M05):**
+   - Incorporación de modal `#modalHistorialPago` para auditar la secuencia histórica de decisiones (`PENDIENTE_VALIDACION`, `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO`, `RECHAZADO`).
+   - Validación manual con justificación obligatoria (mínimo 10 caracteres) y verificación de monto contra la tasa TUPA oficial.
+   - Garantía de **independencia de estados**: La validación manual de pago no provoca saltos indebidos ni muta el expediente a `APROBADO`.
+3. **Gestión de Estados V2 en Bandeja de Expedientes:**
+   - Soporte para expedientes en estado `PRESENTADO` (Mesa de Partes V2) con opciones de calificación ITSE, observaciones formales LPAG y rechazo liminar.
+   - Visualización de estado `APTO_PARA_RESOLUCION` previa a la emisión de la resolución administrativa.
+4. **Administración de Cuentas y Operadores (M01):**
+   - Búsqueda de cuentas por documento de identidad y visualización de operadores nominativos y delegaciones de facultades normativas.
 
 ---
 
@@ -110,10 +117,10 @@ El sistema **NO se encuentra apto para despliegue en producción** debido a los 
 
 ## 5. Resumen de Pruebas y Evidencias Disponibles
 
-- **Total de Pruebas Automatizadas:** 301
+- **Total de Pruebas Automatizadas:** 310 (301 suites iniciales + 4 de `PortalCiudadanoFaseCTest` + 5 de `PortalInternoBackofficeFaseCTest`)
 - **Fallos:** 0
 - **Errores:** 0
 - **Omitidas (Skipped):** 0
-- **Tiempo de Ejecución:** ~32 segundos
+- **Tiempo de Ejecución:** ~39 segundos
 - **Herramienta de Verificación:** Maven Surefire Plugin 3.2.5 sobre Java 21 LTS y H2 in-memory.
 - **Detalle de Evidencias:** Registradas formalmente en [`docs/v2/PRUEBAS_Y_VALIDACION.md`](PRUEBAS_Y_VALIDACION.md).

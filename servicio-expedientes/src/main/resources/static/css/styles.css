@@ -1,26 +1,45 @@
 :root {
+  /* Paleta Primaria Institucional V2 */
   --primary: #003366;          /* Azul Marino Institucional */
   --primary-dark: #001f3f;     /* Azul Huamanga Profundo */
-  --primary-light: #e6f0fa;
+  --primary-light: #e6f0fa;    /* Azul Suave */
   --huamanga-red: #991b1b;     /* Rojo Carmesí Oficial de Huamanga */
   --huamanga-red-light: #fee2e2;
-  --huamanga-gold: #d97706;    /* Dorado Heráldico */
-  --accent: #d97706;
+  --huamanga-gold: #b45309;    /* Dorado Heráldico */
+  --huamanga-gold-light: #fef3c7;
+  --accent: #b45309;
   --accent-light: #fef3c7;
+
+  /* Estados Oficiales Semánticos ERS 3.1 */
+  --status-borrador: #64748b;
+  --status-presentado: #0284c7;
+  --status-evaluacion: #4f46e5;
+  --status-observado: #d97706;
+  --status-subsanado: #0891b2;
+  --status-apto: #7c3aed;
+  --status-aprobado: #16a34a;
+  --status-emitido: #059669;
+  --status-denegado: #dc2626;
+  --status-concluido: #334155;
+
   --success: #059669;
   --success-light: #d1fae5;
-  --warning: #eab308;
-  --warning-light: #fef9c3;
+  --warning: #d97706;
+  --warning-light: #fef3c7;
   --danger: #dc2626;
   --danger-light: #fee2e2;
   --bg-main: #f8fafc;
   --surface: #ffffff;
+  --surface-alt: #f1f5f9;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border: #e2e8f0;
-  --radius: 12px;
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --border: #cbd5e1;
+  --border-light: #e2e8f0;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -249,24 +268,36 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.8rem;
 }
 
-/* Badges */
+/* Badges Semánticos V2 — Catálogo de 10 Estados Oficiales (ERS 3.1) */
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.badge-formatos { background: #e0f2fe; color: #0369a1; }
-.badge-validados { background: #fef3c7; color: #b45309; }
-.badge-evaluacion { background: #f3e8ff; color: #7e22ce; }
-.badge-aprobado { background: #dcfce7; color: #15803d; }
-.badge-observado { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
-.badge-rechazado { background: #fee2e2; color: #b91c1c; }
+.badge-borrador       { background: #f1f5f9; color: var(--status-borrador); border: 1px solid #cbd5e1; }
+.badge-presentado     { background: #e0f2fe; color: var(--status-presentado); border: 1px solid #bae6fd; font-weight: 700; }
+.badge-en-evaluacion,
+.badge-evaluacion     { background: #e0e7ff; color: var(--status-evaluacion); border: 1px solid #c7d2fe; }
+.badge-observado      { background: #fef3c7; color: var(--status-observado); border: 1px solid #fde68a; }
+.badge-subsanado      { background: #cffafe; color: var(--status-subsanado); border: 1px solid #a5f3fc; }
+.badge-apto-para-resolucion,
+.badge-apto           { background: #ede9fe; color: var(--status-apto); border: 1px solid #ddd6fe; font-weight: 700; }
+.badge-aprobado       { background: #dcfce7; color: var(--status-aprobado); border: 1px solid #bbf7d0; }
+.badge-emitido        { background: #d1fae5; color: var(--status-emitido); border: 1px solid #a7f3d0; font-weight: 800; }
+.badge-denegado,
+.badge-rechazado      { background: #fee2e2; color: var(--status-denegado); border: 1px solid #fecaca; }
+.badge-concluido      { background: #e2e8f0; color: var(--status-concluido); border: 1px solid #cbd5e1; }
+
+/* Compatibilidad transitoria con etiquetas de pruebas previas */
+.badge-formatos       { background: #e0f2fe; color: #0369a1; }
+.badge-validados      { background: #fef3c7; color: #b45309; }
 
 .badge-alert {
   background: #fee2e2;
@@ -811,5 +842,181 @@ footer.app-footer {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* ===================================================
+   SISTEMA INSTITUCIONAL V2: LAYOUT DE BACKOFFICE CON SIDEBAR
+   =================================================== */
+
+.app-shell {
+  display: flex;
+  min-height: calc(100vh - 75px);
+  width: 100%;
+}
+
+/* Sidebar Institucional */
+.sidebar {
+  width: 260px;
+  background: var(--primary-dark);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+}
+
+.sidebar-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sidebar-header-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 1rem 0.75rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.sidebar-item {
+  position: relative;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-link-badge {
+  margin-left: auto;
+  font-size: 0.7rem;
+  background: var(--danger);
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+}
+
+/* Área de Trabajo Principal */
+.workspace {
+  flex: 1;
+  background: var(--bg-main);
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+}
+
+.workspace-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.workspace-title {
+  font-size: 1.4rem;
+  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.workspace-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* Paneles de Trabajo Dividido (Split Review View) */
+.split-view-container {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.split-detail-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+/* Utilidades Responsive Institucionales */
+@media (max-width: 1024px) {
+  .split-view-container {
+    grid-template-columns: 1fr;
+  }
+  .split-detail-pane {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .sidebar-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  .workspace {
+    padding: 1rem;
+  }
+}
+
+/* Prevenir desbordamiento horizontal */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 

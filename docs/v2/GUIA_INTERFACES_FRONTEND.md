@@ -51,17 +51,24 @@ graph TD
     end
 ```
 
-### 2.1. Portal Ciudadano (`portal-ciudadano.html` / `portal-ciudadano.js`)
-* **Propósito:** Permitir a los administrados registrar solicitudes, consultar el estado de su trámite mediante su código de expediente (`EXP-YYYY-XXXXX`), subir documentos de subsanación y descargar formatos oficiales en PDF.
-* **Componentes:**
-  - Hero banner con accesos rápidos ("Nuevo Trámite" y "Seguimiento de Expediente").
-  - Formulario de consulta con tarjeta de resultados en tiempo real.
-  - Modal de mesa de ayuda ("¿Cómo se tramita?").
-* **Brecha Identificada en Fase A:** Actualmente invoca `POST /api/expedientes` directo; está pendiente la conexión con la API de Borradores V2 (`POST /api/borradores`).
+### 2.1. Portal Ciudadano (`portal-ciudadano.html` / `portal-ciudadano.js`) — Actualizado Fase C.1
+* **Propósito:** Brindar una experiencia completa, segura y guiada al administrado para gestionar sus cuentas, registrar sus establecimientos comerciales, preparar borradores con autoguardado, adjuntar documentación con cálculo de hash SHA-256 y formalizar la presentación de expedientes con generación atómica de correlativo `EXP-YYYY-XXXXX`.
+* **Componentes Principales (Fase C.1):**
+  - **Barra de Sesión Ciudadana:** En el encabezado superior; permite iniciar sesión (`POST /api/auth/login`), registrarse (`POST /api/cuentas/registro`), alternar entre cuentas administradas, acceder al panel "Mis Trámites y Borradores" y cerrar sesión.
+  - **Wizard V2 de 4 Pasos Canónicos:**
+    1. *Paso 1 (Identidad y Titular):* Precarga de datos de la cuenta activa (DNI/RUC, nombres, email, teléfono de notificación).
+    2. *Paso 2 (Establecimiento y Ubicación Leaflet):* Selector de establecimientos previos o nuevo local comercial, mapa interactivo Leaflet 1.9.4 con pin arrastrable, captura precisa de latitud/longitud y solicitud expresa de consentimiento para geolocalización.
+    3. *Paso 3 (Documentación y Requisitos):* Zona de carga Drag & Drop con validación de extensiones (.pdf, .png, .jpg), tope de 10 MB, cálculo en vivo de hash SHA-256 con Web Cryptography API (`crypto.subtle.digest`), indicador visual de progreso y checklist normativo (`GET /api/borradores/{id}/requisitos-pendientes`).
+    4. *Paso 4 (Revisión y Presentación Formal):* Resumen integral con cálculo referencial de tasa TUPA, declaración jurada legal y botón de presentación formal atómica (`POST /api/borradores/{id}/presentar`) con protección contra doble clic e idempotencia estricta.
+  - **Panel "Mis Trámites y Borradores":** Consulta en tiempo real de borradores en curso de edición (`GET /api/borradores/cuenta/{id}`) con botones de "Continuar edición" o "Descartar", y tabla de establecimientos comerciales vinculados a la cuenta.
+  - **Seguimiento en Línea:** Consulta pública por correlativo `EXP-YYYY-XXXXX` con bitácora de transiciones y modal de subsanación de observaciones.
 
-### 2.2. Formulario Asistido Anexo 1 (`formato-anexo1.html` / `formato-anexo1.js`)
-* **Propósito:** Formulario interactivo por pasos para la captura de los 45 campos normativos del Anexo 1 (D.S. N° 163-2020-PCM).
-* **Componentes:**
+### 2.2. Formulario Asistido Anexo 1 (`formato-anexo1.html` / `formato-anexo1.js`) — Actualizado Fase C.1
+* **Propósito:** Formulario interactivo por pasos para la captura de los 45 campos normativos del Anexo 1 (D.S. N° 163-2020-PCM) con integración bidireccional hacia el borrador ciudadano activo.
+* **Componentes Principales (Fase C.1):**
+  - **Sincronización con Borrador Activo:** Botón toolbar `[📎 Adjuntar a mi Borrador]` que detecta `?borradorId=...` o `sessionStorage.getItem('borrador_id_activo')`.
+  - **Precarga Inteligente:** Descarga los datos del borrador (`GET /api/borradores/{id}`) y pre-llena automáticamente datos del titular, establecimiento, giro y área.
+  - **Generación Vectorial y Envío:** Genera el PDF oficial en memoria y lo adjunta directamente al borrador activo bajo el tipo `DECLARACION_JURADA_ANEXO1` sin intermediación de descargas manuales.
   - Barra de progreso por pasos (Paso 1: Solicitante, Paso 2: Establecimiento y Zonificación, Paso 3: Anexo 4 y Declaración Jurada).
   - Autocalculadora del nivel de riesgo ITSE en cliente según función de edificación y área ($m^2$).
   - Validadores sintácticos de DNI (8 dígitos) y RUC (11 dígitos, prefijo 10 o 20).

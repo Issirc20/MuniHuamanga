@@ -32,9 +32,14 @@ public class UsuarioDataInitializer implements CommandLineRunner {
     private final UsuarioRepository usuarioRepository;
     private final CuentaRepository cuentaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.core.env.Environment environment;
 
     @Override
     public void run(String... args) {
+        if (environment != null && environment.matchesProfiles("prod")) {
+            log.warn("[SEGURIDAD-PRODUCCION] Inicializador de datos semilla abortado por estar en entorno de producción.");
+            return;
+        }
         crearUsuarioSiNoExiste(
                 "admin",
                 "admin123",

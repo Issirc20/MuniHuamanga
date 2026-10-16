@@ -126,7 +126,7 @@ class ResolucionAdministrativaServiceTest {
     @Test
     @DisplayName("I08-02: No permite resolución FAVORABLE si el expediente no está en APTO_PARA_RESOLUCION")
     void testCrearBorrador_DecisionFavorable_ExpedienteNoApto_LanzaExcepcion() {
-        expediente.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
+        expediente.setEstado(EstadoExpediente.EN_EVALUACION);
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expediente));
         when(informeAdministrativoRepository.findByExpedienteIdAndEsVersionActualTrue(expedienteId)).thenReturn(Optional.of(informe));
 

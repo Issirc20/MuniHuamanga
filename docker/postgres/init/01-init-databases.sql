@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS expedientes (
     ciiu_codigo VARCHAR(20),
     giro_negocio VARCHAR(150) NOT NULL,
     actividad_detallada VARCHAR(255),
-    zonificacion VARCHAR(50),
+    zonificacion VARCHAR(100),
     funcion_edificacion VARCHAR(40) DEFAULT 'COMERCIO',
     direccion_establecimiento VARCHAR(255) NOT NULL,
 

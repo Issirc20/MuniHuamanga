@@ -27,12 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarSincronizacionEncabezados();
   configurarEventosCambio();
 
-  // Si en la URL viene ?tramite=EXP-XXXX o ?id=UUID, cargarlo automáticamente
+  // Si en la URL viene ?borradorId=UUID o en sessionStorage
   const params = new URLSearchParams(window.location.search);
+  const borradorParam = params.get('borradorId') || sessionStorage.getItem('borrador_id_activo');
   const tramiteParam = params.get('tramite');
   const idParam = params.get('id');
 
-  if (tramiteParam) {
+  if (borradorParam) {
+    estadoFormato.borradorId = borradorParam;
+    cargarDatosDesdeBorrador(borradorParam);
+  } else if (tramiteParam) {
     document.getElementById('inputBuscarExpediente').value = tramiteParam;
     buscarYPrecargarExpediente(tramiteParam);
   } else if (idParam) {
@@ -915,3 +919,140 @@ function mostrarToast(msg, tipo = 'info') {
     toast.classList.remove('show');
   }, 4000);
 }
+
+// =============================================================================
+// VINCULACIÓN Y ADJUNCIÓN CON BORRADOR V2 (FASE 5)
+// =============================================================================
+async function cargarDatosDesdeBorrador(borradorId) {
+  const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  try {
+    const res = await fetch(`/api/borradores/${borradorId}`, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const b = await res.json();
+
+    estadoFormato.borrador = b;
+    estadoFormato.borradorId = b.id;
+
+    // Mostrar botón de adjuntar a borrador
+    const btnAdjuntar = document.getElementById('btnAdjuntarBorrador');
+    if (btnAdjuntar) btnAdjuntar.style.display = 'inline-flex';
+
+    // Rellenar campos del formulario
+    if (b.cuenta) {
+      document.getElementById('txtTitularNombre').value = b.cuenta.razonSocialONombre || '';
+      document.getElementById('txtDocumentoIdentidad').value = b.cuenta.numeroDocumento || '';
+      document.getElementById('txtTelefono').value = b.cuenta.telefono || b.telefonoContacto || '';
+      document.getElementById('txtCorreoElectronico').value = b.cuenta.email || b.correoNotificacion || '';
+      if (b.cuenta.tipoPersona === 'JURIDICA') {
+        document.getElementById('txtRuc').value = b.cuenta.numeroDocumento || '';
+      }
+    }
+
+    if (b.establecimiento) {
+      document.getElementById('txtNombreComercial').value = b.establecimiento.nombreComercial || b.nombreComercialDeclarado || '';
+      document.getElementById('txtCiiuCodigo').value = b.establecimiento.ciiuCodigo || 'G4772';
+      document.getElementById('txtGiroNegocio').value = b.establecimiento.giroPrincipal || b.giroNegocioDeclarado || '';
+      document.getElementById('txtEstVia').value = b.establecimiento.direccion || '';
+      document.getElementById('txtAreaMetros').value = b.establecimiento.areaMetrosCuadrados || b.areaMetrosCuadrados || '85.50';
+    } else {
+      document.getElementById('txtNombreComercial').value = b.nombreComercialDeclarado || '';
+      document.getElementById('txtGiroNegocio').value = b.giroNegocioDeclarado || '';
+      document.getElementById('txtAreaMetros').value = b.areaMetrosCuadrados || '85.50';
+    }
+
+    // Modalidad
+    if (b.modalidadTramite) {
+      alCambiarModalidad(b.modalidadTramite === 'SA_ITSE_PREVIA' ? 'LICENCIA_INDETERMINADA' : 'LICENCIA_INDETERMINADA');
+    }
+
+    sincronizarFirmante();
+    sincronizarEncabezados();
+
+    const badge = document.getElementById('badgeEstadoDoc');
+    badge.className = 'status-pill status-saved';
+    badge.innerHTML = `📋 Vinculado al Borrador: <strong>${b.id.substring(0, 8)}...</strong>`;
+
+    mostrarToast(`📂 Datos precargados desde el Borrador: ${b.nombreComercialDeclarado || b.id}`, 'success');
+
+  } catch (err) {
+    console.warn('No se pudo cargar datos desde borrador:', err);
+  }
+}
+
+async function adjuntarAlBorradorActivo() {
+  const borradorId = estadoFormato.borradorId || new URLSearchParams(window.location.search).get('borradorId');
+  if (!borradorId) {
+    return alert('⚠️ No hay un borrador activo asociado para adjuntar el formato.');
+  }
+
+  const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+  if (!token) {
+    return alert('⚠️ Debe tener una sesión activa de contribuyente para adjuntar documentos.');
+  }
+
+  const btn = document.getElementById('btnAdjuntarBorrador');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Generando y adjuntando...';
+
+  try {
+    // 1. Generar PDF nativo con los datos interactivos actuales
+    const dto = construirDtoParaPdf();
+    const resPdf = await fetch('/api/formularios/anexo1-declaracion-jurada', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+
+    if (!resPdf.ok) throw new Error('Error al generar el PDF del Anexo 1');
+    const blob = await resPdf.blob();
+
+    // 2. Convertir Blob a Base64
+    const arrayBuffer = await blob.arrayBuffer();
+    let binary = '';
+    const bytes = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = window.btoa(binary);
+
+    // 3. Adjuntar al borrador
+    const payload = {
+      tipoDocumento: 'DECLARACION_JURADA_ANEXO1',
+      nombreArchivo: 'Anexo1-Declaracion-Jurada.pdf',
+      tipoContenido: 'application/pdf',
+      contenidoBase64: base64,
+      descripcion: 'Generado y firmado digitalmente desde formulario interactivo Anexo 1'
+    };
+
+    const resAdjuntar = await fetch(`/api/borradores/${borradorId}/documentos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resAdjuntar.ok) {
+      const err = await resAdjuntar.json().catch(() => ({}));
+      throw new Error(err.message || `Error HTTP ${resAdjuntar.status}`);
+    }
+
+    const badge = document.getElementById('badgeEstadoDoc');
+    badge.className = 'status-pill status-saved';
+    badge.innerHTML = `✅ Anexo 1 Adjuntado al Borrador`;
+
+    mostrarToast('🎉 ¡Anexo 1 adjuntado con éxito a su solicitud! Puede volver al Portal Ciudadano.', 'success');
+    alert('✅ El Formato Oficial Anexo 1 ha sido generado y adjuntado con éxito a su borrador de trámite.\n\nPuede volver al Portal Ciudadano para continuar con la presentación formal.');
+
+  } catch (err) {
+    alert('❌ Error al adjuntar documento: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📎 Adjuntar a mi Borrador';
+  }
+}
+

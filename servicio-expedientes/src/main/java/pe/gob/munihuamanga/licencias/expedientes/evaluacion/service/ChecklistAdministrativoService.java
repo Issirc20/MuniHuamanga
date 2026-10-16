@@ -105,10 +105,13 @@ public class ChecklistAdministrativoService {
     private ItemChecklistDto verificarEstadoExpediente(Expediente exp) {
         EstadoExpediente est = exp.getEstado();
         boolean permitido = est == EstadoExpediente.PRESENTADO
-                || est == EstadoExpediente.DOCUMENTOS_VALIDADOS
-                || est == EstadoExpediente.EN_EVALUACION_FINAL
+                || est == EstadoExpediente.EN_EVALUACION
+                || est == EstadoExpediente.SUBSANADO
+                || est == EstadoExpediente.APTO_PARA_RESOLUCION
                 || est == EstadoExpediente.OBSERVADO
-                || est == EstadoExpediente.APTO_PARA_RESOLUCION;
+                // Compatibilidad histórica para expedientes heredados de V1
+                || est == EstadoExpediente.DOCUMENTOS_VALIDADOS
+                || est == EstadoExpediente.EN_EVALUACION_FINAL;
 
         return ItemChecklistDto.builder()
                 .codigo("CHK-01-EXPEDIENTE")

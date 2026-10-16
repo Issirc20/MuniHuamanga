@@ -17,13 +17,16 @@ import pe.gob.munihuamanga.licencias.expedientes.service.DocumentoPdfService;
 import pe.gob.munihuamanga.licencias.expedientes.service.ExpedienteService;
 
 /**
- * US-11 / RNF-20: Controlador público de alta disponibilidad y solo lectura
- * para la verificación ciudadana y fiscalización de autenticidad de licencias de funcionamiento.
+ * US-11 / RNF-20: Controlador público heredado de verificación.
+ * @deprecated En MuniHuamanga V2, la verificación oficial se realiza mediante {@code LicenciaController}
+ * (/api/licencias/verificar/{codigoQr}) y {@code InspectorLicenciasController} (/api/inspector/licencias/verificar/{token})
+ * según los lineamientos de privacidad de la Ley N° 29733 y el DAS (Incremento I09).
  */
+@Deprecated(since = "2.0")
 @RestController
 @RequestMapping({"/api/public/licencias", "/api/public/verificar"})
 @RequiredArgsConstructor
-@Tag(name = "Verificación Pública de Licencias", description = "Endpoints de solo lectura para consulta de autenticidad por código QR y ciudadanos (RNF-20)")
+@Tag(name = "Verificación Pública de Licencias (Legada)", description = "Endpoints de compatibilidad con V1 para consulta pública")
 public class PublicLicenciasController {
 
     private final ExpedienteService expedienteService;

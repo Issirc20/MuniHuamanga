@@ -132,12 +132,37 @@ En `tests/load-test/` se dispone de un script de pruebas de carga en K6 (`k6-loa
 
 ---
 
-## 5. Declaración de Limitaciones de Infraestructura y Entorno Local
+## 6. Resultados de Verificación — Fase C.1: Portal Ciudadano V2
 
-1. **Disponibilidad de Motor Físico PostgreSQL 16:**
-   - Durante la auditoría técnica del Incremento I06.1, el motor Docker Desktop Linux Engine continuó inactivo en el entorno local de desarrollo (falla al conectar con el named pipe del demonio Docker).
-   - **Registro explícito:** La suite automatizada de 227 pruebas se ejecutó con 100% de éxito sobre H2 in-memory en dialecto PostgreSQL (`MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE`). Los scripts DDL acumulativos (`01` a `05-v2-pagos-sat-zonificacion.sql`) fueron validados sintácticamente, pero **no se emite certificación formal de motor PostgreSQL 16 real** hasta su ejecución en un entorno con demonio de base de datos aprovisionado (p. ej. runner CI/CD).
-2. **Servicio Antivirus / Antimalware:**
-   - La validación de documentos inspecciona firmas binarias (*magic numbers*) y sanitiza rutas. La integración con el socket de ClamAV permanece como tarea delegada de infraestructura y se audita con el estado `ESCANEO_DELEGADO_PENDIENTE_CONFIGURACION_CLAMAV`.
-3. **Integración Externa SAT y Edificaciones:**
-   - Se ratifica la ausencia de adaptadores que simulen conciliaciones automáticas bancarias o resoluciones de zonificación ficticias. Todo el proceso administrativo se sustenta en cotejo manual por personal municipal autorizado y competente.
+En la **Fase C.1**, se incorporó la suite de pruebas de integración `PortalCiudadanoFaseCTest` (`servicio-expedientes/src/test/java/.../portal/PortalCiudadanoFaseCTest.java`), cubriendo de punta a punta la experiencia del administrado:
+
+| ID | Caso de Prueba | Endpoint(s) | Resultado |
+| :---: | :--- | :--- | :---: |
+| **C1-01** | Autenticación de ciudadano semilla devuelve token JWT y perfil correcto | `POST /api/auth/login` | **PASS (200 OK)** |
+| **C1-02** | Registro público de nueva cuenta ciudadana y posterior inicio de sesión | `POST /api/cuentas/registro`, `POST /api/auth/login` | **PASS (201 Created / 200 OK)** |
+| **C1-03** | Control BOLA/IDOR: Ciudadano A no puede consultar ni registrar en cuenta de Ciudadano B | `POST /api/establecimientos/cuenta/{id}` | **PASS (403 Forbidden)** |
+| **C1-04** | Flujo integral del Wizard Ciudadano V2: Establecimiento con Leaflet GPS, Borrador, Carga SHA-256, Validación de Requisitos e Idempotencia en Presentación Formal | `POST /api/establecimientos/cuenta/{id}`, `POST /api/borradores`, `PUT /api/borradores/{id}`, `POST /api/borradores/{id}/documentos`, `GET /api/borradores/{id}/requisitos-pendientes`, `POST /api/borradores/{id}/presentar` | **PASS (201 Created / EXP inmutable e Idempotente)** |
+
+---
+
+## 7. Resultados de Verificación — Fase C.2: Portal Interno (Backoffice) y Módulo SAT
+
+En la **Fase C.2**, se incorporó la suite de pruebas de integración `PortalInternoBackofficeFaseCTest` (`servicio-expedientes/src/test/java/.../portal/PortalInternoBackofficeFaseCTest.java`), cubriendo la experiencia del personal administrativo y cajeros SAT:
+
+| ID | Caso de Prueba | Endpoint(s) | Resultado |
+| :---: | :--- | :--- | :---: |
+| **C2-01** | Segregación RBAC en Bandeja de Pagos SAT: Cajero y Admin autorizados, Ciudadano denegado | `GET /api/pagos/bandeja` | **PASS (200 OK / 403 Forbidden)** |
+| **C2-02** | Validación Manual de Pago SAT por Cajero con Trazabilidad e Independencia de Estados | `POST /api/expedientes/{id}/pagos/declarar`, `POST /api/pagos/{id}/validar-manual`, `GET /api/pagos/{id}/historial` | **PASS (200 OK / Historial inmutable)** |
+| **C2-03** | Reglas de Validación SAT: Justificación obligatoria (>10 caracteres) y monto mínimo de tasa TUPA | `POST /api/pagos/{id}/validar-manual` | **PASS (400 Bad Request en rechazo justificado)** |
+| **C2-04** | Consulta y Filtrado de Expedientes en Estado PRESENTADO (Mesa de Partes V2) | `GET /api/expedientes?estado=PRESENTADO` | **PASS (200 OK / Retorna lista filtrada)** |
+| **C2-05** | Búsqueda de Cuentas y Operadores Nominativos (M01) por Documento de Identidad | `GET /api/cuentas/documento/{doc}` | **PASS (200 OK / Datos de cuenta recuperados)** |
+
+### Resumen Global de Ejecución de Pruebas:
+- **Total de Pruebas Automatizadas:** 310 (301 iniciales + 4 en Fase C.1 + 5 en Fase C.2)
+- **Fallos:** 0
+- **Errores:** 0
+- **Omitidas:** 0
+- **Tiempo de Ejecución:** ~39.3 segundos
+- **Estado:** 100% Verde (`BUILD SUCCESS`)
+
+

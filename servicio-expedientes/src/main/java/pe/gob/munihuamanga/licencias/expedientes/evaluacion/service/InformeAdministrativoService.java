@@ -122,12 +122,12 @@ public class InformeAdministrativoService {
         registrarHistorial(guardado, "ELABORACION_INFORME", null, EstadoInforme.BORRADOR, actor,
                 "Elaboración de informe administrativo con conclusión " + dto.getConclusion());
 
-        // Actualizar estado del expediente si estaba presentado
-        if (exp.getEstado() == EstadoExpediente.PRESENTADO || exp.getEstado() == EstadoExpediente.DOCUMENTOS_VALIDADOS) {
+        // Actualizar estado del expediente si estaba presentado o subsanado
+        if (exp.getEstado() == EstadoExpediente.PRESENTADO || exp.getEstado() == EstadoExpediente.SUBSANADO || exp.getEstado() == EstadoExpediente.DOCUMENTOS_VALIDADOS) {
             EstadoExpediente anterior = exp.getEstado();
-            exp.setEstado(EstadoExpediente.EN_EVALUACION_FINAL);
+            exp.setEstado(EstadoExpediente.EN_EVALUACION);
             expedienteRepository.save(exp);
-            auditoriaService.registrarTransicion(exp.getId(), anterior, EstadoExpediente.EN_EVALUACION_FINAL, actor,
+            auditoriaService.registrarTransicion(exp.getId(), anterior, EstadoExpediente.EN_EVALUACION, actor,
                     "Inicio formal de evaluación administrativa técnica");
         }
 

@@ -121,6 +121,9 @@ public class LicenciaEmitida {
     @Column(name = "observaciones_emision", columnDefinition = "TEXT")
     private String observacionesEmision;
 
+    @Column(name = "es_simulada")
+    private Boolean esSimulada;
+
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 

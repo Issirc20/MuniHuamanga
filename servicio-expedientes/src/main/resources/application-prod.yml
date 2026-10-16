@@ -62,3 +62,10 @@ logging:
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:28800000}
+
+# Firma Digital Fail-Closed en Producción (Ley N° 27269 / ERS-MH-V2-001)
+munihuamanga:
+  firma-digital:
+    enabled: false
+    proveedor: RENIEC_REFIRMA
+    modo-dev-simulado: false # Prohibido simular firmas en entorno productivo (fail-closed)

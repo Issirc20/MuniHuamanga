@@ -148,7 +148,7 @@ class ExpedienteServiceTest {
     }
 
     @Test
-    @DisplayName("Debe registrar pago del voucher y pasar a EN_EVALUACION_FINAL")
+    @DisplayName("Debe registrar pago del voucher y pasar a EN_EVALUACION")
     void testRegistrarPago() {
         expedienteBase.setEstado(EstadoExpediente.DOCUMENTOS_VALIDADOS);
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteBase));
@@ -156,8 +156,8 @@ class ExpedienteServiceTest {
 
         expedienteService.registrarPago(expedienteId, "VCH-2026-999888");
 
-        assertEquals(EstadoExpediente.EN_EVALUACION_FINAL, expedienteBase.getEstado());
-        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.DOCUMENTOS_VALIDADOS), eq(EstadoExpediente.EN_EVALUACION_FINAL), any(), any());
+        assertEquals(EstadoExpediente.EN_EVALUACION, expedienteBase.getEstado());
+        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.DOCUMENTOS_VALIDADOS), eq(EstadoExpediente.EN_EVALUACION), any(), any());
     }
 
     @Test
@@ -285,7 +285,7 @@ class ExpedienteServiceTest {
 
         expedienteService.registrarPago(expedienteId, "VCH-2026-000123", "OP-SAT-998877");
 
-        assertEquals(EstadoExpediente.EN_EVALUACION_FINAL, expedienteBase.getEstado());
+        assertEquals(EstadoExpediente.EN_EVALUACION, expedienteBase.getEstado());
         assertEquals("VCH-2026-000123", expedienteBase.getVoucherId());
         assertEquals("OP-SAT-998877", expedienteBase.getNumeroOperacionSat());
         assertNotNull(expedienteBase.getFechaPagoSat());
@@ -317,10 +317,10 @@ class ExpedienteServiceTest {
 
         expedienteService.subsanar(expedienteId, "Se adjunta plano sellado por arquitecto colegiado", "Juan Pérez");
 
-        assertEquals(EstadoExpediente.DOCUMENTOS_VALIDADOS, expedienteBase.getEstado());
+        assertEquals(EstadoExpediente.SUBSANADO, expedienteBase.getEstado());
         assertEquals("Se adjunta plano sellado por arquitecto colegiado", expedienteBase.getDetalleSubsanacion());
         assertNotNull(expedienteBase.getFechaSubsanacion());
-        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.OBSERVADO), eq(EstadoExpediente.DOCUMENTOS_VALIDADOS), eq("Juan Pérez"), any());
+        verify(auditoriaService).registrarTransicion(eq(expedienteId), eq(EstadoExpediente.OBSERVADO), eq(EstadoExpediente.SUBSANADO), eq("Juan Pérez"), any());
     }
 
     @Test

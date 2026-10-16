@@ -27,19 +27,66 @@ function verificarSesion() {
   const modalLogin = document.getElementById('modalLogin');
 
   if (token && usuario) {
-    const rolCorto = rol ? rol.replace('ROLE_', '') : 'USUARIO';
+    let badgeClass = 'role-badge';
+    let rolDesc = 'USUARIO';
+    if (rol === 'ROLE_ADMIN') { badgeClass += ' role-admin'; rolDesc = 'ADMINISTRADOR'; }
+    else if (rol === 'ROLE_CAJERO') { badgeClass += ' role-cajero'; rolDesc = 'CAJERO SAT'; }
+    else if (rol === 'ROLE_EVALUADOR') { badgeClass += ' role-evaluador'; rolDesc = 'EVALUADOR TÉCNICO'; }
+    else if (rol === 'ROLE_INSPECTOR') { badgeClass += ' role-inspector'; rolDesc = 'INSPECTOR ITSE'; }
+
     if (label) {
-      label.innerHTML = `👤 <strong>${usuario}</strong> <span style="font-size: 0.75rem; background: rgba(255,255,255,0.25); padding: 0.15rem 0.4rem; border-radius: 4px; margin-left: 0.25rem;">${rolCorto}</span>`;
+      label.innerHTML = `👤 <strong>${usuario}</strong> <span class="${badgeClass}">${rolDesc}</span>`;
       label.style.display = 'inline-block';
     }
     if (btnCerrar) btnCerrar.style.display = 'inline-block';
     if (btnIniciar) btnIniciar.style.display = 'none';
     if (modalLogin) modalLogin.style.display = 'none';
+
+    aplicarPermisosVisuales(rol);
   } else {
     if (label) label.style.display = 'none';
     if (btnCerrar) btnCerrar.style.display = 'none';
     if (btnIniciar) btnIniciar.style.display = 'inline-block';
+    aplicarPermisosVisuales(null);
   }
+}
+
+function aplicarPermisosVisuales(rol) {
+  const btnPagos = document.getElementById('btnAccionPagos');
+  const btnZoni = document.getElementById('btnAccionZonificacion');
+  const btnEval = document.getElementById('btnAccionEvaluacion');
+  const btnRes = document.getElementById('btnAccionResoluciones');
+  const btnTupa = document.getElementById('btnAccionTupa');
+  const btnOps = document.getElementById('btnAccionOperadores');
+
+  if (!rol) {
+    if (btnPagos) btnPagos.style.display = 'inline-block';
+    if (btnZoni) btnZoni.style.display = 'inline-block';
+    if (btnEval) btnEval.style.display = 'inline-block';
+    if (btnRes) btnRes.style.display = 'inline-block';
+    if (btnTupa) btnTupa.style.display = 'inline-block';
+    if (btnOps) btnOps.style.display = 'none';
+    return;
+  }
+
+  const esAdmin = rol === 'ROLE_ADMIN';
+  const esCajero = rol === 'ROLE_CAJERO';
+  const esEvaluador = rol === 'ROLE_EVALUADOR';
+
+  if (btnPagos) {
+    btnPagos.style.display = (esAdmin || esCajero) ? 'inline-block' : 'none';
+    if (esCajero) {
+      btnPagos.className = 'btn btn-primary btn-sm';
+      btnPagos.style.background = '#d97706';
+      btnPagos.style.borderColor = '#b45309';
+    }
+  }
+
+  if (btnZoni) btnZoni.style.display = (esAdmin || esEvaluador) ? 'inline-block' : 'none';
+  if (btnEval) btnEval.style.display = (esAdmin || esEvaluador) ? 'inline-block' : 'none';
+  if (btnRes) btnRes.style.display = (esAdmin) ? 'inline-block' : 'none';
+  if (btnTupa) btnTupa.style.display = 'inline-block';
+  if (btnOps) btnOps.style.display = (esAdmin) ? 'inline-block' : 'none';
 }
 
 function abrirModalLogin() {
@@ -240,6 +287,20 @@ function renderFormatosPdf(exp) {
 }
 
 function renderAcciones(exp) {
+  if (exp.estado === 'PRESENTADO') {
+    return `
+      <button class="btn btn-primary btn-sm" onclick="abrirModalItse('${exp.id}')" title="Calificar riesgo ITSE y validar admisibilidad documental">
+        🛡️ Calificar ITSE / Admisibilidad
+      </button>
+      <button class="btn btn-warning btn-sm" onclick="abrirModalObservacion('${exp.id}')" title="Formular observaciones formales según LPAG">
+        ⚠️ Observar
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="abrirModalRechazo('${exp.id}')" title="Rechazar solicitud formal">
+        ❌ Rechazar
+      </button>
+    `;
+  }
+
   if (exp.estado === 'FORMATOS_GENERADOS') {
     return `
       <button class="btn btn-primary btn-sm" onclick="abrirModalItse('${exp.id}')">
@@ -272,7 +333,7 @@ function renderAcciones(exp) {
     `;
   }
 
-  if (exp.estado === 'EN_EVALUACION_FINAL') {
+  if (exp.estado === 'EN_EVALUACION' || exp.estado === 'EN_EVALUACION_FINAL' || exp.estado === 'SUBSANADO') {
     return `
       <button class="btn btn-primary btn-sm" onclick="abrirEvaluacionAdmin('${exp.id}')" title="Formular informe administrativo técnico">
         📋 Informe Técnico (I07)
@@ -308,7 +369,7 @@ function renderAcciones(exp) {
     `;
   }
 
-  if (exp.estado === 'APROBADO') {
+  if (exp.estado === 'APROBADO' || exp.estado === 'EMITIDO') {
     return `
       <a href="verificar-licencia.html?codigo=${exp.licenciaQrCode || ''}" target="_blank" class="btn btn-secondary btn-sm">
         🔍 Verificación Pública
@@ -320,19 +381,26 @@ function renderAcciones(exp) {
 
 function actualizarKpis(list) {
   document.getElementById('kpiTotal').innerText = list.length;
-  document.getElementById('kpiTramite').innerText = list.filter(e => e.estado !== 'APROBADO' && e.estado !== 'RECHAZADO').length;
-  document.getElementById('kpiAprobados').innerText = list.filter(e => e.estado === 'APROBADO').length;
+  document.getElementById('kpiTramite').innerText = list.filter(e => e.estado !== 'APROBADO' && e.estado !== 'RECHAZADO' && e.estado !== 'EMITIDO' && e.estado !== 'DENEGADO').length;
+  document.getElementById('kpiAprobados').innerText = list.filter(e => e.estado === 'APROBADO' || e.estado === 'EMITIDO').length;
   document.getElementById('kpiAlertas').innerText = list.filter(e => e.alertaVencimiento && e.estado !== 'APROBADO' && e.estado !== 'RECHAZADO').length;
 }
 
 function getBadgeClass(estado) {
   switch (estado) {
+    case 'PRESENTADO': return 'badge-presentado';
+    case 'EN_EVALUACION': return 'badge-evaluacion';
+    case 'EN_EVALUACION_FINAL': return 'badge-evaluacion';
+    case 'SUBSANADO': return 'badge-validados';
     case 'FORMATOS_GENERADOS': return 'badge-formatos';
     case 'DOCUMENTOS_VALIDADOS': return 'badge-validados';
-    case 'EN_EVALUACION_FINAL': return 'badge-evaluacion';
+    case 'APTO_PARA_RESOLUCION': return 'badge-apto';
     case 'OBSERVADO': return 'badge-observado';
     case 'APROBADO': return 'badge-aprobado';
+    case 'EMITIDO': return 'badge-aprobado';
     case 'RECHAZADO': return 'badge-rechazado';
+    case 'DENEGADO': return 'badge-rechazado';
+    case 'CONCLUIDO': return 'badge-formatos';
     default: return 'badge-formatos';
   }
 }
@@ -707,12 +775,15 @@ async function cargarBandejaPagos() {
       if (p.estado === 'OBSERVADO') badgeColor = '#ea580c';
       if (p.estado === 'RECHAZADO') badgeColor = '#dc2626';
 
+      const btnHist = `<button class="btn btn-secondary btn-sm" onclick="verHistorialPago('${p.id}', '${p.codigoComprobante}')" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" title="Ver trazabilidad de auditoría de este pago">📜 Historial</button>`;
+
       const acciones = p.estado === 'VALIDADO_MANUALMENTE'
-        ? '<span style="color: #16a34a; font-weight: bold; font-size: 0.8rem;">✓ Validado</span>'
+        ? `<span style="color: #16a34a; font-weight: bold; font-size: 0.8rem; margin-right: 0.35rem;">✓ Validado</span> ${btnHist}`
         : `
           <button class="btn btn-success btn-sm" onclick="abrirValidarPagoModal('${p.id}', '${p.montoDeclarado}')" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Validar</button>
           <button class="btn btn-warning btn-sm" onclick="observarPagoPrompt('${p.id}')" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Observar</button>
           <button class="btn btn-danger btn-sm" onclick="rechazarPagoPrompt('${p.id}')" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">Rechazar</button>
+          ${btnHist}
         `;
 
       return `
@@ -850,6 +921,149 @@ async function rechazarPagoPrompt(pagoId) {
 
     alert('🚫 Pago rechazado.');
     cargarBandejaPagos();
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+async function verHistorialPago(pagoId, codigo) {
+  const modal = document.getElementById('modalHistorialPago');
+  const tbody = document.getElementById('tablaHistorialPagoBody');
+  const lbl = document.getElementById('lblHistorialPagoCodigo');
+  if (lbl) lbl.textContent = `Comprobante: ${codigo || pagoId}`;
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Cargando historial de decisiones...</td></tr>';
+  modal.style.display = 'flex';
+
+  try {
+    const res = await fetchConAuth(`/api/pagos/${pagoId}/historial`);
+    if (!res.ok) throw new Error('Error al consultar historial del comprobante.');
+    const lista = await res.json();
+
+    if (!lista || lista.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Sin decisiones registradas.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = lista.map(h => `
+      <tr>
+        <td style="font-size: 0.8rem;">${h.fechaDecision ? h.fechaDecision.replace('T', ' ').substring(0, 19) : '—'}</td>
+        <td><span class="badge" style="font-size: 0.75rem;">${h.estadoAnterior || '—'} → <strong>${h.estadoNuevo}</strong></span></td>
+        <td><strong>${h.usuarioNombre || 'Sistema'}</strong></td>
+        <td style="font-size: 0.85rem;">${h.motivo || '—'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #dc2626;">${err.message}</td></tr>`;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GESTIÓN DE CUENTAS Y OPERADORES (M01)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function abrirBandejaOperadores() {
+  const modal = document.getElementById('modalOperadores');
+  if (modal) modal.style.display = 'flex';
+}
+
+async function buscarCuentaPorDocumento() {
+  const doc = document.getElementById('inputBuscarCuentaDoc').value.trim();
+  if (!doc) return alert('Por favor ingrese el DNI o RUC de la cuenta a consultar.');
+
+  try {
+    const res = await fetchConAuth(`/api/cuentas/documento/${encodeURIComponent(doc)}`);
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('Cuenta no encontrada para el documento: ' + doc);
+      const msg = await parsearErrorHttp(res, 'consultar cuenta');
+      throw new Error(msg);
+    }
+    const c = await res.json();
+
+    document.getElementById('infoCuentaBox').style.display = 'block';
+    document.getElementById('lblCuentaTitular').textContent = c.razonSocialONombre || '—';
+    document.getElementById('lblCuentaDoc').textContent = c.numeroDocumento || '—';
+    document.getElementById('lblCuentaTipo').textContent = c.tipoPersona || '—';
+    document.getElementById('lblCuentaEmail').textContent = c.email || '—';
+    document.getElementById('lblCuentaEstado').textContent = c.estado || 'ACTIVA';
+
+    document.getElementById('opCuentaId').value = c.id;
+    document.getElementById('seccionListaOperadores').style.display = 'block';
+
+    renderListaOperadores(c.operadores || []);
+  } catch (err) {
+    alert('❌ ' + err.message);
+  }
+}
+
+function renderListaOperadores(ops) {
+  const tbody = document.getElementById('tablaOperadoresBody');
+  if (!ops || ops.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); font-style: italic;">No hay operadores nominativos designados para esta cuenta.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ops.map(o => `
+    <tr>
+      <td><strong>${o.dniOperador}</strong></td>
+      <td>${o.nombreCompleto}</td>
+      <td>${o.poderSustento || '—'}</td>
+      <td style="font-size: 0.8rem;">
+        ${o.puedeCrearBorrador ? '<span class="badge" style="background: #e0e7ff; color: #3730a3;">Crear</span> ' : ''}
+        ${o.puedeAdjuntarDocumentos ? '<span class="badge" style="background: #fef3c7; color: #92400e;">Adjuntar</span> ' : ''}
+        ${o.puedePresentarTramite ? '<span class="badge" style="background: #dcfce7; color: #166534;">Presentar</span>' : ''}
+      </td>
+      <td><span class="badge ${o.activo ? 'badge-aprobado' : 'badge-rechazado'}">${o.activo ? 'ACTIVO' : 'INACTIVO'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function abrirFormNuevoOperador() {
+  document.getElementById('formNuevoOperadorBox').style.display = 'block';
+}
+
+function cerrarFormNuevoOperador() {
+  document.getElementById('formNuevoOperadorBox').style.display = 'none';
+}
+
+async function guardarNuevoOperador() {
+  const cuentaId = document.getElementById('opCuentaId').value;
+  const dni = document.getElementById('txtOpDni').value.trim();
+  const nombre = document.getElementById('txtOpNombre').value.trim();
+  const email = document.getElementById('txtOpEmail').value.trim();
+  const poder = document.getElementById('txtOpPoder').value.trim();
+  const puedeCrear = document.getElementById('chkOpCrear').checked;
+  const puedeAdj = document.getElementById('chkOpAdjuntar').checked;
+  const puedePres = document.getElementById('chkOpPresentar').checked;
+
+  if (!cuentaId) return alert('No hay cuenta seleccionada.');
+  if (!dni || dni.length !== 8) return alert('El DNI del operador debe tener exactamente 8 dígitos.');
+  if (!nombre) return alert('El nombre del operador es obligatorio.');
+
+  const payload = {
+    dniOperador: dni,
+    nombreCompleto: nombre,
+    email: email || `${dni}@munihuamanga.gob.pe`,
+    poderSustento: poder || 'Poder Notarial Registrado',
+    puedeCrearBorrador: puedeCrear,
+    puedeAdjuntarDocumentos: puedeAdj,
+    puedePresentarTramite: puedePres
+  };
+
+  try {
+    const res = await fetchConAuth(`/api/cuentas/${cuentaId}/operadores`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const msg = await parsearErrorHttp(res, 'designar operador');
+      throw new Error(msg);
+    }
+
+    alert('✅ Operador nominativo designado exitosamente.');
+    cerrarFormNuevoOperador();
+    buscarCuentaPorDocumento();
   } catch (err) {
     alert('❌ ' + err.message);
   }

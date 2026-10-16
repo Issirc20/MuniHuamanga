@@ -273,7 +273,7 @@ public class ExpedienteService {
         Expediente expediente = obtenerPorId(id);
 
         EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.EN_EVALUACION_FINAL;
+        EstadoExpediente nuevo = EstadoExpediente.EN_EVALUACION;
 
         estadoExpedienteValidator.validarTransicion(actual, nuevo);
 
@@ -437,11 +437,11 @@ public class ExpedienteService {
         // Determinar estado objetivo según el avance previo
         EstadoExpediente nuevo;
         if (expediente.getFechaPagoSat() != null || (expediente.getVoucherId() != null && expediente.getNivelRiesgo() != null)) {
-            nuevo = EstadoExpediente.EN_EVALUACION_FINAL;
+            nuevo = EstadoExpediente.SUBSANADO;
         } else if (expediente.getNivelRiesgo() != null) {
-            nuevo = EstadoExpediente.DOCUMENTOS_VALIDADOS;
+            nuevo = EstadoExpediente.SUBSANADO;
         } else {
-            nuevo = EstadoExpediente.FORMATOS_GENERADOS;
+            nuevo = EstadoExpediente.SUBSANADO;
         }
 
         estadoExpedienteValidator.validarTransicion(actual, nuevo);

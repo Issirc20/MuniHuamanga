@@ -38,7 +38,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/borradores")
+@RequestMapping({"/api/borradores", "/api/solicitudes/borrador"})
 @RequiredArgsConstructor
 @Tag(name = "Borradores de Licencia", description = "Gestión de borradores preliminares, guardado parcial y presentación formal (M03 y M06)")
 public class SolicitudBorradorController {
@@ -46,6 +46,7 @@ public class SolicitudBorradorController {
     private final SolicitudBorradorService borradorService;
     private final PresentacionFormalService presentacionFormalService;
     private final DocumentoPdfService documentoPdfService;
+    private final pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
 
     @PostMapping
     @PreAuthorize("@borradorSecurity.puedeCrearBorradorEnCuenta(authentication, #dto.cuentaId)")
@@ -208,9 +209,14 @@ public class SolicitudBorradorController {
     }
 
     private UUID obtenerUsuarioId(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
         if (authentication.getPrincipal() instanceof CustomUserDetails cud) {
             return cud.getId();
         }
-        return null;
+        return usuarioRepository.findByUsername(authentication.getName())
+                .map(pe.gob.munihuamanga.licencias.expedientes.model.Usuario::getId)
+                .orElse(null);
     }
 }

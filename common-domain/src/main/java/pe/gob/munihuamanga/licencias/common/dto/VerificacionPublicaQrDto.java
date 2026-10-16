@@ -38,6 +38,7 @@ public class VerificacionPublicaQrDto {
     private EstadoLicencia estadoLicencia;
     private boolean firmaDigitalValida;
     private boolean valida;
+    private boolean esSimulada;
     private String mensajeVerificacion;
     private LocalDateTime fechaConsulta;
 }

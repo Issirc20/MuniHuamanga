@@ -3,135 +3,250 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MuniHuamanga — Sistema de Licencias de Funcionamiento</title>
+  <meta name="description" content="Municipalidad Provincial de Huamanga — Sistema Oficial de Gestión del Trámite de Licencias de Funcionamiento conforme a la Ley N° 28976 y TUO LPAG.">
+  <title>MuniHuamanga — Sistema de Gestión de Licencias de Funcionamiento V2</title>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .hero {
+    .hero-banner {
       text-align: center;
-      padding: 3rem 1rem;
-      background: white;
-      border-radius: var(--radius);
+      padding: 3.5rem 1.5rem 2.5rem;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow);
-      border: 1px solid var(--border);
-      margin-bottom: 2rem;
+      border: 1px solid var(--border-light);
+      margin-bottom: 2.5rem;
     }
-    .portal-cards {
+    .hero-crest {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1.25rem;
+    }
+    .hero-crest img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .hero-title {
+      font-size: 2.1rem;
+      color: var(--primary);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+    .hero-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto 1.5rem;
+      line-height: 1.6;
+    }
+    .portal-cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 2rem;
+      margin-bottom: 3rem;
     }
-    .portal-card {
-      background: white;
+    .portal-access-card {
+      background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem;
       box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      position: relative;
     }
-    .portal-card:hover {
+    .portal-access-card:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
     }
-    .portal-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
+    .card-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+    }
+    .card-title-lg {
+      color: var(--primary);
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .card-desc-text {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      flex: 1;
+    }
+    .card-features-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.75rem;
+      border-top: 1px solid var(--border-light);
+      padding-top: 1rem;
+    }
+    .card-features-list li {
+      font-size: 0.85rem;
+      color: var(--text-main);
+      padding: 0.35rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-features-list li::before {
+      content: "•";
+      color: var(--primary);
+      font-size: 1.2rem;
     }
   </style>
 </head>
 <body>
 
+  <!-- Encabezado Institucional -->
   <header class="app-header">
     <div class="header-brand">
       <div class="shield-icon"><img src="img/escudo-huamanga.png" alt="Escudo de Huamanga"></div>
       <div>
         <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
-        <p>Sistema de Gestión Documentaria del Trámite de Licencia de Funcionamiento</p>
+        <p>Gerencia de Desarrollo Económico y Licencias de Funcionamiento</p>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <div class="hero">
-      <span class="badge badge-formatos" style="margin-bottom: 1rem;">Ley N° 28976 & D.S. N° 046-2017-PCM</span>
-      <h2 style="font-size: 2rem; color: var(--primary); font-weight: 800; margin-bottom: 0.75rem;">
-        Digitalización Integral del Trámite de Licencia Municipal
+
+    <!-- Hero Banner Solemne -->
+    <div class="hero-banner">
+      <div class="hero-crest">
+        <img src="img/escudo-huamanga.png" alt="Escudo Institucional de Huamanga">
+      </div>
+      <span class="badge badge-presentado" style="margin-bottom: 1rem;">Marco Normativo: Ley N° 28976 & D.S. N° 046-2017-PCM</span>
+      <h2 class="hero-title">
+        Sistema Institucional de Licencias de Funcionamiento
       </h2>
-      <p style="max-width: 750px; margin: 0 auto; color: var(--text-muted); line-height: 1.6;">
-        Plataforma tecnológica orientada a la celeridad administrativa, reducción de plazos a 15 días hábiles,
-        emisión de licencias con firma digital y verificación pública inmediata mediante código QR.
+      <p class="hero-subtitle">
+        Plataforma oficial de la Municipalidad Provincial de Huamanga para la digitalización integral,
+        celeridad administrativa, formalización comercial de MYPES y fiscalización mediante código QR seguro.
       </p>
     </div>
 
-    <div class="portal-cards">
-      <!-- Tarjeta 1: Ciudadano -->
-      <div class="portal-card">
+    <!-- Cuadrícula de 3 Accesos Principales -->
+    <div class="portal-cards-grid">
+
+      <!-- Tarjeta 1: Portal Ciudadano -->
+      <div class="portal-access-card">
         <div>
-          <div class="portal-icon">👥</div>
-          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Portal Ciudadano</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Diseñado para administrados y MYPES. Permite registrar digitalmente la solicitud en Mesa de Partes Virtual y realizar el seguimiento cronológico en tiempo real.
+          <div class="card-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <h3 class="card-title-lg">Portal del Administrado</h3>
+          <p class="card-desc-text">
+            Mesa de Partes Virtual orientada a ciudadanos, emprendedores y personas jurídicas (RUC).
+            Permite preparar la solicitud en línea, autoguardar borradores y tramitar formalmente su expediente.
           </p>
+          <ul class="card-features-list">
+            <li>Solicitud guiada paso a paso con mapa georreferenciado</li>
+            <li>Generación automática de Declaración Jurada (Anexo 1)</li>
+            <li>Autoguardado y reanudación de borradores</li>
+            <li>Seguimiento en línea con traducción clara de estados</li>
+          </ul>
         </div>
-        <a href="portal-ciudadano.html" class="btn btn-primary">Ingresar al Portal Ciudadano →</a>
+        <a href="portal-ciudadano.html" class="btn btn-primary" style="width: 100%;">
+          Ingresar al Portal Ciudadano →
+        </a>
       </div>
 
-      <!-- Tarjeta 2: Formato Oficial Anexo 1 -->
-      <div class="portal-card" style="border: 2px solid #3b82f6; position: relative;">
-        <span class="badge badge-formatos" style="position: absolute; top: 1rem; right: 1rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">Versión 03 Oficial</span>
+      <!-- Tarjeta 2: Backoffice Interno -->
+      <div class="portal-access-card">
         <div>
-          <div class="portal-icon">📋</div>
-          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Anexo 1: Declaración Jurada</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Formato oficial fiel a la Ley N° 28976. Llene sus datos interactivamente en pantalla, imprímalo directamente ya llenado y descárguelo en PDF oficial guardado en base de datos.
+          <div class="card-icon-wrapper">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+          </div>
+          <h3 class="card-title-lg">Gestión Interna Municipal</h3>
+          <p class="card-desc-text">
+            Consola administrativa institucional con control de acceso estricto por roles (RBAC).
+            Dedicada a funcionarios de Mesa de Partes, Caja SAT, Evaluadores Técnicos y Autoridad Competente.
           </p>
+          <ul class="card-features-list">
+            <li>Bandeja de verificación manual de comprobantes SAT</li>
+            <li>Evaluación técnica motivada de zonificación PDU</li>
+            <li>Elaboración de informes y resoluciones administrativas</li>
+            <li>Emisión oficial y firma digital fail-closed</li>
+          </ul>
         </div>
-        <a href="formato-anexo1.html" class="btn btn-primary" style="background: #003366; border-color: #003366;">Abrir Formato Anexo 1 →</a>
-      </div>
-
-      <!-- Tarjeta 2: Interno -->
-      <div class="portal-card">
-        <div>
-          <div class="portal-icon">🏢</div>
-          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Sistema Interno de Gestión</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Bandeja de evaluación para la Gerencia de Licencias. Registro de dictamen ITSE de Defensa Civil, cálculo automático de tasa TUPA, validación de pago SAT y aprobación con emisión de QR.
-          </p>
-        </div>
-        <a href="portal-interno.html" class="btn btn-primary">Ingresar a Gestión Interna →</a>
+        <a href="portal-interno.html" class="btn btn-primary" style="width: 100%; background: var(--primary-dark);">
+          Acceso para Funcionarios →
+        </a>
       </div>
 
       <!-- Tarjeta 3: Verificación Pública QR -->
-      <div class="portal-card">
+      <div class="portal-access-card">
         <div>
-          <div class="portal-icon">🔍</div>
-          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Verificación Pública (QR)</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Portal público de solo lectura (RNF-20) para fiscalizadores y ciudadanos. Valida la autenticidad y vigencia en tiempo real de cualquier licencia emitida escaneando el código QR.
+          <div class="card-icon-wrapper" style="background: var(--success-light); color: var(--success);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+          <h3 class="card-title-lg">Verificación Pública QR</h3>
+          <p class="card-desc-text">
+            Servicio oficial de consulta ciudadana y fiscalización en campo. Permite comprobar la autenticidad,
+            vigencia legal y datos públicos autorizados de cualquier licencia emitida escaneando su código QR.
           </p>
+          <ul class="card-features-list">
+            <li>Consulta en tiempo real con minimización (Ley N° 29733)</li>
+            <li>Acreditación de validez oficial y firma electrónica</li>
+            <li>Vista especializada con mapa georreferenciado para inspectores</li>
+            <li>Canal abierto para la ciudadanía en general</li>
+          </ul>
         </div>
-        <a href="verificar-licencia.html" class="btn btn-primary" style="background: var(--success); border-color: var(--success);">Verificar Licencia Pública →</a>
+        <a href="verificar-licencia.html" class="btn btn-success" style="width: 100%;">
+          Verificar Licencia Pública →
+        </a>
       </div>
 
-      <!-- Tarjeta 4: Swagger / OpenAPI -->
-      <div class="portal-card">
-        <div>
-          <div class="portal-icon">⚡</div>
-          <h3 style="color: var(--primary); font-size: 1.3rem; margin-bottom: 0.5rem;">Documentación de APIs</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem;">
-            Especificación técnica interactiva OpenAPI / Swagger 3 de todos los endpoints REST expuestos por los microservicios de la solución.
-          </p>
-        </div>
-        <a href="/swagger-ui.html" target="_blank" class="btn btn-secondary">Abrir Swagger UI →</a>
-      </div>
     </div>
+
+    <!-- Bloque Informativo Institucional -->
+    <div class="card" style="background: var(--surface-alt); border-left: 4px solid var(--primary);">
+      <h4 style="font-size: 1rem; color: var(--primary); margin-bottom: 0.5rem; font-weight: 700;">
+        Información y Asistencia al Contribuyente
+      </h4>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin: 0;">
+        Horario de Atención Presencial: Lunes a Viernes de 08:00 a 16:30 hrs en la Sede Municipal (Portal Independencia N° 72, Plaza Mayor de Huamanga).
+        Consultas sobre el estado de su trámite: Mesa de Partes Virtual y línea de orientación ciudadana.
+      </p>
+    </div>
+
   </main>
 
+  <!-- Pie de Página Institucional -->
   <footer class="app-footer">
-    <p>Municipalidad Provincial de Huamanga — Portal Institucional de Licencias de Funcionamiento</p>
+    <p style="margin-bottom: 0.35rem; font-weight: 600;">Municipalidad Provincial de Huamanga — Ayacucho, Perú</p>
+    <p style="font-size: 0.75rem; color: #94a3b8; margin: 0;">
+      Sistema de Licencias de Funcionamiento V2 • Plataforma de Gobierno Digital • Conforme a Ley N° 28976 y Ley N° 27444
+    </p>
   </footer>
 
 </body>
 </html>
+

@@ -62,15 +62,16 @@ public class ResolucionPdfGenerator {
             PdfWriter writer = PdfWriter.getInstance(doc, baos);
 
             boolean esBorradorOPreliminar = resolucion.getEstado() != EstadoResolucion.FIRMADA;
+            boolean esSimulada = Boolean.TRUE.equals(resolucion.getEsSimulada());
 
             writer.setPageEvent(new PdfPageEventHelper() {
                 @Override
                 public void onEndPage(PdfWriter writer, Document document) {
                     PdfContentByte cb = writer.getDirectContentUnder();
 
-                    if (esBorradorOPreliminar) {
+                    if (esBorradorOPreliminar || esSimulada) {
                         PdfGState gstate = new PdfGState();
-                        gstate.setFillOpacity(0.12f);
+                        gstate.setFillOpacity(0.14f);
                         cb.saveState();
                         cb.setGState(gstate);
                         cb.beginText();
@@ -78,9 +79,12 @@ public class ResolucionPdfGenerator {
                         try {
                             cb.setFontAndSize(com.lowagie.text.pdf.BaseFont.createFont(
                                     com.lowagie.text.pdf.BaseFont.HELVETICA_BOLD,
-                                    com.lowagie.text.pdf.BaseFont.WINANSI, false), 36);
+                                    com.lowagie.text.pdf.BaseFont.WINANSI, false), 34);
+                            String textoMarca = esSimulada
+                                    ? "NO OFICIAL — DEMOSTRACIÓN"
+                                    : "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL";
                             cb.showTextAligned(Element.ALIGN_CENTER,
-                                    "VISTA PRELIMINAR - SIN VALIDEZ OFICIAL",
+                                    textoMarca,
                                     (document.right() + document.left()) / 2,
                                     (document.top() + document.bottom()) / 2, 45);
                         } catch (Exception ex) {
@@ -93,9 +97,14 @@ public class ResolucionPdfGenerator {
                     // Pie de página oficial
                     PdfPTable footer = new PdfPTable(1);
                     footer.setTotalWidth(document.right() - document.left());
-                    String textoFooter = esBorradorOPreliminar
-                            ? "*** BORRADOR DE RESOLUCIÓN ADMINISTRATIVA — NO CONSTITUYE LICENCIA DE FUNCIONAMIENTO NI ACTO VIGENTE ***"
-                            : "Resolución Gerencial N° " + resolucion.getNumeroResolucion() + " — Municipalidad Provincial de Huamanga | Ley N° 27972 / Ley N° 28976";
+                    String textoFooter;
+                    if (esSimulada) {
+                        textoFooter = "*** RESOLUCIÓN EMITIDA EN MODO DEMOSTRACIÓN — SIN EFICACIA LEGAL OFICIAL (LEY N° 27269) ***";
+                    } else if (esBorradorOPreliminar) {
+                        textoFooter = "*** BORRADOR DE RESOLUCIÓN ADMINISTRATIVA — NO CONSTITUYE LICENCIA DE FUNCIONAMIENTO NI ACTO VIGENTE ***";
+                    } else {
+                        textoFooter = "Resolución Gerencial N° " + resolucion.getNumeroResolucion() + " — Municipalidad Provincial de Huamanga | Ley N° 27972 / Ley N° 28976";
+                    }
                     PdfPCell cell = new PdfPCell(new Phrase(textoFooter, F_FOOTER));
                     cell.setBorder(Rectangle.NO_BORDER);
                     cell.setHorizontalAlignment(Element.ALIGN_CENTER);

@@ -102,6 +102,9 @@ public class ResolucionAdministrativa {
     @Column(name = "observaciones_firma", columnDefinition = "TEXT")
     private String observacionesFirma;
 
+    @Column(name = "es_simulada")
+    private Boolean esSimulada;
+
     @Column(name = "es_version_actual", nullable = false)
     private Boolean esVersionActual;
 
