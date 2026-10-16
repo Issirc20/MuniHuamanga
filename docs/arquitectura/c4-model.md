@@ -46,7 +46,7 @@ graph TD
     end
 
     %% ==========================================
-    %% SISTEMA Y EQUIPO MUNICIPAL
+    %% ÁMBITO MUNICIPAL
     %% ==========================================
     subgraph G_MUN["Ámbito Municipal - Huamanga"]
         sistema["<b>MuniHuamanga V2</b><br/><i>[Sistema Software - Monolito Modular]</i><br/>Gestión de licencias (10 estados TUPA),<br/>trazabilidad inmutable y verificación QR"]:::coreSys
