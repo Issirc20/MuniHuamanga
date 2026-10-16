@@ -1,7 +1,8 @@
-const API_BASE        = '/api/expedientes';
-const API_FORMULARIOS = '/api/formularios';
-const API_AUTH        = '/api/auth';
-const API_TUPA        = '/api/tupa/tarifas';
+const BACKEND_BASE    = (window.location.protocol.startsWith('http') && window.location.port === '8081') ? '' : 'http://localhost:8081';
+const API_BASE        = `${BACKEND_BASE}/api/expedientes`;
+const API_FORMULARIOS = `${BACKEND_BASE}/api/formularios`;
+const API_AUTH        = `${BACKEND_BASE}/api/auth`;
+const API_TUPA        = `${BACKEND_BASE}/api/tupa/tarifas`;
 
 document.addEventListener('DOMContentLoaded', () => {
   const demoBox = document.getElementById('demoCredentialsBox');
@@ -104,17 +105,24 @@ async function iniciarSesion() {
   const txtU = document.getElementById('txtUsuario');
   const txtP = document.getElementById('txtPassword');
   const errorBox = document.getElementById('loginError');
+  const submitBtn = document.getElementById('btnSubmitLogin');
 
-  const username = txtU.value.trim();
-  const password = txtP.value.trim();
+  const username = txtU ? txtU.value.trim() : '';
+  const password = txtP ? txtP.value.trim() : '';
 
   if (!username || !password) {
-    errorBox.innerText = 'Por favor complete usuario y contraseña.';
-    errorBox.style.display = 'block';
+    if (errorBox) {
+      errorBox.innerText = 'Por favor complete usuario y contraseña.';
+      errorBox.style.display = 'block';
+    }
     return;
   }
 
-  errorBox.style.display = 'none';
+  if (errorBox) errorBox.style.display = 'none';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Conectando...';
+  }
 
   try {
     const res = await fetch(`${API_AUTH}/login`, {
@@ -133,11 +141,25 @@ async function iniciarSesion() {
     localStorage.setItem('jwt_usuario', data.nombreCompleto || data.username);
     localStorage.setItem('jwt_rol', data.rol);
 
+    if (txtU) txtU.value = '';
+    if (txtP) txtP.value = '';
+    cerrarModal('modalLogin');
     verificarSesion();
     cargarExpedientes();
   } catch (err) {
-    errorBox.innerText = err.message;
-    errorBox.style.display = 'block';
+    if (errorBox) {
+      if (err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('fetch'))) {
+        errorBox.innerText = 'No se pudo conectar con el servidor backend en http://localhost:8081. Verifique que la aplicación Spring Boot esté iniciada.';
+      } else {
+        errorBox.innerText = err.message || 'Error al iniciar sesión.';
+      }
+      errorBox.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Iniciar Sesión';
+    }
   }
 }
 
@@ -165,7 +187,8 @@ async function fetchConAuth(url, options = {}) {
     }
   }
 
-  const res = await fetch(url, options);
+  const fullUrl = url.startsWith('http') ? url : `${BACKEND_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+  const res = await fetch(fullUrl, options);
 
   if (res.status === 401) {
     abrirModalLogin();
@@ -1137,7 +1160,7 @@ async function guardarEvaluacionZonificacion() {
    M08: EVALUACIÓN ADMINISTRATIVA, CHECKLIST E INFORMES TÉCNICOS (I07)
    ══════════════════════════════════════════════════════════════════════════ */
 
-const API_EVAL = '/api/evaluaciones-administrativas';
+const API_EVAL = `${BACKEND_BASE}/api/evaluaciones-administrativas`;
 let currentChecklistExpedienteId = null;
 let currentGestionInformeId = null;
 
@@ -1540,8 +1563,8 @@ async function descargarInformePreliminarPdf() {
    M09: RESOLUCIONES ADMINISTRATIVAS Y LICENCIAS OFICIALES (I08)
    ══════════════════════════════════════════════════════════════════════════ */
 
-const API_RESOLUCIONES = '/api/resoluciones';
-const API_LICENCIAS    = '/api/licencias';
+const API_RESOLUCIONES = `${BACKEND_BASE}/api/resoluciones`;
+const API_LICENCIAS    = `${BACKEND_BASE}/api/licencias`;
 let currentGestionResolucionId = null;
 let currentGestionResolucionExpedienteId = null;
 let currentLicenciaEmitidaId = null;
