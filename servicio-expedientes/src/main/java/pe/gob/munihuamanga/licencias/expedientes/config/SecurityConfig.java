@@ -120,11 +120,16 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.POST,
                             "/api/formularios/declaracion-jurada",
                             "/api/formularios/anexo1-declaracion-jurada",
+                            "/api/formularios/anexo1-itse-solicitud",
+                            "/api/formularios/anexo2-itse-riesgo",
                             "/api/formularios/anexo3-matriz-riesgo",
                             "/api/formularios/anexo3-matriz-riesgo-itse",
                             "/api/formularios/anexo4-condiciones",
                             "/api/formularios/anexo4-condiciones-seguridad",
                             "/api/formularios/voucher-sat").permitAll();
+
+                    // Plantillas documentales oficiales: consulta ciudadana y descarga pública
+                    auth.requestMatchers(HttpMethod.GET, "/api/plantillas-documentales", "/api/plantillas-documentales/**").permitAll();
 
                     // 7. Tarifario TUPA: Consulta pública, Mantenimiento exclusivo ADMIN
                     auth.requestMatchers(HttpMethod.GET, "/api/tupa/**").permitAll();

@@ -44,24 +44,73 @@ public class DocumentosFormulariosController {
     }
 
     @PostMapping({"/anexo1-declaracion-jurada", "/declaracion-jurada"})
-    @Operation(summary = "Generar PDF oficial del Anexo 1 de 2 páginas (Ley N° 28976 / D.S. N° 046-2017-PCM)")
+    @Operation(summary = "Generar PDF oficial del Anexo 1 Licencia (Ley N° 28976 / D.S. N° 046-2017-PCM)")
     public ResponseEntity<byte[]> generarAnexo1DeclaracionJurada(@RequestBody ExpedienteResponseDto expediente) {
         byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(expediente);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + expediente.getNumeroTramite() + ".pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-Licencia-" + expediente.getNumeroTramite() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
 
     @GetMapping("/anexo-1/{id}/pdf")
     @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
-    @Operation(summary = "Descargar PDF oficial de Anexo 1 por ID de expediente")
+    @Operation(summary = "Descargar PDF oficial de Anexo 1 Licencia por ID de expediente")
     public ResponseEntity<byte[]> descargarAnexo1PorId(@PathVariable UUID id) {
         Expediente exp = expedienteService.obtenerPorId(id);
         ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
         byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(dto);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + exp.getNumeroTramite() + ".pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-Licencia-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @PostMapping("/anexo1-itse-solicitud")
+    @Operation(summary = "Generar PDF oficial del Anexo 1 ITSE (Solicitud ITSE / ECSE)")
+    public ResponseEntity<byte[]> generarAnexo1ItseSolicitud(@RequestBody pe.gob.munihuamanga.licencias.common.dto.Anexo1ItseDto dto) {
+        String numTramite = dto.getNumeroExpediente() != null && !dto.getNumeroExpediente().isBlank()
+                ? dto.getNumeroExpediente() : "EXP-BORRADOR";
+        byte[] pdf = documentoPdfService.generarAnexo1ItseDirecto(dto, numTramite);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-ITSE-Solicitud-" + numTramite + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/anexo1-itse/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
+    @Operation(summary = "Descargar PDF oficial de Anexo 1 ITSE por ID de expediente")
+    public ResponseEntity<byte[]> descargarAnexo1ItsePorId(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarAnexo1Itse(dto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-ITSE-Solicitud-" + exp.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @PostMapping("/anexo2-itse-riesgo")
+    @Operation(summary = "Generar PDF oficial del Anexo 2 ITSE (Información para determinación del nivel de riesgo)")
+    public ResponseEntity<byte[]> generarAnexo2ItseRiesgo(@RequestBody pe.gob.munihuamanga.licencias.common.dto.Anexo2ItseDto dto) {
+        String numTramite = "EXP-BORRADOR";
+        byte[] pdf = documentoPdfService.generarAnexo2ItseDirecto(dto, numTramite, null);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo2-ITSE-DeterminacionRiesgo-" + numTramite + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/anexo2-itse/{id}/pdf")
+    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
+    @Operation(summary = "Descargar PDF oficial de Anexo 2 ITSE por ID de expediente")
+    public ResponseEntity<byte[]> descargarAnexo2ItsePorId(@PathVariable UUID id) {
+        Expediente exp = expedienteService.obtenerPorId(id);
+        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
+        byte[] pdf = documentoPdfService.generarAnexo2Itse(dto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo2-ITSE-DeterminacionRiesgo-" + exp.getNumeroTramite() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }
