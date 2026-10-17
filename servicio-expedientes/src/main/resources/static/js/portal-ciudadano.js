@@ -1377,3 +1377,649 @@ async function enviarSubsanacionCiudadana() {
     alert('❌ Error al subsanar: ' + err.message);
   }
 }
+
+// =============================================================================
+// MÓDULO DE FORMATOS OFICIALES: 4 ANEXOS ITSE + 1 DECLARACIÓN JURADA DE LICENCIA
+// =============================================================================
+
+// Estado local de formularios digitales ITSE
+let formatosDigitalesState = {
+  itse1: null,
+  itse2: null,
+  itse4: null,
+  pdfPreviewUrl: null,
+};
+
+// Cargar versiones oficiales de plantillas desde el backend
+async function cargarVersionesPlantillas() {
+  try {
+    const res = await fetch('/api/plantillas-documentales');
+    if (!res.ok) return;
+    const plantillas = await res.json();
+    plantillas.forEach(p => {
+      const elVer = document.getElementById(
+        p.codigo === 'ITSE_ANEXO_1' ? 'badgeVerItse1' :
+        p.codigo === 'ITSE_ANEXO_2' ? 'badgeVerItse2' :
+        p.codigo === 'ITSE_ANEXO_3' ? 'badgeVerItse3' :
+        p.codigo === 'ITSE_ANEXO_4' ? 'badgeVerItse4' :
+        p.codigo === 'LICENCIA_ANEXO_1' ? 'badgeVerLicencia1' : null
+      );
+      if (elVer && p.versionTexto) {
+        elVer.textContent = p.versionTexto;
+      }
+    });
+  } catch (err) {
+    console.warn('No se pudo consultar versiones de plantillas:', err);
+  }
+}
+
+// Escuchar cambios de paso para actualizar versiones y estados de plantillas
+const originalIrPaso = window.irPaso;
+window.irPaso = async function(paso) {
+  const result = await originalIrPaso(paso);
+  if (result !== false && paso === 3) {
+    cargarVersionesPlantillas();
+    actualizarEstadosCardsFormatos();
+  }
+  return result;
+};
+
+// Actualizar badges de estado de cumplimiento de las 5 tarjetas
+function actualizarEstadosCardsFormatos() {
+  const bId = state.borradorId || 'default';
+  
+  if (localStorage.getItem(`itse1_completado_${bId}`)) {
+    marcarCardCompletada('badgeEstadoItse1');
+  }
+  if (localStorage.getItem(`itse2_completado_${bId}`)) {
+    marcarCardCompletada('badgeEstadoItse2');
+  }
+  if (localStorage.getItem(`itse4_completado_${bId}`)) {
+    marcarCardCompletada('badgeEstadoItse4');
+  }
+  if (localStorage.getItem(`licencia1_completado_${bId}`)) {
+    marcarCardCompletada('badgeEstadoLicencia1');
+  }
+}
+
+function marcarCardCompletada(badgeId) {
+  const el = document.getElementById(badgeId);
+  if (el) {
+    el.className = 'badge-estado-doc completado';
+    el.innerHTML = '✅ Completado';
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANEXO 1 ITSE: SOLICITUD ITSE / ECSE
+// -----------------------------------------------------------------------------
+function abrirModalItseAnexo1() {
+  // Precargar nombres, DNI/RUC, teléfono, correo, representante
+  const txtTitular = valor('nombreTitular') || (state.usuario ? state.usuario.nombreCompleto : '');
+  const txtDoc = valor('documentoIdentidad') || (state.usuario ? state.usuario.username : '');
+  const txtTel = valor('telefonoContacto') || '';
+  const txtDom = valor('direccionFiscal') || '';
+  const txtEmail = valor('correoElectronico') || (state.usuario ? state.usuario.email : '');
+
+  // Precargar establecimiento, giro, dirección, área, pisos
+  const txtComercial = valor('nombreComercial') || '';
+  const txtGiro = valor('giroNegocio') || '';
+  const txtDirEst = valor('direccionEstablecimiento') || '';
+  const txtArea = valor('areaMetrosCuadrados') || '85.50';
+  const txtPisos = valor('selNumPisos') || '1';
+
+  if (document.getElementById('itse1NombresTitular')) document.getElementById('itse1NombresTitular').value = txtTitular;
+  if (document.getElementById('itse1DocIdentidad')) document.getElementById('itse1DocIdentidad').value = txtDoc;
+  if (document.getElementById('itse1Telefono')) document.getElementById('itse1Telefono').value = txtTel;
+  if (document.getElementById('itse1DomicilioLegal')) document.getElementById('itse1DomicilioLegal').value = txtDom;
+  if (document.getElementById('itse1Email')) document.getElementById('itse1Email').value = txtEmail;
+
+  if (document.getElementById('itse1NombreComercial')) document.getElementById('itse1NombreComercial').value = txtComercial;
+  if (document.getElementById('itse1Giro')) document.getElementById('itse1Giro').value = txtGiro;
+  if (document.getElementById('itse1DireccionEstablecimiento')) document.getElementById('itse1DireccionEstablecimiento').value = txtDirEst;
+  if (document.getElementById('itse1AreaM2')) document.getElementById('itse1AreaM2').value = txtArea;
+  if (document.getElementById('itse1NumPisos')) document.getElementById('itse1NumPisos').value = txtPisos;
+
+  // Recuperar borrador previo si existe en localStorage
+  const bId = state.borradorId || 'default';
+  const guardado = localStorage.getItem(`itse1_data_${bId}`);
+  if (guardado) {
+    try {
+      const data = JSON.parse(guardado);
+      if (data.tipoItse) document.getElementById('itse1TipoTramite').value = data.tipoItse;
+      if (data.tipoEcse) document.getElementById('itse1TipoEcse').value = data.tipoEcse;
+      if (data.funcionEdificacion) document.getElementById('itse1FuncionEdif').value = data.funcionEdificacion;
+      if (data.condicionSolicitante) document.getElementById('itse1CondicionSolicitante').value = data.condicionSolicitante;
+    } catch (e) {}
+  }
+
+  document.getElementById('modalItseAnexo1').style.display = 'flex';
+}
+
+function construirDtoAnexo1Itse() {
+  const bId = state.borradorId || 'default';
+  return {
+    numeroExpediente: state.borradorId ? `BORR-${state.borradorId.substring(0, 8)}` : 'EXP-BORRADOR',
+    tipoItse: valor('itse1TipoTramite') || 'POSTERIOR',
+    tipoEcse: valor('itse1TipoEcse') || 'NINGUNO',
+    funcionEdificacion: valor('itse1FuncionEdif') || 'COMERCIO',
+    nivelRiesgo: (parseFloat(valor('itse1AreaM2')) || 85.5) <= 500 ? 'MEDIO' : 'ALTO',
+    condicionSolicitante: valor('itse1CondicionSolicitante') || 'CONDUCTOR_ADMINISTRADOR',
+    nombresSolicitante: valor('itse1NombresTitular') || valor('nombreTitular') || 'Titular Solicitante',
+    dniCeSolicitante: valor('itse1DocIdentidad') || valor('documentoIdentidad') || '42567891',
+    domicilioSolicitante: valor('itse1DomicilioLegal') || valor('direccionFiscal') || 'Ayacucho',
+    telefonoSolicitante: valor('itse1Telefono') || valor('telefonoContacto') || '966000000',
+    correoSolicitante: valor('itse1Email') || valor('correoElectronico') || 'solicitante@huamanga.gob.pe',
+    razonSocial: valor('itse1NombresTitular') || valor('nombreTitular') || 'Establecimiento Huamanga',
+    ruc: valor('itse1DocIdentidad') || valor('documentoIdentidad') || '20123456789',
+    nombreComercial: valor('itse1NombreComercial') || valor('nombreComercial') || 'Local Comercial',
+    direccionEstablecimiento: valor('itse1DireccionEstablecimiento') || valor('direccionEstablecimiento') || 'Jr. 28 de Julio',
+    localidad: 'Ayacucho',
+    distrito: 'Ayacucho',
+    provincia: 'Huamanga',
+    departamento: 'Ayacucho',
+    referenciaDireccion: valor('referenciaEstablecimiento') || '',
+    giroActividades: valor('itse1Giro') || valor('giroNegocio') || 'Comercio general',
+    numeroPisos: parseInt(valor('itse1NumPisos')) || 1,
+    pisoUbicacion: '1er Piso',
+    areaOcupadaTotal: parseFloat(valor('itse1AreaM2')) || 85.50,
+    horarioAtencion: valor('itse1Horario') || '08:00 - 20:00',
+    docDeclaracionJurada: true,
+    docReciboPago: true,
+    docCroquisUbicacion: document.getElementById('chkItse1Croquis')?.checked ?? true,
+    docPlanSeguridad: document.getElementById('chkItse1PlanSeg')?.checked ?? true,
+    docPruebasOperatividad: document.getElementById('chkItse1Extintores')?.checked ?? true,
+    docCertificadoPozoTierra: document.getElementById('chkItse1PozoTierra')?.checked ?? false,
+    docPlanoTableros: document.getElementById('chkItse1Tableros')?.checked ?? false,
+  };
+}
+
+async function guardarFormularioItse1(descargar = false) {
+  const dto = construirDtoAnexo1Itse();
+  const bId = state.borradorId || 'default';
+  localStorage.setItem(`itse1_data_${bId}`, JSON.stringify(dto));
+  localStorage.setItem(`itse1_completado_${bId}`, 'true');
+  marcarCardCompletada('badgeEstadoItse1');
+
+  try {
+    // Generar PDF y adjuntarlo al borrador si hay sesión
+    const res = await fetch('/api/formularios/anexo1-itse-solicitud', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+    if (!res.ok) throw new Error('Error al generar PDF del Anexo 1 ITSE');
+    const blob = await res.blob();
+
+    if (state.borradorId && state.token) {
+      await adjuntarBlobAlBorrador(state.borradorId, blob, 'ANEXO_ITSE_1_SOLICITUD', 'Anexo1-ITSE-Solicitud.pdf');
+    }
+
+    if (descargar) {
+      descargarBlob(blob, `Anexo1-ITSE-Solicitud-${dto.numeroExpediente}.pdf`);
+    }
+
+    cerrarModalItse('modalItseAnexo1');
+    alert('✅ Anexo 1 ITSE guardado correctamente y vinculado a su trámite.');
+  } catch (err) {
+    alert('⚠️ Formulario guardado en memoria local. (Detalle PDF: ' + err.message + ')');
+    cerrarModalItse('modalItseAnexo1');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANEXO 2 ITSE: INFORMACIÓN PARA DETERMINACIÓN DE RIESGO
+// -----------------------------------------------------------------------------
+function abrirModalItseAnexo2() {
+  const comercial = valor('nombreComercial') || 'Establecimiento Comercial';
+  const area = valor('areaMetrosCuadrados') || '85.50';
+  document.getElementById('lblItse2Establecimiento').textContent = comercial;
+  document.getElementById('lblItse2Area').textContent = area;
+
+  // Recuperar datos previos
+  const bId = state.borradorId || 'default';
+  const guardado = localStorage.getItem(`itse2_data_${bId}`);
+  if (guardado) {
+    try {
+      const data = JSON.parse(guardado);
+      if (data.funcionPrincipal) {
+        const rad = document.querySelector(`input[name="itse2Funcion"][value="${data.funcionPrincipal}"]`);
+        if (rad) rad.checked = true;
+      }
+      if (data.factorGlp) document.getElementById('itse2FactorGlp').checked = true;
+      if (data.factorCalderas) document.getElementById('itse2FactorCalderas').checked = true;
+      if (data.factorSotano) document.getElementById('itse2FactorSotano').checked = true;
+      if (data.factorQuimicos) document.getElementById('itse2FactorQuimicos').checked = true;
+    } catch (e) {}
+  }
+
+  recalcularRiesgoItse2();
+  document.getElementById('modalItseAnexo2').style.display = 'flex';
+}
+
+function recalcularRiesgoItse2() {
+  const funcionRad = document.querySelector('input[name="itse2Funcion"]:checked');
+  const funcion = funcionRad ? funcionRad.value : 'COMERCIO';
+  const area = parseFloat(valor('areaMetrosCuadrados')) || 85.50;
+
+  const glp = document.getElementById('itse2FactorGlp')?.checked;
+  const calderas = document.getElementById('itse2FactorCalderas')?.checked;
+  const sotano = document.getElementById('itse2FactorSotano')?.checked;
+  const quimicos = document.getElementById('itse2FactorQuimicos')?.checked;
+
+  let nivel = 'BAJO';
+
+  if (funcion === 'COMERCIO') {
+    const sub = document.querySelector('input[name="itse2SubComercio"]:checked')?.value;
+    nivel = (sub === 'MAYOR_500' || area > 500) ? 'ALTO' : (sub === 'HASTA_500' || area > 100 ? 'MEDIO' : 'BAJO');
+  } else if (funcion === 'ENCUENTRO') {
+    const sub = document.querySelector('input[name="itse2SubEncuentro"]:checked')?.value;
+    nivel = sub === 'DISCOTECA_BAR' ? 'MUY_ALTO' : (sub === 'REST_MAYOR_100' ? 'ALTO' : 'MEDIO');
+  } else if (funcion === 'HOSPEDAJE') {
+    const sub = document.querySelector('input[name="itse2SubHospedaje"]:checked')?.value;
+    nivel = sub === 'HOTEL_MAYOR_3P' ? 'ALTO' : 'MEDIO';
+  } else if (funcion === 'EDUCACION') {
+    const sub = document.querySelector('input[name="itse2SubEducacion"]:checked')?.value;
+    nivel = sub === 'MAYOR_2P' ? 'ALTO' : 'MEDIO';
+  } else if (funcion === 'INDUSTRIA') {
+    const sub = document.querySelector('input[name="itse2SubIndustria"]:checked')?.value;
+    nivel = sub === 'MEDIANA_GRAN' ? 'MUY_ALTO' : 'MEDIO';
+  } else if (funcion === 'OFICINAS') {
+    const sub = document.querySelector('input[name="itse2SubOficinas"]:checked')?.value;
+    nivel = sub === 'EDIFICIO_MAYOR' ? 'ALTO' : 'BAJO';
+  } else if (funcion === 'SALUD') {
+    const sub = document.querySelector('input[name="itse2SubSalud"]:checked')?.value;
+    nivel = sub === 'CLINICA_HOSP' ? 'MUY_ALTO' : 'BAJO';
+  } else if (funcion === 'ALMACEN') {
+    const sub = document.querySelector('input[name="itse2SubAlmacen"]:checked')?.value;
+    nivel = sub === 'ALM_COMBUSTIBLE' ? 'MUY_ALTO' : 'MEDIO';
+  }
+
+  if (calderas || quimicos) {
+    if (nivel !== 'MUY_ALTO') nivel = 'ALTO';
+  }
+  if (glp && nivel === 'BAJO') {
+    nivel = 'MEDIO';
+  }
+
+  const badge = document.getElementById('badgeItse2RiesgoPreliminar');
+  const textoNivel = nivel.replace('_', ' ');
+  badge.textContent = `Nivel Preliminar Estimado: ${textoNivel}`;
+  badge.style.background = (nivel === 'BAJO' || nivel === 'MEDIO') ? '#e0f2fe' : '#fef2f2';
+  badge.style.color = (nivel === 'BAJO' || nivel === 'MEDIO') ? '#0369a1' : '#b91c1c';
+
+  formatosDigitalesState.nivelCalculado = nivel;
+  return nivel;
+}
+
+function construirDtoAnexo2Itse() {
+  const funcionRad = document.querySelector('input[name="itse2Funcion"]:checked');
+  const funcion = funcionRad ? funcionRad.value : 'COMERCIO';
+  const nivel = formatosDigitalesState.nivelCalculado || 'MEDIO';
+
+  return {
+    funcionPrincipal: funcion,
+    areaOcupadaTotal: parseFloat(valor('areaMetrosCuadrados')) || 85.50,
+    numeroPisos: parseInt(valor('selNumPisos')) || 1,
+    factorGlp: document.getElementById('itse2FactorGlp')?.checked ?? false,
+    factorCalderas: document.getElementById('itse2FactorCalderas')?.checked ?? false,
+    factorSotano: document.getElementById('itse2FactorSotano')?.checked ?? false,
+    factorQuimicos: document.getElementById('itse2FactorQuimicos')?.checked ?? false,
+    nivelRiesgoCalculado: nivel,
+    clasificacionConfirmada: false
+  };
+}
+
+async function guardarFormularioItse2(descargar = false) {
+  const dto = construirDtoAnexo2Itse();
+  const bId = state.borradorId || 'default';
+  localStorage.setItem(`itse2_data_${bId}`, JSON.stringify(dto));
+  localStorage.setItem(`itse2_completado_${bId}`, 'true');
+  marcarCardCompletada('badgeEstadoItse2');
+
+  try {
+    const res = await fetch('/api/formularios/anexo2-itse-riesgo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dto)
+    });
+    if (!res.ok) throw new Error('Error al generar PDF del Anexo 2 ITSE');
+    const blob = await res.blob();
+
+    if (state.borradorId && state.token) {
+      await adjuntarBlobAlBorrador(state.borradorId, blob, 'ANEXO_ITSE_2_RIESGO', 'Anexo2-ITSE-DeterminacionRiesgo.pdf');
+    }
+
+    if (descargar) {
+      descargarBlob(blob, 'Anexo2-ITSE-DeterminacionRiesgo.pdf');
+    }
+
+    cerrarModalItse('modalItseAnexo2');
+    alert('✅ Anexo 2 ITSE guardado correctamente.');
+  } catch (err) {
+    alert('⚠️ Matriz guardada en memoria local. (Detalle PDF: ' + err.message + ')');
+    cerrarModalItse('modalItseAnexo2');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANEXO 3 ITSE: REPORTE DE NIVEL DE RIESGO
+// -----------------------------------------------------------------------------
+function abrirModalItseAnexo3() {
+  const nivel = formatosDigitalesState.nivelCalculado || 'MEDIO';
+  document.getElementById('lblItse3RiesgoIncendio').textContent = nivel.replace('_', ' ');
+  document.getElementById('lblItse3RiesgoColapso').textContent = 'BAJO';
+  document.getElementById('modalItseAnexo3').style.display = 'flex';
+}
+
+// -----------------------------------------------------------------------------
+// ANEXO 4 ITSE: DECLARACIÓN JURADA DE CONDICIONES DE SEGURIDAD (4 PÁGINAS)
+// -----------------------------------------------------------------------------
+function abrirModalItseAnexo4() {
+  cambiarTabItse4(1);
+
+  // Recuperar respuestas previas si existen
+  const bId = state.borradorId || 'default';
+  const guardado = localStorage.getItem(`itse4_data_${bId}`);
+  if (guardado) {
+    try {
+      const data = JSON.parse(guardado);
+      for (let i = 1; i <= 14; i++) {
+        const sel = document.getElementById(`itse4_q${i}`);
+        if (sel && data[`q${i}`]) sel.value = data[`q${i}`];
+      }
+    } catch (e) {}
+  }
+
+  document.getElementById('modalItseAnexo4').style.display = 'flex';
+}
+
+function cambiarTabItse4(num) {
+  for (let i = 1; i <= 4; i++) {
+    const sec = document.getElementById(`tabItse4Sec${i}`);
+    const btn = document.getElementById(`tabItse4Btn${i}`);
+    if (sec) sec.style.display = (i === num) ? 'block' : 'none';
+    if (btn) {
+      btn.className = (i === num) ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-secondary';
+    }
+  }
+}
+
+function construirDtoAnexo4Itse() {
+  const respuestas = {};
+  for (let i = 1; i <= 14; i++) {
+    const sel = document.getElementById(`itse4_q${i}`);
+    respuestas[`q${i}`] = sel ? sel.value : 'SI';
+  }
+  return {
+    numeroTramite: state.borradorId ? `BORR-${state.borradorId.substring(0, 8)}` : 'EXP-BORRADOR',
+    titular: valor('nombreTitular') || 'Titular Solicitante',
+    razonSocial: valor('nombreTitular') || 'Razón Social',
+    nombreComercial: valor('nombreComercial') || 'Establecimiento',
+    direccion: valor('direccionEstablecimiento') || 'Jr. 28 de Julio',
+    area: parseFloat(valor('areaMetrosCuadrados')) || 85.50,
+    giro: valor('giroNegocio') || 'Comercio',
+    condicionesCumplidas: true,
+    declaracionAceptada: document.getElementById('chkItse4AceptoDeclaracion')?.checked ?? true,
+    ...respuestas
+  };
+}
+
+async function guardarFormularioItse4(descargar = false) {
+  const dto = construirDtoAnexo4Itse();
+  const bId = state.borradorId || 'default';
+  localStorage.setItem(`itse4_data_${bId}`, JSON.stringify(dto));
+  localStorage.setItem(`itse4_completado_${bId}`, 'true');
+  marcarCardCompletada('badgeEstadoItse4');
+
+  try {
+    const expPayload = {
+      numeroTramite: dto.numeroTramite,
+      titular: dto.titular,
+      documentoIdentidad: valor('documentoIdentidad') || '42567891',
+      nombreComercial: dto.nombreComercial,
+      direccion: dto.direccion,
+      areaMetrosCuadrados: dto.area,
+      giro: dto.giro,
+      nivelRiesgo: 'MEDIO'
+    };
+
+    const res = await fetch('/api/formularios/anexo4-condiciones-seguridad', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expPayload)
+    });
+    if (!res.ok) throw new Error('Error al generar PDF del Anexo 4 ITSE');
+    const blob = await res.blob();
+
+    if (state.borradorId && state.token) {
+      await adjuntarBlobAlBorrador(state.borradorId, blob, 'ANEXO_ITSE_4_CONDICIONES', 'Anexo4-ITSE-CondicionesSeguridad.pdf');
+    }
+
+    if (descargar) {
+      descargarBlob(blob, 'Anexo4-ITSE-CondicionesSeguridad.pdf');
+    }
+
+    cerrarModalItse('modalItseAnexo4');
+    alert('✅ Anexo 4 ITSE guardado correctamente y vinculado a su trámite.');
+  } catch (err) {
+    alert('⚠️ Declaración guardada en memoria local. (Detalle PDF: ' + err.message + ')');
+    cerrarModalItse('modalItseAnexo4');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ANEXO N.º 1 LICENCIA: CONEXIÓN INTERACTIVA CON FORMATO-ANEXO1.HTML
+// -----------------------------------------------------------------------------
+async function abrirAnexo1ConBorrador() {
+  // Asegurar guardado previo del borrador para que tenga UUID
+  if (!state.borradorId) {
+    await guardarAvanceBorrador(false);
+  }
+
+  const bId = state.borradorId;
+  if (bId) {
+    sessionStorage.setItem('borrador_id_activo', bId);
+    window.location.href = `formato-anexo1.html?borradorId=${bId}`;
+  } else {
+    window.location.href = 'formato-anexo1.html';
+  }
+}
+
+// -----------------------------------------------------------------------------
+// CONTROL GENERAL DE MODALES, PREVIEWS Y DESCARGAS
+// -----------------------------------------------------------------------------
+function cerrarModalItse(modalId) {
+  const el = document.getElementById(modalId);
+  if (el) el.style.display = 'none';
+}
+
+async function previsualizarDocumento(codigo) {
+  const modal = document.getElementById('modalPreviewPdf');
+  const iframe = document.getElementById('iframePreviewPdf');
+  const lblTit = document.getElementById('lblPreviewTitulo');
+  const btnDesc = document.getElementById('btnDescargarPreviewActual');
+
+  lblTit.textContent = `👁️ Vista Previa: ${codigo.replace(/_/g, ' ')}`;
+  iframe.src = 'about:blank';
+  modal.style.display = 'flex';
+
+  try {
+    const blob = await generarBlobPorCodigo(codigo);
+    if (formatosDigitalesState.pdfPreviewUrl) {
+      URL.revokeObjectURL(formatosDigitalesState.pdfPreviewUrl);
+    }
+    const url = URL.createObjectURL(blob);
+    formatosDigitalesState.pdfPreviewUrl = url;
+    iframe.src = url;
+    btnDesc.href = url;
+    btnDesc.download = `${codigo.toLowerCase()}.pdf`;
+  } catch (err) {
+    alert('❌ Error al generar la vista previa: ' + err.message);
+    cerrarModalPreviewPdf();
+  }
+}
+
+async function descargarDocumentoGenerado(codigo) {
+  try {
+    const blob = await generarBlobPorCodigo(codigo);
+    descargarBlob(blob, `${codigo.toLowerCase()}-oficial.pdf`);
+  } catch (err) {
+    alert('❌ Error al descargar documento: ' + err.message);
+  }
+}
+
+async function imprimirDocumentoDirecto(codigo) {
+  try {
+    const blob = await generarBlobPorCodigo(codigo);
+    const url = URL.createObjectURL(blob);
+    
+    // Crear iframe oculto para impresión nativa del navegador
+    let hiddenIframe = document.getElementById('hiddenPrintIframe');
+    if (!hiddenIframe) {
+      hiddenIframe = document.createElement('iframe');
+      hiddenIframe.id = 'hiddenPrintIframe';
+      hiddenIframe.style.position = 'fixed';
+      hiddenIframe.style.right = '0';
+      hiddenIframe.style.bottom = '0';
+      hiddenIframe.style.width = '0';
+      hiddenIframe.style.height = '0';
+      hiddenIframe.style.border = '0';
+      document.body.appendChild(hiddenIframe);
+    }
+
+    hiddenIframe.src = url;
+    hiddenIframe.onload = function() {
+      setTimeout(() => {
+        hiddenIframe.contentWindow.focus();
+        hiddenIframe.contentWindow.print();
+      }, 500);
+    };
+  } catch (err) {
+    alert('❌ Error al preparar la impresión: ' + err.message);
+  }
+}
+
+function descargarPlantillaEnBlanco(codigo) {
+  window.open(`/api/plantillas-documentales/${codigo}/descargar`, '_blank');
+}
+
+function cerrarModalPreviewPdf() {
+  document.getElementById('modalPreviewPdf').style.display = 'none';
+  if (formatosDigitalesState.pdfPreviewUrl) {
+    URL.revokeObjectURL(formatosDigitalesState.pdfPreviewUrl);
+    formatosDigitalesState.pdfPreviewUrl = null;
+  }
+}
+
+function imprimirIframePreview() {
+  const iframe = document.getElementById('iframePreviewPdf');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  }
+}
+
+async function generarBlobPorCodigo(codigo) {
+  let endpoint = '';
+  let payload = {};
+
+  if (codigo === 'ITSE_ANEXO_1') {
+    endpoint = '/api/formularios/anexo1-itse-solicitud';
+    payload = construirDtoAnexo1Itse();
+  } else if (codigo === 'ITSE_ANEXO_2') {
+    endpoint = '/api/formularios/anexo2-itse-riesgo';
+    payload = construirDtoAnexo2Itse();
+  } else if (codigo === 'ITSE_ANEXO_3') {
+    endpoint = '/api/formularios/anexo3-matriz-riesgo-itse';
+    payload = {
+      numeroTramite: state.borradorId ? `BORR-${state.borradorId.substring(0, 8)}` : 'EXP-BORRADOR',
+      titular: valor('nombreTitular') || 'Titular Solicitante',
+      nombreComercial: valor('nombreComercial') || 'Establecimiento',
+      direccion: valor('direccionEstablecimiento') || 'Jr. 28 de Julio',
+      areaMetrosCuadrados: parseFloat(valor('areaMetrosCuadrados')) || 85.50,
+      giro: valor('giroNegocio') || 'Comercio',
+      nivelRiesgo: formatosDigitalesState.nivelCalculado || 'MEDIO'
+    };
+  } else if (codigo === 'ITSE_ANEXO_4') {
+    endpoint = '/api/formularios/anexo4-condiciones-seguridad';
+    payload = {
+      numeroTramite: state.borradorId ? `BORR-${state.borradorId.substring(0, 8)}` : 'EXP-BORRADOR',
+      titular: valor('nombreTitular') || 'Titular Solicitante',
+      nombreComercial: valor('nombreComercial') || 'Establecimiento',
+      direccion: valor('direccionEstablecimiento') || 'Jr. 28 de Julio',
+      areaMetrosCuadrados: parseFloat(valor('areaMetrosCuadrados')) || 85.50,
+      giro: valor('giroNegocio') || 'Comercio',
+      nivelRiesgo: 'MEDIO'
+    };
+  } else if (codigo === 'LICENCIA_ANEXO_1') {
+    endpoint = '/api/formularios/anexo1-declaracion-jurada';
+    payload = {
+      numeroTramite: state.borradorId ? `BORR-${state.borradorId.substring(0, 8)}` : 'EXP-BORRADOR',
+      titular: valor('nombreTitular') || 'Titular Solicitante',
+      documentoIdentidad: valor('documentoIdentidad') || '42567891',
+      nombreComercial: valor('nombreComercial') || 'Establecimiento',
+      direccion: valor('direccionEstablecimiento') || 'Jr. 28 de Julio',
+      areaMetrosCuadrados: parseFloat(valor('areaMetrosCuadrados')) || 85.50,
+      giro: valor('giroNegocio') || 'Comercio',
+      nivelRiesgo: 'MEDIO'
+    };
+  }
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    throw new Error(`Error en servidor (HTTP ${res.status}) al procesar formato ${codigo}`);
+  }
+
+  return await res.blob();
+}
+
+function descargarBlob(blob, nombreArchivo) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 300);
+}
+
+async function adjuntarBlobAlBorrador(borradorId, blob, tipoDocumento, nombreArchivo) {
+  try {
+    const arrayBuffer = await blob.arrayBuffer();
+    let binary = '';
+    const bytes = new Uint8Array(arrayBuffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = window.btoa(binary);
+
+    const payload = {
+      tipoDocumento: tipoDocumento,
+      nombreArchivo: nombreArchivo,
+      tipoContenido: 'application/pdf',
+      contenidoBase64: base64,
+      descripcion: `Formato oficial digitalizado: ${tipoDocumento}`
+    };
+
+    await fetch(`/api/borradores/${borradorId}/documentos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.token}`
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn('No se pudo adjuntar automáticamente al borrador:', e);
+  }
+}
+

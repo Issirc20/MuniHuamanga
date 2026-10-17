@@ -39,15 +39,21 @@ import java.util.Map;
 public class DocumentoPdfService {
 
     private final Anexo1PdfGenerator anexo1PdfGenerator;
+    private final Anexo1ItsePdfGenerator anexo1ItsePdfGenerator;
+    private final Anexo2ItsePdfGenerator anexo2ItsePdfGenerator;
     private final Anexo3PdfGenerator anexo3PdfGenerator;
     private final Anexo4PdfGenerator anexo4PdfGenerator;
     private final LicenciaPdfGenerator licenciaPdfGenerator;
 
     public DocumentoPdfService(Anexo1PdfGenerator anexo1PdfGenerator,
+                               Anexo1ItsePdfGenerator anexo1ItsePdfGenerator,
+                               Anexo2ItsePdfGenerator anexo2ItsePdfGenerator,
                                Anexo3PdfGenerator anexo3PdfGenerator,
                                Anexo4PdfGenerator anexo4PdfGenerator,
                                LicenciaPdfGenerator licenciaPdfGenerator) {
         this.anexo1PdfGenerator = anexo1PdfGenerator;
+        this.anexo1ItsePdfGenerator = anexo1ItsePdfGenerator;
+        this.anexo2ItsePdfGenerator = anexo2ItsePdfGenerator;
         this.anexo3PdfGenerator = anexo3PdfGenerator;
         this.anexo4PdfGenerator = anexo4PdfGenerator;
         this.licenciaPdfGenerator = licenciaPdfGenerator;
@@ -61,6 +67,22 @@ public class DocumentoPdfService {
 
     public byte[] generarAnexo1DeclaracionJurada(ExpedienteResponseDto expediente) {
         return anexo1PdfGenerator.generarPdf(expediente);
+    }
+
+    public byte[] generarAnexo1Itse(ExpedienteResponseDto expediente) {
+        return anexo1ItsePdfGenerator.generarPdf(expediente);
+    }
+
+    public byte[] generarAnexo1ItseDirecto(pe.gob.munihuamanga.licencias.common.dto.Anexo1ItseDto dto, String numeroTramite) {
+        return anexo1ItsePdfGenerator.generarPdf(dto, numeroTramite);
+    }
+
+    public byte[] generarAnexo2Itse(ExpedienteResponseDto expediente) {
+        return anexo2ItsePdfGenerator.generarPdf(expediente);
+    }
+
+    public byte[] generarAnexo2ItseDirecto(pe.gob.munihuamanga.licencias.common.dto.Anexo2ItseDto dto, String numeroTramite, ExpedienteResponseDto exp) {
+        return anexo2ItsePdfGenerator.generarPdf(dto, numeroTramite, exp);
     }
 
     public byte[] generarAnexo3MatrizRiesgoItse(ExpedienteResponseDto expediente) {

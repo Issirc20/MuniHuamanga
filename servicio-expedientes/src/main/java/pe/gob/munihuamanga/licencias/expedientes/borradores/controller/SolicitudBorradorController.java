@@ -179,7 +179,31 @@ public class SolicitudBorradorController {
         ExpedienteResponseDto dto = borradorService.convertirBorradorAExpedienteResponseDto(id);
         byte[] pdf = documentoPdfService.generarAnexo1DeclaracionJurada(dto);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-" + dto.getNumeroTramite() + ".pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-DeclaracionJurada-Licencia-" + dto.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/{id}/formularios/anexo1-itse/pdf")
+    @PreAuthorize("@borradorSecurity.puedeVerBorrador(authentication, #id)")
+    @Operation(summary = "Generar y descargar PDF oficial del Anexo 1 ITSE Solicitud reutilizando datos del borrador")
+    public ResponseEntity<byte[]> descargarAnexo1ItseBorrador(@PathVariable UUID id) {
+        ExpedienteResponseDto dto = borradorService.convertirBorradorAExpedienteResponseDto(id);
+        byte[] pdf = documentoPdfService.generarAnexo1Itse(dto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo1-ITSE-Solicitud-" + dto.getNumeroTramite() + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping("/{id}/formularios/anexo2-itse/pdf")
+    @PreAuthorize("@borradorSecurity.puedeVerBorrador(authentication, #id)")
+    @Operation(summary = "Generar y descargar PDF oficial del Anexo 2 ITSE Determinación de Riesgo reutilizando datos del borrador")
+    public ResponseEntity<byte[]> descargarAnexo2ItseBorrador(@PathVariable UUID id) {
+        ExpedienteResponseDto dto = borradorService.convertirBorradorAExpedienteResponseDto(id);
+        byte[] pdf = documentoPdfService.generarAnexo2Itse(dto);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo2-ITSE-DeterminacionRiesgo-" + dto.getNumeroTramite() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }

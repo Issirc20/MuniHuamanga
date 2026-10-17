@@ -1020,3 +1020,369 @@ html, body {
   overflow-x: hidden;
 }
 
+/* ==========================================================================
+   MÓDULO: FORMATOS OFICIALES (4 ANEXOS ITSE + 1 DECLARACIÓN JURADA LICENCIA)
+   ========================================================================== */
+
+.grupo-documental {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow);
+}
+
+.grupo-documental.grupo-itse {
+  border-left: 5px solid #0284c7;
+}
+
+.grupo-documental.grupo-licencia {
+  border-left: 5px solid var(--primary);
+}
+
+.grupo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.grupo-titulo-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.grupo-icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.grupo-itse .grupo-icono {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.grupo-licencia .grupo-icono {
+  background: #e6f0fa;
+  color: var(--primary);
+}
+
+.grupo-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.grupo-subtitulo {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.grupo-badge-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Tarjetas de Formatos Oficiales */
+.formatos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.card-formato {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-formato:hover {
+  background: #ffffff;
+  border-color: #93c5fd;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-formato-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.badge-version-doc {
+  font-size: 0.7rem;
+  font-family: monospace;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #334155;
+  font-weight: 600;
+}
+
+.badge-estado-doc {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-estado-doc.pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-estado-doc.completado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-estado-doc.autogenerado {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.card-formato-title {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+  margin-top: 0.25rem;
+}
+
+.card-formato-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.card-formato-legal {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.card-formato-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.card-formato-btn-primary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: var(--primary);
+  color: #ffffff;
+  transition: background 0.15s;
+}
+
+.card-formato-btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.card-formato-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.card-formato-btn-sub {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.card-formato-btn-sub:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.card-formato-link-blanco {
+  text-align: center;
+  font-size: 0.73rem;
+  color: #64748b;
+  text-decoration: underline;
+  cursor: pointer;
+  padding-top: 0.2rem;
+}
+
+.card-formato-link-blanco:hover {
+  color: var(--primary);
+}
+
+/* Modales para formularios digitales de Anexos ITSE */
+.modal-formato-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-formato-box {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-formato-header {
+  background: #002b5c;
+  color: #ffffff;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--huamanga-gold);
+}
+
+.modal-formato-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-formato-header p {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.75rem;
+  color: #93c5fd;
+}
+
+.modal-formato-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  font-size: 0.875rem;
+}
+
+.modal-formato-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.seccion-formato {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.seccion-formato-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #002b5c;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reserva-autoridad-aviso {
+  background: #eff6ff;
+  border-left: 4px solid #2563eb;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #1e40af;
+  margin-top: 1rem;
+}
+
+/* Optimización para Impresión en Navegador (window.print()) */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .no-print, header, footer, aside, .wizard-steps, .wizard-nav, .app-header, .app-footer, .sidebar {
+    display: none !important;
+  }
+  .printable-area, .printable-area * {
+    visibility: visible !important;
+  }
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}
+
+

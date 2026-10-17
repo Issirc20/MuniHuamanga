@@ -377,42 +377,208 @@
           </div>
         </div>
 
-        <!-- Descarga de plantillas oficiales obligatorias -->
-        <div style="margin-bottom: 1.5rem;">
-          <label style="font-weight: 700; font-size: 0.9rem; color: #1e293b; display: block; margin-bottom: 0.5rem;">
-            1. Formatos Oficiales que debe completar y firmar:
-          </label>
-          <div class="doc-cards-grid">
-            <div class="doc-card anexo1" style="padding: 1rem;">
-              <span class="doc-card-badge obligatorio">Obligatorio</span>
-              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 1 — Declaración Jurada</div>
-              <div style="display: flex; gap: 0.5rem; flex-direction: column; margin-top: 0.75rem;">
-                <button type="button" class="btn btn-primary btn-sm" onclick="abrirAnexo1ConBorrador()">
-                  ✏️ Llenar / Adjuntar Interactivo →
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-1')">
-                  ⬇️ Descargar PDF Oficial
-                </button>
+        <!-- SECCIÓN DE FORMATOS OFICIALES (4 ANEXOS ITSE + 1 DECLARACIÓN JURADA DE LICENCIA) -->
+        <div style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: #002b5c; margin: 0;">1. Formatos Oficiales Normativos (Digitalizables e Imprimibles)</h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0 0;">
+                Complete los documentos directamente en línea sin necesidad de imprimir ni escanear, o descargue la plantilla oficial en blanco.
+              </p>
+            </div>
+            <span style="font-size: 0.78rem; background: #e0f2fe; color: #0369a1; padding: 0.25rem 0.6rem; border-radius: 9999px; font-weight: 600;">
+              Total: 5 Formatos Oficiales Vigentes
+            </span>
+          </div>
+
+          <!-- GRUPO A — DEFENSA CIVIL / ITSE (4 DOCUMENTOS) -->
+          <div class="grupo-documental grupo-itse">
+            <div class="grupo-header">
+              <div class="grupo-titulo-box">
+                <div class="grupo-icono">🛡️</div>
+                <div>
+                  <h4 class="grupo-titulo">Grupo A — Defensa Civil / ITSE</h4>
+                  <p class="grupo-subtitulo">Inspección Técnica de Seguridad en Edificaciones conforme al D.S. N° 002-2018-PCM y R.J. N° 016-2018-CENEPRED/J</p>
+                </div>
               </div>
+              <span class="grupo-badge-count">4 Formatos ITSE</span>
             </div>
 
-            <div class="doc-card anexo3" style="padding: 1rem;">
-              <span class="doc-card-badge automatico">Auto-generado</span>
-              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 3 — Matriz de Riesgo ITSE</div>
-              <div style="margin-top: 0.75rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-3')" style="width: 100%;">
-                  ⬇️ Descargar Anexo 3 (PDF)
-                </button>
+            <div class="formatos-grid">
+              <!-- Tarjeta 1: Anexo 1 ITSE -->
+              <div class="card-formato">
+                <div>
+                  <div class="card-formato-top">
+                    <span class="badge-version-doc" id="badgeVerItse1">v1.0 (2026)</span>
+                    <span class="badge-estado-doc pendiente" id="badgeEstadoItse1">⏳ Pendiente</span>
+                  </div>
+                  <div class="card-formato-title">Anexo 1 ITSE — Solicitud ITSE / ECSE</div>
+                  <div class="card-formato-desc">Solicitud oficial de inspección técnica previa, posterior o evaluación de espectáculos (ECSE).</div>
+                  <div class="card-formato-legal">Base: D.S. N° 002-2018-PCM / Art. 14</div>
+                </div>
+                <div class="card-formato-actions">
+                  <button type="button" class="card-formato-btn-primary" onclick="abrirModalItseAnexo1()">
+                    ✏️ Completar en línea
+                  </button>
+                  <div class="card-formato-btn-row">
+                    <button type="button" class="card-formato-btn-sub" onclick="previsualizarDocumento('ITSE_ANEXO_1')" title="Previsualizar PDF">
+                      👁️ Vista previa
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="descargarDocumentoGenerado('ITSE_ANEXO_1')" title="Descargar PDF">
+                      ⬇️ PDF
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_1')" title="Imprimir formato">
+                      🖨️ Imprimir
+                    </button>
+                  </div>
+                  <div class="card-formato-link-blanco" onclick="descargarPlantillaEnBlanco('ITSE_ANEXO_1')">
+                    📄 Descargar plantilla oficial en blanco (PDF)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tarjeta 2: Anexo 2 ITSE -->
+              <div class="card-formato">
+                <div>
+                  <div class="card-formato-top">
+                    <span class="badge-version-doc" id="badgeVerItse2">v1.0 (2026)</span>
+                    <span class="badge-estado-doc pendiente" id="badgeEstadoItse2">⏳ Pendiente</span>
+                  </div>
+                  <div class="card-formato-title">Anexo 2 ITSE — Información Determinación de Riesgo</div>
+                  <div class="card-formato-desc">Matriz de 8 categorías funcionales y factores adicionales para la determinación del nivel de riesgo.</div>
+                  <div class="card-formato-legal">Base: Manual ITSE CENEPRED</div>
+                </div>
+                <div class="card-formato-actions">
+                  <button type="button" class="card-formato-btn-primary" onclick="abrirModalItseAnexo2()">
+                    ✏️ Completar en línea
+                  </button>
+                  <div class="card-formato-btn-row">
+                    <button type="button" class="card-formato-btn-sub" onclick="previsualizarDocumento('ITSE_ANEXO_2')" title="Previsualizar PDF">
+                      👁️ Vista previa
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="descargarDocumentoGenerado('ITSE_ANEXO_2')" title="Descargar PDF">
+                      ⬇️ PDF
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_2')" title="Imprimir formato">
+                      🖨️ Imprimir
+                    </button>
+                  </div>
+                  <div class="card-formato-link-blanco" onclick="descargarPlantillaEnBlanco('ITSE_ANEXO_2')">
+                    📄 Descargar plantilla oficial en blanco (PDF)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tarjeta 3: Anexo 3 ITSE -->
+              <div class="card-formato">
+                <div>
+                  <div class="card-formato-top">
+                    <span class="badge-version-doc" id="badgeVerItse3">v1.0 (2026)</span>
+                    <span class="badge-estado-doc autogenerado" id="badgeEstadoItse3">📊 Preliminar</span>
+                  </div>
+                  <div class="card-formato-title">Anexo 3 ITSE — Reporte de Nivel de Riesgo</div>
+                  <div class="card-formato-desc">Reporte oficial con matriz de riesgo de incendio y colapso. Dictamen oficial reservado a Defensa Civil.</div>
+                  <div class="card-formato-legal">Base: Matriz CENEPRED / Huamanga</div>
+                </div>
+                <div class="card-formato-actions">
+                  <button type="button" class="card-formato-btn-primary" style="background: #0369a1;" onclick="abrirModalItseAnexo3()">
+                    👁️ Ver reporte y dictamen
+                  </button>
+                  <div class="card-formato-btn-row">
+                    <button type="button" class="card-formato-btn-sub" onclick="previsualizarDocumento('ITSE_ANEXO_3')" title="Previsualizar PDF">
+                      👁️ Vista previa
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="descargarDocumentoGenerado('ITSE_ANEXO_3')" title="Descargar PDF">
+                      ⬇️ PDF
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_3')" title="Imprimir formato">
+                      🖨️ Imprimir
+                    </button>
+                  </div>
+                  <div class="card-formato-link-blanco" onclick="descargarPlantillaEnBlanco('ITSE_ANEXO_3')">
+                    📄 Descargar plantilla oficial en blanco (PDF)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tarjeta 4: Anexo 4 ITSE -->
+              <div class="card-formato">
+                <div>
+                  <div class="card-formato-top">
+                    <span class="badge-version-doc" id="badgeVerItse4">v1.0 (2026)</span>
+                    <span class="badge-estado-doc pendiente" id="badgeEstadoItse4">⏳ Pendiente</span>
+                  </div>
+                  <div class="card-formato-title">Anexo 4 ITSE — Declaración Jurada de Seguridad</div>
+                  <div class="card-formato-desc">Declaración jurada de 4 páginas de verificación de condiciones de seguridad en edificación (ITSE posterior).</div>
+                  <div class="card-formato-legal">Base: D.S. N° 002-2018-PCM / Huamanga</div>
+                </div>
+                <div class="card-formato-actions">
+                  <button type="button" class="card-formato-btn-primary" onclick="abrirModalItseAnexo4()">
+                    ✏️ Completar en línea (4 págs.)
+                  </button>
+                  <div class="card-formato-btn-row">
+                    <button type="button" class="card-formato-btn-sub" onclick="previsualizarDocumento('ITSE_ANEXO_4')" title="Previsualizar PDF">
+                      👁️ Vista previa
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="descargarDocumentoGenerado('ITSE_ANEXO_4')" title="Descargar PDF">
+                      ⬇️ PDF
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_4')" title="Imprimir formato">
+                      🖨️ Imprimir
+                    </button>
+                  </div>
+                  <div class="card-formato-link-blanco" onclick="descargarPlantillaEnBlanco('ITSE_ANEXO_4')">
+                    📄 Descargar plantilla oficial en blanco (PDF)
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div class="doc-card anexo4" style="padding: 1rem;">
-              <span class="doc-card-badge obligatorio">Obligatorio</span>
-              <div style="font-weight: 700; font-size: 0.95rem; margin: 0.5rem 0;">Anexo 4 — Condiciones de Seguridad</div>
-              <div style="margin-top: 0.75rem;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="descargarAnexoBorrador('anexo-4')" style="width: 100%;">
-                  ⬇️ Descargar Anexo 4 (PDF)
-                </button>
+          <!-- GRUPO B — LICENCIA DE FUNCIONAMIENTO (1 DOCUMENTO) -->
+          <div class="grupo-documental grupo-licencia">
+            <div class="grupo-header">
+              <div class="grupo-titulo-box">
+                <div class="grupo-icono">🏛️</div>
+                <div>
+                  <h4 class="grupo-titulo">Grupo B — Licencia de Funcionamiento</h4>
+                  <p class="grupo-subtitulo">Gerencia de Licencias y Autorizaciones conforme a la Ley Marco N° 28976 y TUO D.S. N° 046-2017-PCM</p>
+                </div>
+              </div>
+              <span class="grupo-badge-count" style="background: #e6f0fa; color: var(--primary);">1 Formato Licencia</span>
+            </div>
+
+            <div class="formatos-grid" style="grid-template-columns: minmax(320px, 600px);">
+              <!-- Tarjeta 5: Anexo N.º 1 Licencia -->
+              <div class="card-formato" style="border-left: 4px solid var(--primary);">
+                <div>
+                  <div class="card-formato-top">
+                    <span class="badge-version-doc" id="badgeVerLicencia1">Versión 03 (Ley N° 28976)</span>
+                    <span class="badge-estado-doc pendiente" id="badgeEstadoLicencia1">⏳ Pendiente</span>
+                  </div>
+                  <div class="card-formato-title">Anexo N.º 1 — Declaración Jurada para Licencia de Funcionamiento</div>
+                  <div class="card-formato-desc">Formato oficial normativo de 6 secciones con datos del solicitante, establecimiento, actividades comerciales y campos reservados para la administración municipal.</div>
+                  <div class="card-formato-legal">Base: Ley N° 28976 / D.S. N° 046-2017-PCM / D.S. N° 163-2020-PCM</div>
+                </div>
+                <div class="card-formato-actions">
+                  <button type="button" class="card-formato-btn-primary" onclick="abrirAnexo1ConBorrador()">
+                    ✏️ Completar en Línea (Interactivo Oficial) →
+                  </button>
+                  <div class="card-formato-btn-row">
+                    <button type="button" class="card-formato-btn-sub" onclick="previsualizarDocumento('LICENCIA_ANEXO_1')" title="Previsualizar PDF">
+                      👁️ Vista previa
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="descargarDocumentoGenerado('LICENCIA_ANEXO_1')" title="Descargar PDF">
+                      ⬇️ PDF Oficial
+                    </button>
+                    <button type="button" class="card-formato-btn-sub" onclick="imprimirDocumentoDirecto('LICENCIA_ANEXO_1')" title="Imprimir formato">
+                      🖨️ Imprimir
+                    </button>
+                  </div>
+                  <div class="card-formato-link-blanco" onclick="descargarPlantillaEnBlanco('LICENCIA_ANEXO_1')">
+                    📄 Descargar plantilla oficial en blanco (PDF)
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -872,6 +1038,601 @@
         <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" class="btn btn-secondary" onclick="cerrarModalRegistroCuenta()">Cancelar</button>
           <button type="button" class="btn btn-primary" onclick="ejecutarRegistroCuenta()">Crear Mi Cuenta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         MODAL 1: ANEXO 1 ITSE — SOLICITUD DE INSPECCIÓN TÉCNICA (ITSE / ECSE)
+         ========================================================================= -->
+    <div id="modalItseAnexo1" class="modal-formato-overlay">
+      <div class="modal-formato-box" style="max-width: 950px;">
+        <div class="modal-formato-header">
+          <div>
+            <h3>🛡️ Anexo 1 ITSE — Solicitud de Inspección Técnica de Seguridad en Edificaciones</h3>
+            <p>D.S. N° 002-2018-PCM / R.J. N° 016-2018-CENEPRED/J — Municipalidad Provincial de Huamanga</p>
+          </div>
+          <button type="button" onclick="cerrarModalItse('modalItseAnexo1')" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-formato-body">
+          
+          <!-- I. Información General -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">I. INFORMACIÓN GENERAL Y MODALIDAD DEL TRÁMITE</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="itse1TipoTramite">Tipo de Inspección *</label>
+                <select id="itse1TipoTramite">
+                  <option value="POSTERIOR" selected>ITSE Posterior al inicio de actividades (Riesgo Bajo / Medio)</option>
+                  <option value="PREVIA">ITSE Previa al otorgamiento de licencia (Riesgo Alto / Muy Alto)</option>
+                  <option value="RENOVACION">Renovación del Certificado ITSE</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="itse1TipoEcse">Evaluación de Condiciones en Espectáculos (ECSE)</label>
+                <select id="itse1TipoEcse">
+                  <option value="NINGUNO" selected>No aplica (Establecimiento comercial regular)</option>
+                  <option value="HASTA_3000">ECSE hasta 3,000 personas</option>
+                  <option value="MAYOR_3000">ECSE mayor a 3,000 personas</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="itse1FuncionEdif">Función Principal de la Edificación *</label>
+                <select id="itse1FuncionEdif">
+                  <option value="COMERCIO" selected>Comercio (Tienda, Bodega, Bazar, Botica, etc.)</option>
+                  <option value="ENCUENTRO">Encuentro (Restaurante, Café, Bar, etc.)</option>
+                  <option value="HOSPEDAJE">Hospedaje (Hotel, Hostal, Albergue)</option>
+                  <option value="EDUCACION">Educación (Colegio, Nido, Instituto)</option>
+                  <option value="INDUSTRIAL">Industrial (Taller, Manufactura, Fabril)</option>
+                  <option value="OFICINAS">Oficinas Administrativas / Consultorios</option>
+                  <option value="SALUD">Salud (Clínica, Centro Médico, Tópico)</option>
+                  <option value="ALMACEN">Almacén / Depósito Comercial</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="itse1NivelRiesgoEstimado">Nivel de Riesgo Preliminar (Informativo)</label>
+                <input type="text" id="itse1NivelRiesgoEstimado" readonly style="background: #f1f5f9; font-weight: 700; color: #1e3a8a;" value="BAJO / MEDIO (Calculado por sistema)">
+              </div>
+            </div>
+          </div>
+
+          <!-- II. Datos del Solicitante -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">II. DATOS DEL SOLICITANTE / ADMINISTRADO (PRECARGADOS)</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="itse1CondicionSolicitante">Condición del Solicitante *</label>
+                <select id="itse1CondicionSolicitante">
+                  <option value="CONDUCTOR_ADMINISTRADOR" selected>Conductor / Titular Administrador</option>
+                  <option value="PROPIETARIO">Propietario del Inmueble</option>
+                  <option value="REPRESENTANTE_LEGAL">Representante Legal Acreditado</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="itse1NombresTitular">Apellidos y Nombres / Razón Social *</label>
+                <input type="text" id="itse1NombresTitular">
+              </div>
+              <div class="form-group">
+                <label for="itse1DocIdentidad">DNI / CE / RUC *</label>
+                <input type="text" id="itse1DocIdentidad">
+              </div>
+              <div class="form-group">
+                <label for="itse1Telefono">Teléfono / Celular de Contacto *</label>
+                <input type="text" id="itse1Telefono">
+              </div>
+              <div class="form-group full-width">
+                <label for="itse1DomicilioLegal">Domicilio Legal del Solicitante</label>
+                <input type="text" id="itse1DomicilioLegal">
+              </div>
+              <div class="form-group full-width">
+                <label for="itse1Email">Correo Electrónico para Notificaciones Oficiales</label>
+                <input type="email" id="itse1Email">
+              </div>
+            </div>
+          </div>
+
+          <!-- III. Datos del Establecimiento -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">III. DATOS DEL ESTABLECIMIENTO OBJETO DE INSPECCIÓN (PRECARGADOS)</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="itse1NombreComercial">Nombre Comercial del Establecimiento *</label>
+                <input type="text" id="itse1NombreComercial">
+              </div>
+              <div class="form-group">
+                <label for="itse1Giro">Giro / Actividad Económica *</label>
+                <input type="text" id="itse1Giro">
+              </div>
+              <div class="form-group full-width">
+                <label for="itse1DireccionEstablecimiento">Dirección Exacta en Huamanga (Jr / Av / N° / Int) *</label>
+                <input type="text" id="itse1DireccionEstablecimiento">
+              </div>
+              <div class="form-group">
+                <label for="itse1Distrito">Distrito *</label>
+                <input type="text" id="itse1Distrito" value="Ayacucho (Huamanga)" readonly style="background: #f1f5f9;">
+              </div>
+              <div class="form-group">
+                <label for="itse1AreaM2">Área Ocupada Total (m²) *</label>
+                <input type="number" id="itse1AreaM2" step="0.01">
+              </div>
+              <div class="form-group">
+                <label for="itse1NumPisos">N° de Pisos de la Edificación</label>
+                <input type="number" id="itse1NumPisos" value="1" min="1" max="20">
+              </div>
+              <div class="form-group">
+                <label for="itse1Horario">Horario de Atención</label>
+                <input type="text" id="itse1Horario" value="08:00 - 20:00">
+              </div>
+            </div>
+          </div>
+
+          <!-- IV. Documentos Presentados -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">IV. DOCUMENTOS PRESENTADOS SEGÚN TUPA VIGENTE</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1Croquis" checked> Croquis de Ubicación y Distribución
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1PlanSeg" checked> Plan de Seguridad / Contingencias
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1PozoTierra"> Certificado de Medición de Pozo a Tierra
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1Tableros"> Diagramas Unifilares y Cuadros de Carga
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1Extintores" checked> Certificado de Operatividad de Extintores
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">
+                <input type="checkbox" id="chkItse1PagoTasa" checked> Comprobante de Pago por Tasa ITSE
+              </label>
+            </div>
+          </div>
+
+          <!-- Reserva para la Autoridad Municipal -->
+          <div class="reserva-autoridad-aviso">
+            <strong>⚖️ RESERVADO A LA MUNICIPALIDAD PROVINCIAL DE HUAMANGA (DEFENSA CIVIL):</strong>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem;">
+              El registro de fecha y hora de recepción, número de expediente ITSE, programación de fecha de inspección y designación del inspector colegiado acreditado por CENEPRED son de competencia exclusiva del funcionario municipal.
+            </p>
+          </div>
+
+        </div>
+        <div class="modal-formato-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalItse('modalItseAnexo1')">Cerrar</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="previsualizarDocumento('ITSE_ANEXO_1')">👁️ Vista Previa PDF</button>
+            <button type="button" class="btn btn-secondary" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_1')">🖨️ Imprimir</button>
+            <button type="button" class="btn btn-primary" onclick="guardarFormularioItse1(true)">💾 Guardar y Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         MODAL 2: ANEXO 2 ITSE — INFORMACIÓN PARA DETERMINACIÓN DE RIESGO
+         ========================================================================= -->
+    <div id="modalItseAnexo2" class="modal-formato-overlay">
+      <div class="modal-formato-box" style="max-width: 950px;">
+        <div class="modal-formato-header">
+          <div>
+            <h3>🛡️ Anexo 2 ITSE — Información para Determinación del Nivel de Riesgo</h3>
+            <p>Matriz de 8 Categorías y Factores Adicionales — R.J. N° 016-2018-CENEPRED/J</p>
+          </div>
+          <button type="button" onclick="cerrarModalItse('modalItseAnexo2')" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-formato-body">
+          
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <strong style="color: #0f172a;">Establecimiento:</strong> <span id="lblItse2Establecimiento">-</span> |
+                <strong style="color: #0f172a;">Área:</strong> <span id="lblItse2Area">-</span> m²
+              </div>
+              <div id="badgeItse2RiesgoPreliminar" style="padding: 0.35rem 0.8rem; border-radius: 9999px; background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.85rem;">
+                Nivel Estimado: BAJO / MEDIO
+              </div>
+            </div>
+            <p style="font-size: 0.78rem; color: #64748b; margin: 0.35rem 0 0 0;">
+              Seleccione las características físicas y operativas que correspondan a su establecimiento. El sistema estimará el nivel preliminar, el cual será ratificado o clasificado oficialmente por el inspector de Defensa Civil.
+            </p>
+          </div>
+
+          <!-- Matriz de 8 Categorías Funcionales -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">MATRIZ DE CARACTERÍSTICAS DECLARADAS (SELECCIONE LA QUE CORRESPONDA)</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- 1. Comercio -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="COMERCIO" checked onchange="recalcularRiesgoItse2()">
+                  1. FUNCIÓN COMERCIO (Tiendas, Bodegas, Bazares, Farmacias, Supermercados)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubComercio" value="HASTA_100" checked onchange="recalcularRiesgoItse2()"> Área hasta 100 m² y hasta 2 pisos (Riesgo Bajo / ITSE Posterior)</label>
+                  <label><input type="radio" name="itse2SubComercio" value="HASTA_500" onchange="recalcularRiesgoItse2()"> Área entre 101 m² y 500 m² (Riesgo Medio / ITSE Posterior)</label>
+                  <label><input type="radio" name="itse2SubComercio" value="MAYOR_500" onchange="recalcularRiesgoItse2()"> Área mayor a 500 m² o Galería Comercial / Mercado (Riesgo Alto / ITSE Previa)</label>
+                </div>
+              </div>
+
+              <!-- 2. Encuentro -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="ENCUENTRO" onchange="recalcularRiesgoItse2()">
+                  2. FUNCIÓN ENCUENTRO (Restaurantes, Cafeterías, Bares, Discotecas, Peñas, Casinos)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubEncuentro" value="REST_HASTA_100" onchange="recalcularRiesgoItse2()"> Restaurante / Cafetería hasta 100 m² (Riesgo Medio / ITSE Posterior)</label>
+                  <label><input type="radio" name="itse2SubEncuentro" value="REST_MAYOR_100" onchange="recalcularRiesgoItse2()"> Restaurante mayor a 100 m² o con aforo > 50 personas (Riesgo Alto / ITSE Previa)</label>
+                  <label><input type="radio" name="itse2SubEncuentro" value="DISCOTECA_BAR" onchange="recalcularRiesgoItse2()"> Bar, Discoteca, Casino, Pub o Sala de Juegos (Riesgo Muy Alto / ITSE Previa)</label>
+                </div>
+              </div>
+
+              <!-- 3. Hospedaje -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="HOSPEDAJE" onchange="recalcularRiesgoItse2()">
+                  3. FUNCIÓN HOSPEDAJE (Hoteles, Hostales, Albergues, Residenciales)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubHospedaje" value="HOSTAL_HASTA_3P" onchange="recalcularRiesgoItse2()"> Hostal hasta 3 pisos y hasta 20 habitaciones (Riesgo Medio)</label>
+                  <label><input type="radio" name="itse2SubHospedaje" value="HOTEL_MAYOR_3P" onchange="recalcularRiesgoItse2()"> Hotel de más de 3 pisos o categorizado (Riesgo Alto)</label>
+                </div>
+              </div>
+
+              <!-- 4. Educación -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="EDUCACION" onchange="recalcularRiesgoItse2()">
+                  4. FUNCIÓN EDUCACIÓN (Cunas, Inicial, Primaria, Secundaria, Institutos, Academias)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubEducacion" value="HASTA_2P" onchange="recalcularRiesgoItse2()"> Cuna / Jardín / Academia hasta 2 pisos (Riesgo Medio)</label>
+                  <label><input type="radio" name="itse2SubEducacion" value="MAYOR_2P" onchange="recalcularRiesgoItse2()"> Colegio / Instituto / Universidad más de 2 pisos o talleres (Riesgo Alto)</label>
+                </div>
+              </div>
+
+              <!-- 5. Industria -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="INDUSTRIA" onchange="recalcularRiesgoItse2()">
+                  5. FUNCIÓN INDUSTRIAL (Manufactura, Carpintería, Metalmecánica, Panadería industrial)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubIndustria" value="ARTESANAL_HASTA_100" onchange="recalcularRiesgoItse2()"> Taller artesanal hasta 100 m² no combustible (Riesgo Medio)</label>
+                  <label><input type="radio" name="itse2SubIndustria" value="MEDIANA_GRAN" onchange="recalcularRiesgoItse2()"> Mediana o gran industria con calderas o químicos (Riesgo Muy Alto)</label>
+                </div>
+              </div>
+
+              <!-- 6. Oficinas Administrativas -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="OFICINAS" onchange="recalcularRiesgoItse2()">
+                  6. OFICINAS ADMINISTRATIVAS Y SERVICIOS PROFESIONALES
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubOficinas" value="HASTA_3P" onchange="recalcularRiesgoItse2()"> Oficinas o consultorios hasta 3 pisos y ≤ 500 m² (Riesgo Bajo / Medio)</label>
+                  <label><input type="radio" name="itse2SubOficinas" value="EDIFICIO_MAYOR" onchange="recalcularRiesgoItse2()"> Edificio corporativo o call center de más de 3 pisos (Riesgo Alto)</label>
+                </div>
+              </div>
+
+              <!-- 7. Salud -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="SALUD" onchange="recalcularRiesgoItse2()">
+                  7. FUNCIÓN SALUD (Consultorio odontológico, Policlínico, Hospital, Clínica)
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubSalud" value="CONSULTORIO_INDIV" onchange="recalcularRiesgoItse2()"> Consultorio médico u odontológico individual hasta 100 m² (Riesgo Bajo)</label>
+                  <label><input type="radio" name="itse2SubSalud" value="CLINICA_HOSP" onchange="recalcularRiesgoItse2()"> Policlínico, centro de salud o clínica con internamiento (Riesgo Muy Alto)</label>
+                </div>
+              </div>
+
+              <!-- 8. Almacén -->
+              <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.85rem; background: #fdfdfd;">
+                <label style="font-weight: 700; color: #002b5c; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="itse2Funcion" value="ALMACEN" onchange="recalcularRiesgoItse2()">
+                  8. FUNCIÓN ALMACÉN / DEPÓSITO
+                </label>
+                <div style="padding-left: 1.5rem; margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.85rem;">
+                  <label><input type="radio" name="itse2SubAlmacen" value="ALM_NO_COMBUSTIBLE" onchange="recalcularRiesgoItse2()"> Almacén techado no combustible hasta 500 m² (Riesgo Medio)</label>
+                  <label><input type="radio" name="itse2SubAlmacen" value="ALM_COMBUSTIBLE" onchange="recalcularRiesgoItse2()"> Almacén de productos altamente combustibles, plásticos o químicos (Riesgo Muy Alto)</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Factores Adicionales de Incremento de Riesgo -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">FACTORES ADICIONALES DE RIESGO DE INCENDIO Y COLAPSO</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; font-size: 0.85rem;">
+              <label style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="checkbox" id="itse2FactorGlp" onchange="recalcularRiesgoItse2()"> Cuenta con balones de gas GLP (> 45 kg) o tanque estacionario
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="checkbox" id="itse2FactorCalderas" onchange="recalcularRiesgoItse2()"> Cuenta con calderas u hornos industriales
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="checkbox" id="itse2FactorSotano" onchange="recalcularRiesgoItse2()"> Cuenta con sótano de atención al público o estacionamiento
+              </label>
+              <label style="display: flex; gap: 0.5rem; align-items: center;">
+                <input type="checkbox" id="itse2FactorQuimicos" onchange="recalcularRiesgoItse2()"> Almacena pinturas, disolventes, pirotecnia o hidrocarburos
+              </label>
+            </div>
+          </div>
+
+          <div class="reserva-autoridad-aviso">
+            <strong>⚖️ ADVERTENCIA NORMATIVA (D.S. N° 002-2018-PCM):</strong>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem;">
+              La información consignada tiene carácter de Declaración Jurada. El funcionario municipal de Defensa Civil validará físicamente la concordancia de estos datos durante la diligencia de inspección.
+            </p>
+          </div>
+
+        </div>
+        <div class="modal-formato-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalItse('modalItseAnexo2')">Cerrar</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="previsualizarDocumento('ITSE_ANEXO_2')">👁️ Vista Previa PDF</button>
+            <button type="button" class="btn btn-secondary" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_2')">🖨️ Imprimir</button>
+            <button type="button" class="btn btn-primary" onclick="guardarFormularioItse2(true)">💾 Guardar y Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         MODAL 3: ANEXO 3 ITSE — REPORTE DE NIVEL DE RIESGO
+         ========================================================================= -->
+    <div id="modalItseAnexo3" class="modal-formato-overlay">
+      <div class="modal-formato-box" style="max-width: 900px;">
+        <div class="modal-formato-header">
+          <div>
+            <h3>📊 Anexo 3 ITSE — Reporte del Nivel de Riesgo del Establecimiento</h3>
+            <p>Matriz de Riesgo de Incendio y Colapso Estructural — D.S. N° 002-2018-PCM</p>
+          </div>
+          <button type="button" onclick="cerrarModalItse('modalItseAnexo3')" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-formato-body">
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+            <!-- Matriz Incendio -->
+            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; background: #ffffff;">
+              <h4 style="color: #b91c1c; margin: 0 0 0.5rem 0; font-size: 0.95rem;">🔥 1. Riesgo de Incendio</h4>
+              <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 0.75rem;">Evaluación de carga combustible, fuentes de ignición e instalaciones.</p>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.75rem;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: #991b1b;">Nivel de Riesgo de Incendio:</span>
+                <span id="lblItse3RiesgoIncendio" style="font-weight: 700; color: #991b1b; font-size: 1rem;">MEDIO</span>
+              </div>
+            </div>
+
+            <!-- Matriz Colapso -->
+            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; background: #ffffff;">
+              <h4 style="color: #0369a1; margin: 0 0 0.5rem 0; font-size: 0.95rem;">🏢 2. Riesgo de Colapso Estructural</h4>
+              <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 0.75rem;">Evaluación de antigüedad, material noble/adobe, mantenimiento y altura.</p>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 0.75rem;">
+                <span style="font-size: 0.85rem; font-weight: 600; color: #0369a1;">Nivel de Riesgo de Colapso:</span>
+                <span id="lblItse3RiesgoColapso" style="font-weight: 700; color: #0369a1; font-size: 1rem;">BAJO</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuadro de Matriz de Cruce -->
+          <div class="seccion-formato">
+            <div class="seccion-formato-title">MATRIZ CENEPRED: DETERMINACIÓN DEL NIVEL DE RIESGO FINAL</div>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: center;">
+                <thead>
+                  <tr style="background: #002b5c; color: white;">
+                    <th style="padding: 0.5rem; border: 1px solid #cbd5e1;">Nivel Consolidado</th>
+                    <th style="padding: 0.5rem; border: 1px solid #cbd5e1;">Tipo de ITSE</th>
+                    <th style="padding: 0.5rem; border: 1px solid #cbd5e1;">Momento de la Inspección</th>
+                    <th style="padding: 0.5rem; border: 1px solid #cbd5e1;">Vigencia Certificado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="background: #ecfdf5;">
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1; font-weight: 700; color: #065f46;">RIESGO BAJO</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">ITSE Posterior</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Inspección posterior al inicio</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">2 Años (D.S. 002-2018-PCM)</td>
+                  </tr>
+                  <tr style="background: #eff6ff;">
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1; font-weight: 700; color: #1e40af;">RIESGO MEDIO</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">ITSE Posterior</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Inspección posterior al inicio</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">2 Años</td>
+                  </tr>
+                  <tr style="background: #fffbeb;">
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1; font-weight: 700; color: #b45309;">RIESGO ALTO</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">ITSE Previa</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Inspección previa obligatoria</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">2 Años</td>
+                  </tr>
+                  <tr style="background: #fef2f2;">
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1; font-weight: 700; color: #b91c1c;">RIESGO MUY ALTO</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">ITSE Previa con Grupo Especializado</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Inspección previa multidisciplinaria</td>
+                    <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">2 Años</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Dictamen Oficial Reservado -->
+          <div style="background: #f1f5f9; border: 2px dashed #94a3b8; border-radius: 8px; padding: 1.25rem; text-align: center;">
+            <div style="font-weight: 700; color: #334155; font-size: 0.95rem; margin-bottom: 0.25rem;">
+              🏛️ DICTAMEN OFICIAL DE DEFENSA CIVIL
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.75rem 0;">
+              Sección estrictamente reservada para el Inspector Técnico de Seguridad en Edificaciones acreditado por CENEPRED. El ciudadano no puede alterar directamente la clasificación oficial.
+            </p>
+            <div style="display: inline-block; padding: 0.5rem 1.25rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 700; color: #0284c7;">
+              ESTADO DEL DICTAMEN: PENDIENTE DE PROGRAMACIÓN DE INSPECCIÓN
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-formato-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalItse('modalItseAnexo3')">Cerrar</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="previsualizarDocumento('ITSE_ANEXO_3')">👁️ Vista Previa PDF</button>
+            <button type="button" class="btn btn-secondary" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_3')">🖨️ Imprimir</button>
+            <button type="button" class="btn btn-primary" onclick="descargarDocumentoGenerado('ITSE_ANEXO_3')">⬇️ Descargar Reporte PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         MODAL 4: ANEXO 4 ITSE — DECLARACIÓN JURADA DE CONDICIONES DE SEGURIDAD
+         ========================================================================= -->
+    <div id="modalItseAnexo4" class="modal-formato-overlay">
+      <div class="modal-formato-box" style="max-width: 950px;">
+        <div class="modal-formato-header">
+          <div>
+            <h3>🛡️ Anexo 4 ITSE — Declaración Jurada de Cumplimiento de Condiciones de Seguridad</h3>
+            <p>Formato de 4 Páginas para ITSE Posterior — D.S. N° 002-2018-PCM / R.J. N° 016-2018-CENEPRED/J</p>
+          </div>
+          <button type="button" onclick="cerrarModalItse('modalItseAnexo4')" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-formato-body">
+
+          <!-- Pestañas de las 4 Secciones Normativas -->
+          <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.25rem; overflow-x: auto; padding-bottom: 0.25rem;">
+            <button type="button" id="tabItse4Btn1" class="btn btn-sm btn-primary" onclick="cambiarTabItse4(1)">1. Evacuación y Señales</button>
+            <button type="button" id="tabItse4Btn2" class="btn btn-sm btn-secondary" onclick="cambiarTabItse4(2)">2. Instalaciones Eléctricas</button>
+            <button type="button" id="tabItse4Btn3" class="btn btn-sm btn-secondary" onclick="cambiarTabItse4(3)">3. Protección contra Incendios</button>
+            <button type="button" id="tabItse4Btn4" class="btn btn-sm btn-secondary" onclick="cambiarTabItse4(4)">4. Estructuras y Aforo</button>
+          </div>
+
+          <!-- Tab 1: Medios de Evacuación y Señalización -->
+          <div id="tabItse4Sec1" class="seccion-formato">
+            <div class="seccion-formato-title">1. CONDICIONES DE EVACUACIÓN Y SEÑALIZACIÓN (PÁGINA 1 Y 2)</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>1.1. Las rutas de evacuación (pasadizos, escaleras y puertas) se encuentran libres de obstáculos.</span>
+                <select id="itse4_q1" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>1.2. Las puertas de salida abren fácilmente en el sentido de la evacuación o permanecen abiertas durante atención.</span>
+                <select id="itse4_q2" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>1.3. Cuenta con señalización fotoluminiscente de rutas de escape, salidas y zonas seguras según NTP 399.010-1.</span>
+                <select id="itse4_q3" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>1.4. Cuenta con luces de emergencia autónomas y operativas en pasadizos, salidas y caja de pago.</span>
+                <select id="itse4_q4" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Instalaciones Eléctricas -->
+          <div id="tabItse4Sec2" class="seccion-formato" style="display: none;">
+            <div class="seccion-formato-title">2. CONDICIONES DE SEGURIDAD EN INSTALACIONES ELÉCTRICAS (PÁGINA 2 Y 3)</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>2.1. El tablero eléctrico es de material incombustible, cuenta con mandil de protección y directorio actualizado.</span>
+                <select id="itse4_q5" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>2.2. Todos los circuitos eléctricos cuentan con interruptores termomagnéticos e interruptor diferencial.</span>
+                <select id="itse4_q6" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>2.3. Cuenta con sistema de puesta a tierra con protocolo de medición de resistencia vigente (≤ 25 Ohmios).</span>
+                <select id="itse4_q7" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>2.4. Los conductores eléctricos se encuentran debidamente protegidos mediante canaletas o tuberías conduit.</span>
+                <select id="itse4_q8" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Protección contra Incendios -->
+          <div id="tabItse4Sec3" class="seccion-formato" style="display: none;">
+            <div class="seccion-formato-title">3. PROTECCIÓN Y COMBATE CONTRA INCENDIOS (PÁGINA 3)</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>3.1. Cuenta con extintores operativos tipo PQS o CO2, con tarjeta de control y recarga vigente (menos de 1 año).</span>
+                <select id="itse4_q9" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>3.2. Los extintores se encuentran instalados a una altura máxima de 1.50 m, libres de obstáculos y señalizados.</span>
+                <select id="itse4_q10" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>3.3. Cuenta con botiquín de primeros auxilios debidamente equipado conforme a la normativa de salud.</span>
+                <select id="itse4_q11" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Estructuras y Declaración -->
+          <div id="tabItse4Sec4" class="seccion-formato" style="display: none;">
+            <div class="seccion-formato-title">4. CONDICIONES ESTRUCTURALES Y AFORO (PÁGINA 4)</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>4.1. La edificación no presenta fisuras estructurales, pandeos de vigas ni desprendimiento de cielo raso.</span>
+                <select id="itse4_q12" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>4.2. Los vidrios o mamparas primarias cuentan con láminas de seguridad o son de cristal templado.</span>
+                <select id="itse4_q13" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+                <span>4.3. El establecimiento exhibe en un lugar visible el Aforo Máximo Autorizado de personas.</span>
+                <select id="itse4_q14" style="width: 100px;"><option value="SI" selected>SÍ</option><option value="NO">NO</option><option value="NA">N/A</option></select>
+              </div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.85rem; margin-top: 1rem;">
+              <label style="display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 700; color: #0f172a; cursor: pointer;">
+                <input type="checkbox" id="chkItse4AceptoDeclaracion" checked style="margin-top: 0.2rem;">
+                <span>DECLARO BAJO JURAMENTO que toda la información consignada y las condiciones de seguridad descritas en este documento son veraces y corresponden a la realidad física de mi establecimiento (Art. 51 TUO Ley N° 27444).</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-formato-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalItse('modalItse4')">Cerrar</button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary" onclick="previsualizarDocumento('ITSE_ANEXO_4')">👁️ Vista Previa PDF</button>
+            <button type="button" class="btn btn-secondary" onclick="imprimirDocumentoDirecto('ITSE_ANEXO_4')">🖨️ Imprimir</button>
+            <button type="button" class="btn btn-primary" onclick="guardarFormularioItse4(true)">💾 Guardar Declaración y Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         MODAL VISOR DE PDF OFICIAL (VISTA PREVIA Y CONTROL DE IMPRESIÓN)
+         ========================================================================= -->
+    <div id="modalPreviewPdf" class="modal-formato-overlay">
+      <div class="modal-formato-box" style="max-width: 980px; height: 92vh;">
+        <div class="modal-formato-header">
+          <div>
+            <h3 id="lblPreviewTitulo">👁️ Vista Previa del Formato Oficial PDF</h3>
+            <p id="lblPreviewSubtitulo">Municipalidad Provincial de Huamanga — Visualización fiel antes de imprimir o descargar</p>
+          </div>
+          <button type="button" onclick="cerrarModalPreviewPdf()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <div class="modal-formato-body" style="padding: 0; background: #525659; display: flex; flex-direction: column;">
+          <iframe id="iframePreviewPdf" style="width: 100%; height: 100%; border: none; min-height: 500px; flex: 1;" src="about:blank"></iframe>
+        </div>
+        <div class="modal-formato-footer">
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalPreviewPdf()">Cerrar Vista Previa</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="imprimirIframePreview()">🖨️ Imprimir</button>
+            <a id="btnDescargarPreviewActual" class="btn btn-primary" target="_blank" download="documento-oficial.pdf">⬇️ Descargar PDF Oficial</a>
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,8 @@
-const API_BASE        = '/api/expedientes';
-const API_FORMULARIOS = '/api/formularios';
-const API_AUTH        = '/api/auth';
-const API_TUPA        = '/api/tupa/tarifas';
+const BACKEND_BASE    = (window.location.protocol.startsWith('http') && window.location.port === '8081') ? '' : 'http://localhost:8081';
+const API_BASE        = `${BACKEND_BASE}/api/expedientes`;
+const API_FORMULARIOS = `${BACKEND_BASE}/api/formularios`;
+const API_AUTH        = `${BACKEND_BASE}/api/auth`;
+const API_TUPA        = `${BACKEND_BASE}/api/tupa/tarifas`;
 
 document.addEventListener('DOMContentLoaded', () => {
   const demoBox = document.getElementById('demoCredentialsBox');
@@ -104,17 +105,24 @@ async function iniciarSesion() {
   const txtU = document.getElementById('txtUsuario');
   const txtP = document.getElementById('txtPassword');
   const errorBox = document.getElementById('loginError');
+  const submitBtn = document.getElementById('btnSubmitLogin');
 
-  const username = txtU.value.trim();
-  const password = txtP.value.trim();
+  const username = txtU ? txtU.value.trim() : '';
+  const password = txtP ? txtP.value.trim() : '';
 
   if (!username || !password) {
-    errorBox.innerText = 'Por favor complete usuario y contraseña.';
-    errorBox.style.display = 'block';
+    if (errorBox) {
+      errorBox.innerText = 'Por favor complete usuario y contraseña.';
+      errorBox.style.display = 'block';
+    }
     return;
   }
 
-  errorBox.style.display = 'none';
+  if (errorBox) errorBox.style.display = 'none';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Conectando...';
+  }
 
   try {
     const res = await fetch(`${API_AUTH}/login`, {
@@ -133,11 +141,25 @@ async function iniciarSesion() {
     localStorage.setItem('jwt_usuario', data.nombreCompleto || data.username);
     localStorage.setItem('jwt_rol', data.rol);
 
+    if (txtU) txtU.value = '';
+    if (txtP) txtP.value = '';
+    cerrarModal('modalLogin');
     verificarSesion();
     cargarExpedientes();
   } catch (err) {
-    errorBox.innerText = err.message;
-    errorBox.style.display = 'block';
+    if (errorBox) {
+      if (err.name === 'TypeError' || (err.message && err.message.toLowerCase().includes('fetch'))) {
+        errorBox.innerText = 'No se pudo conectar con el servidor backend en http://localhost:8081. Verifique que la aplicación Spring Boot esté iniciada.';
+      } else {
+        errorBox.innerText = err.message || 'Error al iniciar sesión.';
+      }
+      errorBox.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Iniciar Sesión';
+    }
   }
 }
 
@@ -165,7 +187,8 @@ async function fetchConAuth(url, options = {}) {
     }
   }
 
-  const res = await fetch(url, options);
+  const fullUrl = url.startsWith('http') ? url : `${BACKEND_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
+  const res = await fetch(fullUrl, options);
 
   if (res.status === 401) {
     abrirModalLogin();
@@ -1137,7 +1160,7 @@ async function guardarEvaluacionZonificacion() {
    M08: EVALUACIÓN ADMINISTRATIVA, CHECKLIST E INFORMES TÉCNICOS (I07)
    ══════════════════════════════════════════════════════════════════════════ */
 
-const API_EVAL = '/api/evaluaciones-administrativas';
+const API_EVAL = `${BACKEND_BASE}/api/evaluaciones-administrativas`;
 let currentChecklistExpedienteId = null;
 let currentGestionInformeId = null;
 
@@ -1540,8 +1563,8 @@ async function descargarInformePreliminarPdf() {
    M09: RESOLUCIONES ADMINISTRATIVAS Y LICENCIAS OFICIALES (I08)
    ══════════════════════════════════════════════════════════════════════════ */
 
-const API_RESOLUCIONES = '/api/resoluciones';
-const API_LICENCIAS    = '/api/licencias';
+const API_RESOLUCIONES = `${BACKEND_BASE}/api/resoluciones`;
+const API_LICENCIAS    = `${BACKEND_BASE}/api/licencias`;
 let currentGestionResolucionId = null;
 let currentGestionResolucionExpedienteId = null;
 let currentLicenciaEmitidaId = null;
@@ -1904,3 +1927,308 @@ async function descargarLicenciaOficialPdf() {
     alert(`❌ Error al descargar certificado de licencia:\n${err.message}`);
   }
 }
+
+// =============================================================================
+// MÓDULO: ADMINISTRACIÓN Y VERSIONADO DE PLANTILLAS OFICIALES ITSE Y LICENCIA
+// =============================================================================
+
+let plantillasAdminCache = [];
+let plantillaFiltroActual = 'TODAS';
+let sustituirArchivoBase64 = null;
+let sustituirArchivoNombre = null;
+
+async function abrirModalAdminPlantillas() {
+  const modal = document.getElementById('modalAdminPlantillas');
+  if (modal) modal.style.display = 'flex';
+  await cargarPlantillasAdmin();
+}
+
+async function cargarPlantillasAdmin() {
+  const tbody = document.getElementById('tablaPlantillasBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1.5rem;">⏳ Cargando plantillas documentales oficiales...</td></tr>';
+
+  try {
+    const res = await fetchConAuth('/api/plantillas-documentales');
+    if (!res.ok) throw new Error('No se pudo consultar el catálogo de plantillas documentales');
+    plantillasAdminCache = await res.json();
+    renderizarTablaPlantillas(plantillasAdminCache);
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 1.5rem;">❌ Error: ${err.message}</td></tr>`;
+  }
+}
+
+function filtrarPlantillasAdmin(grupo) {
+  plantillaFiltroActual = grupo;
+  if (grupo === 'TODAS') {
+    renderizarTablaPlantillas(plantillasAdminCache);
+  } else {
+    const filtradas = plantillasAdminCache.filter(p => p.grupo === grupo);
+    renderizarTablaPlantillas(filtradas);
+  }
+}
+
+function renderizarTablaPlantillas(lista) {
+  const tbody = document.getElementById('tablaPlantillasBody');
+  if (!tbody) return;
+
+  if (!lista || lista.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 1.5rem;">No hay plantillas registradas.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(p => {
+    const hashCorto = p.hashSha256 ? `${p.hashSha256.substring(0, 10)}...` : 'N/A';
+    const fecha = p.fechaActualizacion ? new Date(p.fechaActualizacion).toLocaleString('es-PE') : '-';
+    const grupoBadge = p.grupo === 'ITSE' 
+      ? '<span class="badge" style="background: #e0f2fe; color: #0369a1;">ITSE</span>'
+      : '<span class="badge" style="background: #e6f0fa; color: #003366;">LICENCIA</span>';
+
+    return `
+      <tr>
+        <td style="font-family: monospace; font-weight: 700;">${p.codigo}</td>
+        <td>
+          <div style="font-weight: 600; color: #0f172a;">${p.nombre}</div>
+          <div style="font-size: 0.75rem; color: #64748b;">${p.baseLegal || ''}</div>
+        </td>
+        <td>${grupoBadge}</td>
+        <td><strong style="color: #0284c7;">${p.versionTexto || `v${p.versionActual}.0`}</strong></td>
+        <td><code title="${p.hashSha256}" style="cursor: pointer; color: #475569;" onclick="copiarAlPortapapeles('${p.hashSha256}')">${hashCorto} 📋</code></td>
+        <td>${p.actualizadoPor || 'SISTEMA'}</td>
+        <td style="font-size: 0.8rem;">${fecha}</td>
+        <td>
+          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="previsualizarPlantillaInterno('${p.codigo}', '${p.nombre}')" title="Previsualizar PDF en visor">👁️</button>
+            <button class="btn btn-secondary btn-sm" onclick="descargarPlantillaVigenteInterno('${p.codigo}', '${p.nombreArchivo}')" title="Descargar PDF vigente">⬇️</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalSustituirPlantilla('${p.codigo}', '${p.nombre}')" title="Sustituir por nueva versión">📤 Cargar</button>
+            <button class="btn btn-secondary btn-sm" onclick="abrirHistorialPlantilla('${p.codigo}', '${p.nombre}')" title="Historial inmutable">📜 Historial (${p.totalVersionesHistoricas || 1})</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function abrirModalSustituirPlantilla(codigo, nombre) {
+  document.getElementById('txtSustituirCodigo').value = codigo;
+  document.getElementById('lblSustituirNombre').textContent = `${nombre} (${codigo})`;
+  document.getElementById('fileSustituirPdf').value = '';
+  document.getElementById('txtSustituirMotivo').value = '';
+  document.getElementById('boxSustituirInfoFile').style.display = 'none';
+
+  sustituirArchivoBase64 = null;
+  sustituirArchivoNombre = null;
+
+  document.getElementById('modalSustituirPlantilla').style.display = 'flex';
+}
+
+async function alSeleccionarPdfSustituir(input) {
+  const file = input.files[0];
+  const infoBox = document.getElementById('boxSustituirInfoFile');
+  if (!file) {
+    infoBox.style.display = 'none';
+    return;
+  }
+
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    alert('❌ Únicamente se permiten archivos en formato PDF.');
+    input.value = '';
+    infoBox.style.display = 'none';
+    return;
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+
+  // Validación de cabecera mágica auténtica: %PDF- (0x25 0x50 0x44 0x46 0x2D)
+  if (bytes.length < 5 || bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46 || bytes[4] !== 0x2D) {
+    alert('❌ El archivo seleccionado no es un PDF auténtico (cabecera corrupta o inválida).');
+    input.value = '';
+    infoBox.style.display = 'none';
+    return;
+  }
+
+  // Cálculo de SHA-256 nativo con Web Crypto API
+  const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const sha256Hex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Conversión a Base64
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  sustituirArchivoBase64 = window.btoa(binary);
+  sustituirArchivoNombre = file.name;
+
+  document.getElementById('lblSustituirFileName').textContent = file.name;
+  document.getElementById('lblSustituirFileSize').textContent = `${(file.size / 1024).toFixed(1)} KB`;
+  document.getElementById('lblSustituirFileHash').textContent = sha256Hex;
+  infoBox.style.display = 'block';
+}
+
+async function ejecutarSustitucionPlantilla() {
+  const codigo = document.getElementById('txtSustituirCodigo').value;
+  const motivo = document.getElementById('txtSustituirMotivo').value.trim();
+
+  if (!sustituirArchivoBase64 || !sustituirArchivoNombre) {
+    alert('Debe seleccionar un archivo PDF oficial válido.');
+    return;
+  }
+
+  if (motivo.length < 10) {
+    alert('El motivo de sustitución o base normativa debe tener al menos 10 caracteres.');
+    return;
+  }
+
+  const btn = document.getElementById('btnEjecutarSustituir');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Publicando nueva versión...';
+
+  try {
+    const res = await fetchConAuth(`/api/plantillas-documentales/${codigo}/sustituir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombreArchivo: sustituirArchivoNombre,
+        contenidoBase64: sustituirArchivoBase64,
+        motivoCambio: motivo
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    const actualizada = await res.json();
+    alert(`🎉 ¡Plantilla ${codigo} sustituida exitosamente!\nNueva versión vigente: ${actualizada.versionTexto}\nHash SHA-256: ${actualizada.hashSha256}`);
+    cerrarModal('modalSustituirPlantilla');
+    await cargarPlantillasAdmin();
+  } catch (err) {
+    alert(`❌ No se pudo sustituir la plantilla:\n${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Publicar Nueva Versión';
+  }
+}
+
+async function abrirHistorialPlantilla(codigo, nombre) {
+  document.getElementById('txtHistorialCodigo').value = codigo;
+  document.getElementById('lblHistorialSubtitulo').textContent = `${nombre} (${codigo})`;
+  const tbody = document.getElementById('tablaHistorialBody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 1rem;">⏳ Cargando historial inmutable...</td></tr>';
+
+  document.getElementById('modalHistorialPlantilla').style.display = 'flex';
+
+  try {
+    const res = await fetchConAuth(`/api/plantillas-documentales/${codigo}/versiones`);
+    if (!res.ok) throw new Error('Error al consultar versiones históricas');
+    const versiones = await res.json();
+
+    if (versiones.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Sin historial registrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = versiones.map(v => {
+      const fecha = v.fechaCreacion ? new Date(v.fechaCreacion).toLocaleString('es-PE') : '-';
+      const badgeEstado = v.esVersionVigente 
+        ? '<span class="badge badge-aprobado">VIGENTE</span>'
+        : '<span class="badge badge-borrador">HISTÓRICA</span>';
+      
+      const botonRestaurar = v.esVersionVigente
+        ? '<span style="font-size: 0.75rem; color: #94a3b8;">Activa</span>'
+        : `<button class="btn btn-warning btn-sm" onclick="restaurarVersionPlantilla('${codigo}', ${v.version})" title="Restaurar creando nueva versión">🔄 Restaurar</button>`;
+
+      return `
+        <tr>
+          <td><strong style="color: #0284c7;">${v.versionTexto || `v${v.version}.0`}</strong></td>
+          <td style="font-size: 0.8rem;">${fecha}</td>
+          <td>${v.creadoPor || 'SISTEMA'}</td>
+          <td style="max-width: 250px; font-size: 0.8rem;">${v.motivoCambio || '-'}</td>
+          <td><code title="${v.hashSha256}" style="cursor: pointer; color: #475569;" onclick="copiarAlPortapapeles('${v.hashSha256}')">${v.hashSha256 ? v.hashSha256.substring(0, 8) + '...' : ''} 📋</code></td>
+          <td>${badgeEstado}</td>
+          <td>
+            <div style="display: flex; gap: 0.35rem;">
+              <button class="btn btn-secondary btn-sm" onclick="descargarVersionHistoricaInterno('${codigo}', ${v.version})" title="Descargar copia exacta histórica">⬇️</button>
+              ${botonRestaurar}
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">❌ Error: ${err.message}</td></tr>`;
+  }
+}
+
+async function restaurarVersionPlantilla(codigo, version) {
+  const motivo = prompt(`¿Confirma la restauración de la versión ${version}.0 para la plantilla ${codigo}?\n\nDe acuerdo con la política de auditoría y no retroactividad, esta acción NO borrará el historial sino que creará una NUEVA versión controlada.\n\nIngrese la justificación de la restauración:`);
+  if (!motivo || motivo.trim().length < 5) {
+    alert('La restauración requiere una justificación motivada.');
+    return;
+  }
+
+  try {
+    const res = await fetchConAuth(`/api/plantillas-documentales/${codigo}/versiones/${version}/restaurar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ motivo: motivo.trim() })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    const nueva = await res.json();
+    alert(`🎉 ¡Versión restaurada exitosamente!\nSe ha generado la nueva versión vigente: ${nueva.versionTexto}`);
+    cerrarModal('modalHistorialPlantilla');
+    await cargarPlantillasAdmin();
+  } catch (err) {
+    alert(`❌ No se pudo restaurar la versión:\n${err.message}`);
+  }
+}
+
+async function previsualizarPlantillaInterno(codigo, nombre) {
+  const modal = document.getElementById('modalPreviewPlantillaInterno');
+  const iframe = document.getElementById('iframePreviewInterno');
+  document.getElementById('lblPreviewInternoTitulo').textContent = `👁️ Previsualización Oficial: ${nombre} (${codigo})`;
+
+  iframe.src = `/api/plantillas-documentales/${codigo}/descargar`;
+  modal.style.display = 'flex';
+}
+
+function descargarPlantillaVigenteInterno(codigo, nombreArchivo) {
+  window.open(`/api/plantillas-documentales/${codigo}/descargar`, '_blank');
+}
+
+async function descargarVersionHistoricaInterno(codigo, version) {
+  try {
+    const res = await fetchConAuth(`/api/plantillas-documentales/${codigo}/versiones/${version}/descargar`);
+    if (!res.ok) throw new Error('Error al descargar versión histórica');
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${codigo.toLowerCase()}_v${version}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert(`❌ Error al descargar versión histórica: ${err.message}`);
+  }
+}
+
+function copiarAlPortapapeles(texto) {
+  if (!navigator.clipboard) {
+    prompt('Copie el hash SHA-256:', texto);
+    return;
+  }
+  navigator.clipboard.writeText(texto).then(() => {
+    alert('📋 Hash SHA-256 copiado al portapapeles:\n' + texto);
+  });
+}
+
