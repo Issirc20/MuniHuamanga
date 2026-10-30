@@ -6,6 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
@@ -53,17 +54,28 @@ public class ExpedienteSecurity {
         if (expediente.isEmpty() || expediente.get().getEstado() != EstadoExpediente.OBSERVADO) {
             return false;
         }
-        return puedeActuarComoAdministrado(authentication, expediente.get(), PermisoOperador.SUBSANAR_EXPEDIENTE);
+        return puedeActuarComoAdministrado(authentication, expediente.get(),
+                RolesInstitucionales.ATENCION_PRESENCIAL, PermisoOperador.SUBSANAR_EXPEDIENTE);
     }
 
     /**
-     * Actuaciones del administrado en etapas posteriores a la presentación (carga de anexos ITSE,
-     * declaración de pago). Mesa de partes puede registrarlas en nombre del administrado.
+     * Actuaciones del administrado en etapas posteriores a la presentación (carga de anexos ITSE).
+     * Mesa de partes puede registrarlas en nombre del administrado cuando se reciben en ventanilla.
      */
     public boolean puedeActuarComoAdministrado(Authentication authentication, UUID expedienteId, String permiso) {
         Optional<Expediente> expediente = expedienteRepository.findById(expedienteId);
-        return expediente.isPresent()
-                && puedeActuarComoAdministrado(authentication, expediente.get(), PermisoOperador.valueOf(permiso));
+        return expediente.isPresent() && puedeActuarComoAdministrado(authentication, expediente.get(),
+                RolesInstitucionales.ATENCION_PRESENCIAL, PermisoOperador.valueOf(permiso));
+    }
+
+    /**
+     * Declaración del comprobante de pago: el administrado, mesa de partes, o la caja del SAT
+     * cuando el pago se recibe presencialmente en ventanilla.
+     */
+    public boolean puedeDeclararPago(Authentication authentication, UUID expedienteId) {
+        Optional<Expediente> expediente = expedienteRepository.findById(expedienteId);
+        return expediente.isPresent() && puedeActuarComoAdministrado(authentication, expediente.get(),
+                RolesInstitucionales.RECEPCION_PAGOS, PermisoOperador.PRESENTAR_EXPEDIENTE);
     }
 
     /** Indica si la persona autenticada representa al titular del expediente con la facultad indicada. */
@@ -75,12 +87,13 @@ public class ExpedienteSecurity {
         return servicioRepresentacion.tieneFacultad(actor.usuarioId(), expediente.getCuentaId(), permiso);
     }
 
-    private boolean puedeActuarComoAdministrado(Authentication authentication, Expediente expediente, PermisoOperador permiso) {
+    private boolean puedeActuarComoAdministrado(Authentication authentication, Expediente expediente,
+                                                RolUsuario[] rolesPresenciales, PermisoOperador permiso) {
         if (!ProveedorContextoSeguridad.estaAutenticado(authentication)) {
             return false;
         }
         Actor actor = proveedorContexto.desde(authentication);
-        if (actor.tieneAlgunRol(RolesInstitucionales.ATENCION_PRESENCIAL)) {
+        if (actor.tieneAlgunRol(rolesPresenciales)) {
             return true;
         }
         return esRepresentanteDelTitular(authentication, expediente, permiso);

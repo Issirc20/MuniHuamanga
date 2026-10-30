@@ -120,7 +120,7 @@ public class PortalInternoBackofficeFaseCTest {
                         .content(objectMapper.writeValueAsString(valDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("VALIDADO_MANUALMENTE"))
-                .andExpect(jsonPath("$.validadorNombre").value("cajero"))
+                .andExpect(jsonPath("$.validadorNombre").value("Caja del SAT Huamanga"))
                 .andExpect(jsonPath("$.numeroOperacionSat").value("OP-SAT-2026-8800"));
 
         // 4. Consultar historial de decisiones de auditoría (M05)

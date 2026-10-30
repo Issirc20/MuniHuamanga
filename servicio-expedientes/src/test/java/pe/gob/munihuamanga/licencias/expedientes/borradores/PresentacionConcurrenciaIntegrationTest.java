@@ -91,7 +91,7 @@ class PresentacionConcurrenciaIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         String dniPrueba = "43999901";
-        String pwdPrueba = "password123";
+        String pwdPrueba = "Concurrencia.Huamanga26";
 
         if (!cuentaRepository.existsByNumeroDocumento(dniPrueba)) {
             RegistroCuentaDto cuentaDto = RegistroCuentaDto.builder()
