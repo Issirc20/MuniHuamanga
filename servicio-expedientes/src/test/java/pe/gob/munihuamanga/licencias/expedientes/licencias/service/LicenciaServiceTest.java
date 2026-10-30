@@ -75,6 +75,10 @@ class LicenciaServiceTest {
     @Mock
     private NotificacionEmailService notificacionEmailService;
     @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente comandosExpediente;
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor proveedorActor;
+    @Mock
     private pe.gob.munihuamanga.licencias.expedientes.rectificacion.repository.SolicitudRectificacionUbicacionRepository solicitudRectificacionUbicacionRepository;
     @Mock
     private pe.gob.munihuamanga.licencias.expedientes.licencias.repository.AuditoriaConsultaInspeccionRepository auditoriaConsultaInspeccionRepository;
@@ -90,6 +94,7 @@ class LicenciaServiceTest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(proveedorActor.actual()).thenReturn(pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor.sistema());
         resolucionId = UUID.randomUUID();
         expediente = Expediente.builder()
                 .id(UUID.randomUUID())
@@ -105,7 +110,7 @@ class LicenciaServiceTest {
                 .aforoPersonas(20)
                 .zonificacion("Comercio Zonal (CZ)")
                 .nivelRiesgo(NivelRiesgo.MEDIO)
-                .estado(EstadoExpediente.APTO_PARA_RESOLUCION)
+                .estado(EstadoExpediente.APROBADO)
                 .build();
 
         resolucion = ResolucionAdministrativa.builder()
@@ -175,12 +180,11 @@ class LicenciaServiceTest {
         assertEquals(EstadoLicencia.EMITIDA, result.getEstadoLicencia());
         assertNotNull(result.getCodigoVerificacionQr());
         assertEquals(32, result.getCodigoVerificacionQr().length()); // UUID sin guiones
-        assertEquals(EstadoExpediente.APROBADO, expediente.getEstado());
         assertEquals("LIC-2026-00001", expediente.getNumeroLicencia());
         assertTrue(expediente.getFirmaDigitalValida());
 
         verify(expedienteRepository).save(expediente);
-        verify(auditoriaService).registrarTransicion(eq(expediente.getId()), eq(EstadoExpediente.APTO_PARA_RESOLUCION), eq(EstadoExpediente.APROBADO), eq("admin"), any());
+        verify(comandosExpediente).registrar(eq(expediente.getId()), eq(pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente.LICENCIA_EMITIDA), any());
         verify(notificacionEmailService).notificarAprobacion(expediente);
     }
 

@@ -35,7 +35,7 @@ public class LicenciaController {
     private final pe.gob.munihuamanga.licencias.expedientes.licencias.service.RateLimiterService rateLimiterService;
 
     @PostMapping("/emitir")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
     public ResponseEntity<LicenciaEmitidaDto> emitirLicencia(
             @Valid @RequestBody EmitirLicenciaDto dto,
             Authentication auth) {
@@ -44,14 +44,22 @@ public class LicenciaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(lic);
     }
 
+    @PostMapping("/{id}/notificacion")
+    @PreAuthorize("hasRole('MESA_DE_PARTES')")
+    public ResponseEntity<LicenciaEmitidaDto> registrarNotificacion(
+            @PathVariable UUID id,
+            @Valid @RequestBody pe.gob.munihuamanga.licencias.common.dto.RegistrarNotificacionLicenciaDto dto) {
+        return ResponseEntity.ok(licenciaService.registrarNotificacion(id, dto));
+    }
+
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR') or @licenciaSecurity.puedeVerODescargarLicencia(authentication, #id)")
+    @PreAuthorize("@licenciaSecurity.puedeVerODescargarLicencia(authentication, #id)")
     public ResponseEntity<LicenciaEmitidaDto> obtenerPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(licenciaService.obtenerPorId(id));
     }
 
     @GetMapping("/expediente/{expedienteId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR') or @expedienteSecurity.puedeVerExpediente(authentication, #expedienteId)")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpediente(authentication, #expedienteId)")
     public ResponseEntity<LicenciaEmitidaDto> obtenerPorExpediente(@PathVariable UUID expedienteId) {
         return ResponseEntity.ok(licenciaService.obtenerPorExpediente(expedienteId));
     }
@@ -75,7 +83,7 @@ public class LicenciaController {
     }
 
     @GetMapping("/{id}/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR') or @licenciaSecurity.puedeVerODescargarLicencia(authentication, #id)")
+    @PreAuthorize("@licenciaSecurity.puedeVerODescargarLicencia(authentication, #id)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable UUID id) {
         byte[] pdfBytes = licenciaService.descargarPdfLicencia(id);
         HttpHeaders headers = new HttpHeaders();

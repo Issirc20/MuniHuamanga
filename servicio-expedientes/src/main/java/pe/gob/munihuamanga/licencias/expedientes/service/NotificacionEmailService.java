@@ -226,6 +226,56 @@ public class NotificacionEmailService {
     }
 
     // ════════════════════════════════════════════════════════════════════════
+    // EVENTO 5: Aviso de plazo próximo a vencer
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Recuerda al administrado que el plazo de la etapa a su cargo está próximo a vencer.
+     */
+    @Async("emailExecutor")
+    public void notificarAvisoPlazo(Expediente expediente, String detalle) {
+        if (!puedeEnviar(expediente)) return;
+        enviarMensajeInstitucional(
+                expediente.getCorreoElectronico(),
+                expediente.getNombreTitular(),
+                "Expediente N° " + expediente.getNumeroTramite() + " - Aviso de plazo",
+                "Aviso de plazo del procedimiento",
+                "Le recordamos que su expediente requiere una actuación de su parte. "
+                        + "De no realizarse dentro del plazo, la autoridad podrá declarar el abandono del procedimiento.",
+                detalle,
+                portalCiudadano,
+                "Ingresar al portal ciudadano");
+    }
+
+    /**
+     * Envía una comunicación institucional con la plantilla general.
+     * Si el envío de correos está deshabilitado, la comunicación se omite.
+     */
+    public void enviarMensajeInstitucional(String correo, String destinatario, String asunto, String titulo,
+                                           String mensaje, String referencia, String enlace, String textoEnlace) {
+        if (!emailHabilitado || correo == null || correo.isBlank()) {
+            log.debug("[EMAIL] Envío omitido: notificaciones deshabilitadas o destinatario sin correo.");
+            return;
+        }
+        try {
+            Context ctx = new Context(Locale.of("es", "PE"));
+            ctx.setVariable("titulo", titulo);
+            ctx.setVariable("destinatario", destinatario);
+            ctx.setVariable("mensaje", mensaje);
+            ctx.setVariable("referencia", referencia);
+            ctx.setVariable("enlace", enlace);
+            ctx.setVariable("textoEnlace", textoEnlace);
+            enviarHtml(correo, asunto, templateEngine.process("email/email-mensaje", ctx));
+        } catch (Exception e) {
+            log.error("[EMAIL] Error al preparar la comunicación institucional: {}", e.getMessage());
+        }
+    }
+
+    public boolean estaHabilitado() {
+        return emailHabilitado;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
     // PRIVADOS
     // ════════════════════════════════════════════════════════════════════════
 
@@ -267,10 +317,10 @@ public class NotificacionEmailService {
             helper.setText(htmlContent, true);   // true = HTML
 
             mailSender.send(msg);
-            log.info("[EMAIL] ✅ Correo enviado a: {} — Asunto: {}", destinatario, asunto);
+            log.info("[EMAIL] Correo enviado. Asunto: {}", asunto);
 
         } catch (Exception e) {
-            log.warn("[EMAIL] ⚠ No se pudo enviar correo a {} — {}", destinatario, e.getMessage());
+            log.warn("[EMAIL] No se pudo enviar el correo. Asunto: {}. Causa: {}", asunto, e.getMessage());
         }
     }
 }

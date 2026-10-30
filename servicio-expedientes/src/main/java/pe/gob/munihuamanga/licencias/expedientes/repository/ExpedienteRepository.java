@@ -27,6 +27,10 @@ public interface ExpedienteRepository extends JpaRepository<Expediente, UUID> {
 
     org.springframework.data.domain.Page<Expediente> findByEstadoIn(java.util.Collection<EstadoExpediente> estados, org.springframework.data.domain.Pageable pageable);
 
+    List<Expediente> findByEstadoIn(java.util.Collection<EstadoExpediente> estados);
+
+    List<Expediente> findByCuentaIdInOrderByFechaCreacionDesc(java.util.Collection<UUID> cuentaIds);
+
     Optional<Expediente> findByLicenciaQrCode(String licenciaQrCode);
 
     @org.springframework.data.jpa.repository.Query("SELECT e FROM Expediente e WHERE " +

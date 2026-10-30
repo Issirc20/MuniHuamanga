@@ -62,6 +62,12 @@ class PagoZonificacionIntegrationTest {
     @Autowired
     private PagoExpedienteRepository pagoRepository;
 
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository operadorCuentaRepository;
+
     private final String CIUDADANO_DNI = "47889911";
     private UUID cuentaId;
     private Expediente expediente;
@@ -81,6 +87,7 @@ class PagoZonificacionIntegrationTest {
                 .fechaCreacion(LocalDateTime.now())
                 .build();
         cuentaRepository.save(cuenta);
+        pe.gob.munihuamanga.licencias.expedientes.soporte.DatosDePrueba.vincularTitular(usuarioRepository, operadorCuentaRepository, cuenta, CIUDADANO_DNI, "Carlos Mendoza Prado");
 
         expediente = Expediente.builder()
                 .id(UUID.randomUUID())
@@ -92,7 +99,7 @@ class PagoZonificacionIntegrationTest {
                 .nombreComercial("Librería Huamanga")
                 .giroNegocio("Venta de libros y útiles de oficina")
                 .direccionEstablecimiento("Portal Unión 15")
-                .estado(EstadoExpediente.PRESENTADO)
+                .estado(EstadoExpediente.PENDIENTE_PAGO)
                 .nivelRiesgo(NivelRiesgo.BAJO)
                 .montoTasa(new BigDecimal("154.50"))
                 .fechaCreacion(LocalDateTime.now())
@@ -103,7 +110,7 @@ class PagoZonificacionIntegrationTest {
 
     @Test
     @WithMockUser(username = CIUDADANO_DNI, roles = {"CIUDADANO"})
-    @DisplayName("I06: Administrado declara comprobante; queda en PENDIENTE_VALIDACION sin auto-aprobar")
+    @DisplayName("El administrado declara el comprobante de la tasa liquidada; queda pendiente de validación")
     void declararPago_ciudadanoPropietario_retorna201() throws Exception {
         DeclararPagoDto dto = DeclararPagoDto.builder()
                 .codigoComprobante("VCH-SAT-2026-0001")
@@ -121,13 +128,12 @@ class PagoZonificacionIntegrationTest {
                 .andExpect(jsonPath("$.montoDeclarado").value(154.50));
 
         Expediente expActual = expedienteRepository.findById(expediente.getId()).orElseThrow();
-        assertThat(expActual.getEstado()).isEqualTo(EstadoExpediente.PRESENTADO);
-        assertThat(expActual.getEstado()).isNotEqualTo(EstadoExpediente.APROBADO);
+        assertThat(expActual.getEstado()).isEqualTo(EstadoExpediente.PENDIENTE_PAGO);
     }
 
     @Test
     @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
-    @DisplayName("I06: Cajero municipal valida manualmente comprobante registrado")
+    @DisplayName("El cajero valida el comprobante y el expediente pasa a evaluación, iniciando el plazo legal")
     void validarPagoManual_cajero_retorna200() throws Exception {
         PagoExpediente pago = PagoExpediente.builder()
                 .id(UUID.randomUUID())
@@ -149,7 +155,7 @@ class PagoZonificacionIntegrationTest {
                 .justificacion("Cotejo con registro diario de caja ventanilla 1")
                 .build();
 
-        mockMvc.perform(post("/api/pagos/{id}/validar-manual", pago.getId())
+        mockMvc.perform(post("/api/pagos/{id}/validar", pago.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -158,10 +164,9 @@ class PagoZonificacionIntegrationTest {
                 .andExpect(jsonPath("$.validadorNombre").value("cajero_pedro"));
 
         Expediente expActual = expedienteRepository.findById(expediente.getId()).orElseThrow();
-        // Regla I06.1: Independencia de estados — el expediente se mantiene en PRESENTADO
-        assertThat(expActual.getEstado()).isEqualTo(EstadoExpediente.PRESENTADO);
-        assertThat(expActual.getEstado()).isNotEqualTo(EstadoExpediente.DOCUMENTOS_VALIDADOS);
-        assertThat(expActual.getEstado()).isNotEqualTo(EstadoExpediente.APROBADO);
+        // Con el pago validado el expediente queda completo y pasa a evaluación
+        assertThat(expActual.getEstado()).isEqualTo(EstadoExpediente.EN_EVALUACION);
+        assertThat(expActual.getFechaLimite()).isNotNull();
         assertThat(expActual.getVoucherId()).isEqualTo("VCH-SAT-2026-0002");
     }
 
@@ -189,7 +194,7 @@ class PagoZonificacionIntegrationTest {
                 .justificacion("Intento de revalidación simultánea")
                 .build();
 
-        mockMvc.perform(post("/api/pagos/{id}/validar-manual", pago.getId())
+        mockMvc.perform(post("/api/pagos/{id}/validar", pago.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -220,7 +225,7 @@ class PagoZonificacionIntegrationTest {
                 .justificacion("Intento de validar voucher cancelado")
                 .build();
 
-        mockMvc.perform(post("/api/pagos/{id}/validar-manual", pago.getId())
+        mockMvc.perform(post("/api/pagos/{id}/validar", pago.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -258,7 +263,7 @@ class PagoZonificacionIntegrationTest {
                 .justificacion("Auto-validación ciudadana denegada")
                 .build();
 
-        mockMvc.perform(post("/api/pagos/{id}/validar-manual", pagoId)
+        mockMvc.perform(post("/api/pagos/{id}/validar", pagoId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isForbidden());
@@ -390,7 +395,7 @@ class PagoZonificacionIntegrationTest {
                 .nombreComercial("Ferretería Central")
                 .giroNegocio("Ferretería en general")
                 .direccionEstablecimiento("Av. Mariscal Cáceres 780")
-                .estado(EstadoExpediente.DOCUMENTOS_VALIDADOS)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .nivelRiesgo(NivelRiesgo.MEDIO)
                 .montoTasa(new BigDecimal("218.00"))
                 .fechaCreacion(LocalDateTime.now())

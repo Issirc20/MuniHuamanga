@@ -45,16 +45,19 @@ class SecurityConfigProdTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.security.sesion.GestorSesiones gestorSesiones;
+
     @BeforeEach
     void setUp() {
         if (usuarioRepository.findByUsername("admin").isEmpty()) {
             usuarioRepository.save(Usuario.builder()
                     .id(UUID.randomUUID())
                     .username("admin")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode("Sistemas.Huamanga26"))
                     .nombreCompleto("Administrador Prod Test")
                     .email("admin@test.pe")
-                    .rol(RolUsuario.ROLE_ADMIN)
+                    .roles(new java.util.HashSet<>(java.util.Set.of(RolUsuario.ROLE_ADMIN)))
                     .activo(true)
                     .build());
         }
@@ -73,7 +76,9 @@ class SecurityConfigProdTest {
     @Test
     @DisplayName("I02.1: En perfil prod, /h2-console está denegado absolutamente incluso con token de administrador (403 Forbidden)")
     void h2ConsoleDenegadoConAutenticacionEnProduccion() throws Exception {
-        String tokenAdmin = jwtTokenProvider.generarToken("admin", "ROLE_ADMIN", "Administrador General", UUID.randomUUID());
+        Usuario admin = usuarioRepository.findByUsername("admin").orElseThrow();
+        UUID sesion = gestorSesiones.abrir(admin.getId(), "127.0.0.1", "prueba").sesion().getId();
+        String tokenAdmin = jwtTokenProvider.generarTokenAcceso(new CustomUserDetails(admin, sesion), sesion);
 
         mockMvc.perform(get("/h2-console")
                         .header("Authorization", "Bearer " + tokenAdmin))

@@ -7,6 +7,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
+import pe.gob.munihuamanga.licencias.expedientes.security.ServicioRepresentacion;
+import pe.gob.munihuamanga.licencias.expedientes.security.VerificadorTitularidad;
+import java.util.EnumSet;
+import static org.mockito.Mockito.lenient;
 import org.springframework.security.access.AccessDeniedException;
 import pe.gob.munihuamanga.licencias.common.dto.AdjuntarDocumentoVersionadoDto;
 import pe.gob.munihuamanga.licencias.common.dto.DocumentoVersionadoDto;
@@ -61,7 +69,12 @@ class DocumentoVersionadoServiceTest {
     @Mock
     private DocumentoSecurityValidator securityValidator;
 
-    @InjectMocks
+    @Mock
+    private ProveedorActor proveedorActor;
+
+    @Mock
+    private ServicioRepresentacion servicioRepresentacion;
+
     private DocumentoVersionadoService service;
 
     private UUID expedienteId;
@@ -78,6 +91,11 @@ class DocumentoVersionadoServiceTest {
     void setUp() {
         expedienteId = UUID.randomUUID();
         titularId = UUID.randomUUID();
+
+        service = new DocumentoVersionadoService(documentoRepository, documentoBorradorRepository, expedienteRepository,
+                observacionRepository, securityValidator, new VerificadorTitularidad(proveedorActor, servicioRepresentacion));
+        lenient().when(proveedorActor.actual()).thenReturn(new Actor(titularId, "42567891", "Titular de prueba", EnumSet.of(RolUsuario.ROLE_CIUDADANO)));
+        lenient().when(servicioRepresentacion.tieneFacultad(any(), any(), any(PermisoOperador[].class))).thenReturn(true);
 
         expedienteObservado = Expediente.builder()
                 .id(expedienteId)
@@ -114,9 +132,7 @@ class DocumentoVersionadoServiceTest {
                 .motivoActualizacion("Carga inicial")
                 .build();
 
-        DocumentoVersionadoDto res = service.adjuntarDocumentoAExpediente(
-                expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO"
-        );
+        DocumentoVersionadoDto res = service.adjuntarDocumentoAExpediente(expedienteId, dto);
 
         assertThat(res).isNotNull();
         assertThat(res.getVersion()).isEqualTo(1);
@@ -154,9 +170,7 @@ class DocumentoVersionadoServiceTest {
                 .motivoActualizacion("Subsanación de observación sobre escala")
                 .build();
 
-        DocumentoVersionadoDto res = service.adjuntarDocumentoAExpediente(
-                expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO"
-        );
+        DocumentoVersionadoDto res = service.adjuntarDocumentoAExpediente(expedienteId, dto);
 
         assertThat(res).isNotNull();
         assertThat(res.getVersion()).isEqualTo(2);
@@ -176,11 +190,9 @@ class DocumentoVersionadoServiceTest {
                 .contenidoBase64(VALID_BASE64)
                 .build();
 
-        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(
-                expedienteAprobado.getId(), dto, titularId, "42567891", "ROLE_CIUDADANO"
-        ))
+        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(expedienteAprobado.getId(), dto))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No se pueden alterar ni agregar documentos a un expediente concluido");
+                .hasMessageContaining("No se pueden agregar documentos a un expediente resuelto");
     }
 
     @Test
@@ -201,11 +213,9 @@ class DocumentoVersionadoServiceTest {
                 .contenidoBase64(VALID_BASE64)
                 .build();
 
-        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(
-                expPresentado.getId(), dto, titularId, "42567891", "ROLE_CIUDADANO"
-        ))
+        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(expPresentado.getId(), dto))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("no se encuentra en estado OBSERVADO");
+                .hasMessageContaining("no admite la carga del documento");
     }
 
     @Test
@@ -220,10 +230,11 @@ class DocumentoVersionadoServiceTest {
                 .build();
 
         when(documentoRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(servicioRepresentacion.tieneFacultad(any(), any(), any(PermisoOperador[].class))).thenReturn(false);
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expedienteObservado));
 
         UUID otroUsuarioId = UUID.randomUUID();
-        assertThatThrownBy(() -> service.descargarDocumento(docId, otroUsuarioId, "99998888", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.descargarDocumento(docId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("No cuenta con autorización");
     }
@@ -272,7 +283,7 @@ class DocumentoVersionadoServiceTest {
                 .observacionId(obsAjenaId)
                 .build();
 
-        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.adjuntarDocumentoAExpediente(expedienteId, dto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("no pertenece al expediente");
     }
@@ -294,7 +305,7 @@ class DocumentoVersionadoServiceTest {
                 .contenidoBase64(VALID_BASE64)
                 .build();
 
-        service.adjuntarDocumentoAExpediente(expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO");
+        service.adjuntarDocumentoAExpediente(expedienteId, dto);
 
         verify(documentoRepository).desmarcarVersionesActualesExpediente(expedienteId, TipoDocumentoAdjunto.PLANO_DISTRIBUCION);
     }
@@ -321,10 +332,11 @@ class DocumentoVersionadoServiceTest {
                 .build();
 
         when(documentoRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(servicioRepresentacion.tieneFacultad(any(), any(), any(PermisoOperador[].class))).thenReturn(false);
         when(expedienteRepository.findById(expV1Id)).thenReturn(Optional.of(expV1));
 
         // Ciudadano con DNI 42567891 intenta acceder a expediente V1 no reclamado
-        assertThatThrownBy(() -> service.descargarDocumento(docId, UUID.randomUUID(), "42567891", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.descargarDocumento(docId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("No cuenta con autorización");
     }

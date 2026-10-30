@@ -78,6 +78,19 @@ public class Cuenta {
     private Boolean identidadValidadaOficialmente = false;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "medio_validacion_identidad", length = 40)
+    private pe.gob.munihuamanga.licencias.common.enums.MedioValidacionIdentidad medioValidacionIdentidad;
+
+    @Column(name = "referencia_validacion_identidad", length = 200)
+    private String referenciaValidacionIdentidad;
+
+    @Column(name = "identidad_validada_por", length = 150)
+    private String identidadValidadaPor;
+
+    @Column(name = "fecha_validacion_identidad")
+    private LocalDateTime fechaValidacionIdentidad;
+
+    @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(name = "estado", nullable = false, length = 30)
     private EstadoCuenta estado = EstadoCuenta.PENDIENTE_VERIFICACION;

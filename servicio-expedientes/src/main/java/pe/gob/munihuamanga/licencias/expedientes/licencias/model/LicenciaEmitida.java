@@ -129,4 +129,19 @@ public class LicenciaEmitida {
 
     @Column(name = "creado_por", nullable = false, length = 100)
     private String creadoPor;
+
+    // Notificación al administrado: condición para el cómputo del plazo de recursos y el cierre del procedimiento
+    @Column(name = "fecha_notificacion")
+    private LocalDateTime fechaNotificacion;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "medio_notificacion", length = 30)
+    private pe.gob.munihuamanga.licencias.common.enums.MedioNotificacion medioNotificacion;
+
+    @Column(name = "constancia_notificacion", length = 200)
+    private String constanciaNotificacion;
+
+    public boolean estaNotificada() {
+        return fechaNotificacion != null;
+    }
 }

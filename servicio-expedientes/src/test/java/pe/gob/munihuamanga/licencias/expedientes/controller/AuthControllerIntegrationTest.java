@@ -36,7 +36,7 @@ class AuthControllerIntegrationTest {
     void testLoginExitoso() throws Exception {
         LoginRequestDto request = LoginRequestDto.builder()
                 .username("evaluador")
-                .password("eval123")
+                .password("Licencias.Huamanga26")
                 .build();
 
         mockMvc.perform(post("/api/auth/login")
@@ -66,7 +66,7 @@ class AuthControllerIntegrationTest {
     @Test
     @DisplayName("Debe denegar acceso (HTTP 401) a operaciones administrativas protegidas si no se envía token")
     void testOperacionProtegidaSinToken_Retorna401() throws Exception {
-        mockMvc.perform(post("/api/expedientes/" + UUID.randomUUID() + "/aprobar")
+        mockMvc.perform(post("/api/resoluciones/" + UUID.randomUUID() + "/aprobar")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
@@ -76,8 +76,8 @@ class AuthControllerIntegrationTest {
     void testBandejaConToken_Retorna200() throws Exception {
         // 1. Iniciar sesión para obtener token
         LoginRequestDto request = LoginRequestDto.builder()
-                .username("admin")
-                .password("admin123")
+                .username("evaluador")
+                .password("Licencias.Huamanga26")
                 .build();
 
         MvcResult result = mockMvc.perform(post("/api/auth/login")
@@ -102,7 +102,7 @@ class AuthControllerIntegrationTest {
     @DisplayName("Debe permitir acceso al endpoint de consulta por trámite sin token (público para el ciudadano)")
     void testSeguimientoCiudadanoPublico_Permitido() throws Exception {
         // Consultar trámite inexistente responde 404 pero NO 401
-        mockMvc.perform(get("/api/expedientes/tramite/EXP-2026-99999"))
+        mockMvc.perform(get("/api/expedientes/tramite/EXP-2026-99999").param("documento", "1234"))
                 .andExpect(status().isNotFound());
     }
 }

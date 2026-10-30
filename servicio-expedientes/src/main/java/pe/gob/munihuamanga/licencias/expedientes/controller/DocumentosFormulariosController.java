@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
-import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.service.DocumentoPdfService;
@@ -157,54 +156,6 @@ public class DocumentosFormulariosController {
         byte[] pdf = documentoPdfService.generarAnexo4CondicionesSeguridad(dto);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo4-CondicionesSeguridad-" + exp.getNumeroTramite() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
-    @PostMapping("/voucher-sat")
-    @Operation(summary = "Generar PDF oficial de Voucher de Pago SAT con código de barras")
-    public ResponseEntity<byte[]> generarVoucherSat(@RequestBody VoucherDto voucher) {
-        byte[] pdf = documentoPdfService.generarVoucherSatPdf(voucher);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=VoucherSAT-" + voucher.getVoucherId() + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
-    @PostMapping("/licencia")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
-    @Operation(summary = "Generar PDF oficial del Certificado de Licencia con QR (Requiere estado APROBADO y firma digital válida)")
-    public ResponseEntity<byte[]> generarLicencia(@RequestBody ExpedienteResponseDto expediente) {
-        if (expediente.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
-            throw new IllegalArgumentException("No se puede emitir el Certificado de Licencia para un expediente que no esté en estado APROBADO. Estado actual: " + expediente.getEstado());
-        }
-        if (!Boolean.TRUE.equals(expediente.getFirmaDigitalValida()) && (expediente.getLicenciaQrCode() == null || expediente.getLicenciaQrCode().isBlank())) {
-            throw new IllegalArgumentException("No se puede emitir el Certificado de Licencia oficial: requiere firma digital institucional válida (Ley N° 27269 / DAS DA-06).");
-        }
-        byte[] pdf = documentoPdfService.generarLicenciaPdf(expediente);
-        String codigo = expediente.getLicenciaQrCode() != null ? expediente.getLicenciaQrCode() : expediente.getNumeroTramite();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(pdf);
-    }
-
-    @GetMapping("/licencia/{id}/pdf")
-    @PreAuthorize("@expedienteSecurity.puedeDescargarDocumento(authentication, #id)")
-    @Operation(summary = "Descargar PDF oficial de Certificado de Licencia por ID de expediente (Requiere estado APROBADO y firma digital válida)")
-    public ResponseEntity<byte[]> descargarLicenciaPorId(@PathVariable UUID id) {
-        Expediente exp = expedienteService.obtenerPorId(id);
-        if (exp.getEstado() != pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente.APROBADO) {
-            throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " no se encuentra APROBADO. Estado actual: " + exp.getEstado());
-        }
-        if (!Boolean.TRUE.equals(exp.getFirmaDigitalValida()) || exp.getLicenciaQrCode() == null) {
-            throw new IllegalStateException("El expediente " + exp.getNumeroTramite() + " se encuentra aprobado pero la emisión oficial del certificado definitivo está bloqueada: requiere firma digital institucional válida (Ley N° 27269 / DAS DA-06).");
-        }
-        ExpedienteResponseDto dto = expedienteMapper.toDto(exp);
-        byte[] pdf = documentoPdfService.generarLicenciaPdf(dto);
-        String codigo = exp.getLicenciaQrCode() != null ? exp.getLicenciaQrCode() : exp.getNumeroTramite();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Licencia-" + codigo + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
     }

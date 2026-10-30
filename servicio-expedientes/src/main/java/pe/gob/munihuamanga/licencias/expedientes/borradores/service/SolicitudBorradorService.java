@@ -218,7 +218,7 @@ public class SolicitudBorradorService {
         SolicitudBorrador borrador = obtenerEntidadBorrador(borradorId);
 
         // Control de autorización: creador, operador de la cuenta titular o funcionario municipal
-        boolean esFuncionario = rolUsuario != null && (rolUsuario.contains("ADMIN") || rolUsuario.contains("EVALUADOR"));
+        boolean esFuncionario = rolUsuario != null && (rolUsuario.contains("MESA_DE_PARTES") || rolUsuario.contains("EVALUADOR") || rolUsuario.contains("SUPERVISOR_LICENCIAS") || rolUsuario.contains("AUDITOR"));
         if (!esFuncionario && usuarioId != null && !usuarioId.equals(borrador.getCreadorId())) {
             boolean esOperador = borrador.getCuenta() != null && borrador.getCuenta().getOperadores() != null &&
                     borrador.getCuenta().getOperadores().stream()
@@ -277,20 +277,9 @@ public class SolicitudBorradorService {
         if (borrador.getModalidadTramite() == null) camposFaltantes.add("Modalidad de trámite");
         if (borrador.getGiroNegocioDeclarado() == null || borrador.getGiroNegocioDeclarado().isBlank()) camposFaltantes.add("Giro del negocio");
         if (borrador.getAreaMetrosCuadrados() == null || borrador.getAreaMetrosCuadrados().compareTo(java.math.BigDecimal.ZERO) <= 0) camposFaltantes.add("Área ocupada (m²)");
-        if (borrador.getNivelRiesgoDeclarado() == null) camposFaltantes.add("Nivel de riesgo ITSE declarado");
-        if (borrador.getNumeroOperacionSat() == null || borrador.getNumeroOperacionSat().isBlank()) camposFaltantes.add("Número de operación / constancia de pago SAT");
-
-        // Documentos - consulta directa para consistencia transaccional
+        // El nivel de riesgo y el pago no se exigen al presentar: el riesgo lo determina Defensa Civil
+        // en los anexos ITSE firmados y la tasa se liquida y paga después de su validación.
         List<DocumentoBorrador> docs = documentoRepository.findByBorradorId(borradorId);
-        boolean tieneEvidenciaRiesgo = docs.stream().anyMatch(d -> d.getTipoDocumento() == TipoDocumentoAdjunto.EVIDENCIA_RIESGO_ITSE);
-        boolean tieneComprobanteSat = docs.stream().anyMatch(d -> d.getTipoDocumento() == TipoDocumentoAdjunto.COMPROBANTE_PAGO_SAT);
-
-        if (!tieneEvidenciaRiesgo) {
-            documentosFaltantes.add("Evidencia técnica o anexo de clasificación de riesgo ITSE");
-        }
-        if (!tieneComprobanteSat && (borrador.getVoucherId() == null || borrador.getVoucherId().isBlank())) {
-            documentosFaltantes.add("Copia digitalizada de constancia de pago SAT");
-        }
 
         if (borrador.getCuenta().getTipoPersona() == TipoPersona.JURIDICA) {
             boolean tienePoder = docs.stream().anyMatch(d -> d.getTipoDocumento() == TipoDocumentoAdjunto.VIGENCIA_PODER || d.getTipoDocumento() == TipoDocumentoAdjunto.DNI_REPRESENTANTE);

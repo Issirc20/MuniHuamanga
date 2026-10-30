@@ -26,7 +26,6 @@ import pe.gob.munihuamanga.licencias.expedientes.evaluacion.service.InformePdfGe
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.service.SecuenciaInformeService;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -59,7 +58,10 @@ class InformeAdministrativoServiceTest {
     private InformePdfGenerator informePdfGenerator;
 
     @Mock
-    private AuditoriaService auditoriaService;
+    private pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente comandosExpediente;
+
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.documentos.service.ObservacionExpedienteService observacionExpedienteService;
 
     @Mock
     private ObjectMapper objectMapper;
@@ -82,7 +84,7 @@ class InformeAdministrativoServiceTest {
         expediente = Expediente.builder()
                 .id(expedienteId)
                 .numeroTramite("EXP-2026-00500")
-                .estado(EstadoExpediente.PRESENTADO)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .nombreTitular("Carlos Quispe")
                 .documentoIdentidad("41998877")
                 .build();
@@ -126,7 +128,6 @@ class InformeAdministrativoServiceTest {
         assertThat(res.getNumeroInforme()).startsWith("INF-");
 
         verify(historialRepository).save(any());
-        verify(expedienteRepository).save(expediente);
         assertThat(expediente.getEstado()).isEqualTo(EstadoExpediente.EN_EVALUACION);
     }
 
@@ -320,9 +321,7 @@ class InformeAdministrativoServiceTest {
         assertThat(res.getEstado()).isEqualTo(EstadoInforme.APROBADO);
         assertThat(res.getAprobadorNombre()).isEqualTo("gerente_licencias");
 
-        verify(expedienteRepository).save(expediente);
-        assertThat(expediente.getEstado()).isEqualTo(EstadoExpediente.APTO_PARA_RESOLUCION);
-        verify(auditoriaService).registrarTransicion(eq(expedienteId), any(), eq(EstadoExpediente.APTO_PARA_RESOLUCION), eq("gerente_licencias"), any());
+        verify(comandosExpediente).registrar(eq(expedienteId), eq(pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente.INFORME_APROBADO), any());
     }
 
     @Test

@@ -25,6 +25,9 @@ import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPo
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.ResultadoFirmaDigital;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.HistorialResolucion;
@@ -55,6 +58,8 @@ public class ResolucionAdministrativaService {
     private final FirmaDigitalPort firmaDigitalPort;
     private final UsuarioRepository usuarioRepository;
     private final pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.OperacionFirmaRepository operacionFirmaRepository;
+    private final ComandosExpediente comandosExpediente;
+    private final NotificacionEmailService notificacionEmailService;
 
     @Transactional
     public ResolucionAdministrativaDto crearBorrador(CrearResolucionDto dto, Authentication auth) {
@@ -72,11 +77,11 @@ public class ResolucionAdministrativaService {
             throw new IllegalStateException("No se puede emitir resolución sin informe administrativo previamente APROBADO por la autoridad técnica");
         }
 
-        // Si la decisión pretendida es FAVORABLE, el expediente debe estar en APTO_PARA_RESOLUCION
+        // Toda resolución, favorable o denegatoria, se emite sobre un expediente con informe aprobado
+        if (exp.getEstado() != EstadoExpediente.APTO_PARA_RESOLUCION) {
+            throw new IllegalStateException("La resolución se formula con el expediente en estado APTO_PARA_RESOLUCION. Estado actual: " + exp.getEstado());
+        }
         if (dto.getTipoDecision() == TipoDecisionResolucion.FAVORABLE) {
-            if (exp.getEstado() != EstadoExpediente.APTO_PARA_RESOLUCION) {
-                throw new IllegalStateException("Para emitir resolución FAVORABLE el expediente debe encontrarse en estado APTO_PARA_RESOLUCION. Estado actual: " + exp.getEstado());
-            }
             if (inf.getConclusion() != ConclusionInforme.FAVORABLE) {
                 throw new IllegalStateException("No se puede formular resolución FAVORABLE si el informe técnico concluyó: " + inf.getConclusion());
             }
@@ -333,6 +338,7 @@ public class ResolucionAdministrativaService {
             registrarHistorial(guardada, "FIRMA_DIGITAL_EXITOSA", anterior, EstadoResolucion.FIRMADA, actor,
                     "Firma digital PKI aplicada exitosamente. Hash SHA-256: " + resultado.getHashSha256());
 
+            comunicarResolucionFirmada(guardada);
             return mapearDto(guardada);
 
         } catch (IllegalStateException e) {
@@ -350,6 +356,21 @@ public class ResolucionAdministrativaService {
 
             registrarHistorial(res, "ERROR_FIRMA_TECNICA", EstadoResolucion.EN_PROCESO_FIRMA, EstadoResolucion.ERROR_FIRMA, actor, res.getObservacionesFirma());
             throw new IllegalStateException("Falla de comunicación con el servicio de firma digital: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Comunica al expediente el sentido de la resolución firmada. Una resolución denegatoria
+     * concluye el procedimiento; la favorable habilita la emisión de la licencia.
+     */
+    private void comunicarResolucionFirmada(ResolucionAdministrativa resolucion) {
+        Expediente expediente = resolucion.getExpediente();
+        boolean favorable = resolucion.getTipoDecision() == TipoDecisionResolucion.FAVORABLE;
+        comandosExpediente.registrar(expediente.getId(),
+                favorable ? EventoExpediente.RESOLUCION_FAVORABLE_FIRMADA : EventoExpediente.RESOLUCION_DENEGATORIA_FIRMADA,
+                "Resolución " + resolucion.getNumeroResolucion() + " firmada con decisión " + resolucion.getTipoDecision() + ".");
+        if (!favorable) {
+            notificacionEmailService.notificarRechazo(expediente, resolucion.getFundamentos());
         }
     }
 

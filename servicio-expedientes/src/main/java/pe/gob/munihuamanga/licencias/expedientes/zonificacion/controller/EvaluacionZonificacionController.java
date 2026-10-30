@@ -33,7 +33,7 @@ public class EvaluacionZonificacionController {
     private final EvaluacionZonificacionService zonificacionService;
 
     @PostMapping("/api/expedientes/{id}/zonificacion/evaluar")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     @Operation(summary = "Registrar evaluación técnica de zonificación y compatibilidad (EVALUADOR / ADMIN)")
     public ResponseEntity<EvaluacionZonificacionDto> registrarEvaluacion(
             @PathVariable UUID id,
@@ -76,7 +76,7 @@ public class EvaluacionZonificacionController {
     }
 
     @GetMapping("/api/zonificacion/bandeja")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     @Operation(summary = "Bandeja de evaluaciones de zonificación por resultado (EVALUADOR / ADMIN)")
     public ResponseEntity<List<EvaluacionZonificacionDto>> bandejaZonificacion(
             @RequestParam(required = false, defaultValue = "PENDIENTE_EVALUACION") ResultadoZonificacion resultado

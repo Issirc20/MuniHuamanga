@@ -1,7 +1,7 @@
 package pe.gob.munihuamanga.licencias.expedientes.documentos.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.munihuamanga.licencias.common.dto.CrearObservacionDto;
@@ -9,104 +9,84 @@ import pe.gob.munihuamanga.licencias.common.dto.ObservacionExpedienteDto;
 import pe.gob.munihuamanga.licencias.common.dto.SubsanarObservacionesDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoRevisionDocumento;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
 import pe.gob.munihuamanga.licencias.common.enums.TipoObservacion;
 import pe.gob.munihuamanga.licencias.common.exception.RecursoNoEncontradoException;
-import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
-import pe.gob.munihuamanga.licencias.expedientes.borradores.security.DocumentoSecurityValidator;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository;
+import pe.gob.munihuamanga.licencias.common.exception.TransicionInvalidaException;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.model.DocumentoVersionado;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.model.ObservacionExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.repository.DocumentoVersionadoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.repository.ObservacionExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.CalculadoraPlazos;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.CodigoPlazo;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.ParametrosPlazoService;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
+import pe.gob.munihuamanga.licencias.expedientes.security.RolesInstitucionales;
+import pe.gob.munihuamanga.licencias.expedientes.security.VerificadorTitularidad;
 import pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService;
-import pe.gob.munihuamanga.licencias.expedientes.validator.EstadoExpedienteValidator;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
- * Servicio de gestión de observaciones técnicas/documentales y subsanaciones (Incremento I05 / I05.1).
- * Aplica con rigor la Ley N° 27444 LPAG (Art. 136 y 143), el D.S. N° 002-2018-PCM y el TUPA MPH.
+ * Observaciones formales al expediente y su subsanación (TUO de la Ley N° 27444, art. 136).
+ * Las observaciones pueden formularse en la etapa de admisibilidad o durante la evaluación administrativa.
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ObservacionExpedienteService {
 
     private final ObservacionExpedienteRepository observacionRepository;
     private final DocumentoVersionadoRepository documentoRepository;
     private final ExpedienteRepository expedienteRepository;
-    private final OperadorCuentaRepository operadorCuentaRepository;
-    private final CuentaRepository cuentaRepository;
-    private final EstadoExpedienteValidator estadoValidator;
-    private final AuditoriaService auditoriaService;
+    private final ComandosExpediente comandosExpediente;
+    private final VerificadorTitularidad verificadorTitularidad;
+    private final CalculadoraPlazos calculadoraPlazos;
+    private final ParametrosPlazoService parametrosPlazo;
     private final NotificacionEmailService notificacionEmailService;
-
-    public ObservacionExpedienteService(ObservacionExpedienteRepository observacionRepository,
-                                       DocumentoVersionadoRepository documentoRepository,
-                                       ExpedienteRepository expedienteRepository,
-                                       OperadorCuentaRepository operadorCuentaRepository,
-                                       CuentaRepository cuentaRepository,
-                                       EstadoExpedienteValidator estadoValidator,
-                                       AuditoriaService auditoriaService,
-                                       NotificacionEmailService notificacionEmailService) {
-        this.observacionRepository = observacionRepository;
-        this.documentoRepository = documentoRepository;
-        this.expedienteRepository = expedienteRepository;
-        this.operadorCuentaRepository = operadorCuentaRepository;
-        this.cuentaRepository = cuentaRepository;
-        this.estadoValidator = estadoValidator;
-        this.auditoriaService = auditoriaService;
-        this.notificacionEmailService = notificacionEmailService;
-    }
+    private final Clock reloj;
 
     /**
-     * Formula una o más observaciones sobre un expediente por funcionarios autorizados (EVALUADOR/ADMIN).
-     * Transiciona el expediente a estado OBSERVADO con cálculo exacto de días hábiles.
+     * Formula una o más observaciones y pasa el expediente a OBSERVADO.
+     * El plazo de subsanación por defecto depende de la etapa en que se formula la observación.
      */
     @Transactional
-    public List<ObservacionExpedienteDto> formularObservaciones(UUID expedienteId,
-                                                               List<CrearObservacionDto> dtos,
-                                                               UUID evaluadorId,
-                                                               String evaluadorUsername) {
-        Expediente expediente = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
-
-        EstadoExpediente actual = expediente.getEstado();
-        if (actual == EstadoExpediente.APROBADO || actual == EstadoExpediente.RECHAZADO) {
-            throw new IllegalStateException("No se pueden formular observaciones a un expediente concluido o resuelto. Estado actual: " + actual);
+    public List<ObservacionExpedienteDto> formularObservaciones(UUID expedienteId, List<CrearObservacionDto> dtos) {
+        Expediente expediente = obtenerExpediente(expedienteId);
+        if (!EventoExpediente.SOLICITUD_OBSERVADA.admiteOrigen(expediente.getEstado())) {
+            throw new TransicionInvalidaException("No se pueden formular observaciones al expediente "
+                    + expediente.getNumeroTramite() + " en estado " + expediente.getEstado() + ".");
         }
 
-        estadoValidator.validarTransicion(actual, EstadoExpediente.OBSERVADO);
+        Actor actor = verificadorTitularidad.actorActual();
+        boolean enAdmisibilidad = expediente.getEstado() == EstadoExpediente.PRESENTADO;
+        int plazoPorDefecto = parametrosPlazo.dias(enAdmisibilidad
+                ? CodigoPlazo.SUBSANACION_ADMISIBILIDAD
+                : CodigoPlazo.SUBSANACION_EVALUACION);
+        LocalDateTime ahora = LocalDateTime.now(reloj);
 
-        LocalDateTime ahora = LocalDateTime.now();
         List<ObservacionExpediente> guardadas = new ArrayList<>();
-        StringBuilder motivosAcumulados = new StringBuilder();
-
+        List<String> motivos = new ArrayList<>();
         for (CrearObservacionDto dto : dtos) {
             TipoObservacion tipo = dto.getTipoObservacion() != null
                     ? dto.getTipoObservacion()
-                    : TipoObservacion.EVALUACION_TECNICA_ITSE;
-
-            int plazo = (dto.getPlazoDiasHabiles() != null && dto.getPlazoDiasHabiles() > 0)
-                    ? dto.getPlazoDiasHabiles()
-                    : tipo.getPlazoDiasHabilesDefault();
-
+                    : (enAdmisibilidad ? TipoObservacion.RECEPCION_DOCUMENTAL : TipoObservacion.EVALUACION_ADMINISTRATIVA);
+            int plazo = (dto.getPlazoDiasHabiles() != null && dto.getPlazoDiasHabiles() > 0) ? dto.getPlazoDiasHabiles() : plazoPorDefecto;
             String fundamento = (dto.getFundamentoLegal() != null && !dto.getFundamentoLegal().isBlank())
                     ? dto.getFundamentoLegal()
                     : tipo.getBaseLegalDefault();
 
-            LocalDateTime fechaLimite = calcularFechaLimiteDiasHabiles(ahora, plazo);
-
-            ObservacionExpediente obs = ObservacionExpediente.builder()
+            guardadas.add(observacionRepository.save(ObservacionExpediente.builder()
                     .id(UUID.randomUUID())
                     .expedienteId(expedienteId)
                     .documentoId(dto.getDocumentoId())
@@ -115,220 +95,124 @@ public class ObservacionExpedienteService {
                     .motivo(dto.getMotivo())
                     .fundamentoLegal(fundamento)
                     .fechaObservacion(ahora)
-                    .observadorId(evaluadorId)
-                    .observadorUsername(evaluadorUsername)
+                    .observadorId(actor.usuarioId())
+                    .observadorUsername(actor.nombreParaRegistro())
                     .plazoDiasHabiles(plazo)
-                    .fechaLimiteSubsanacion(fechaLimite)
+                    .fechaLimiteSubsanacion(calculadoraPlazos.sumarDiasHabiles(ahora.toLocalDate(), plazo).atTime(LocalTime.of(23, 59)))
                     .subsanada(false)
-                    .build();
-
-            guardadas.add(observacionRepository.save(obs));
+                    .build()));
 
             if (dto.getDocumentoId() != null) {
-                documentoRepository.findById(dto.getDocumentoId()).ifPresent(doc -> {
-                    doc.setEstadoRevision(EstadoRevisionDocumento.OBSERVADO);
-                    documentoRepository.save(doc);
+                documentoRepository.findById(dto.getDocumentoId()).ifPresent(documento -> {
+                    documento.setEstadoRevision(EstadoRevisionDocumento.OBSERVADO);
+                    documentoRepository.save(documento);
                 });
             }
-
-            if (!motivosAcumulados.isEmpty()) motivosAcumulados.append(" | ");
-            motivosAcumulados.append("[").append(dto.getRequisitoAfectado()).append("] ").append(dto.getMotivo());
+            motivos.add("[" + dto.getRequisitoAfectado() + "] " + dto.getMotivo());
         }
 
-        // Transicionar expediente a OBSERVADO
-        expediente.setMotivoObservacion(motivosAcumulados.toString());
+        String resumen = String.join(" | ", motivos);
+        expediente.setMotivoObservacion(recortar(resumen));
         expediente.setFechaObservacion(ahora);
-        expediente.cambiarEstado(EstadoExpediente.OBSERVADO);
         expedienteRepository.save(expediente);
 
-        // Registro de auditoría institucional
-        auditoriaService.registrarTransicion(
-                expedienteId,
-                actual,
-                EstadoExpediente.OBSERVADO,
-                evaluadorUsername,
-                "Observaciones formuladas: " + motivosAcumulados
-        );
+        comandosExpediente.registrar(expedienteId, EventoExpediente.SOLICITUD_OBSERVADA, "Observaciones formuladas: " + resumen);
+        notificacionEmailService.notificarObservacion(expediente, resumen);
 
-        // Notificación por correo electrónico
-        notificacionEmailService.notificarObservacion(expediente, motivosAcumulados.toString());
-
-        log.info("[OBSERVACION-EXPEDIENTE] {} observaciones registradas para expediente {} por evaluador {}",
-                guardadas.size(), expedienteId, evaluadorUsername);
-
-        return guardadas.stream().map(this::mapearDto).collect(Collectors.toList());
+        log.info("[OBSERVACIONES] {} observaciones registradas para el expediente {}.", guardadas.size(), expediente.getNumeroTramite());
+        return guardadas.stream().map(this::mapearDto).toList();
     }
 
-    /**
-     * Consulta el catálogo de observaciones formuladas al expediente.
-     */
     @Transactional(readOnly = true)
-    public List<ObservacionExpedienteDto> listarObservaciones(UUID expedienteId,
-                                                             UUID usuarioId,
-                                                             String username,
-                                                             String rolUsuario) {
-        Expediente exp = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
-
-        boolean esFuncionario = rolUsuario != null && (rolUsuario.contains("ADMIN") || rolUsuario.contains("EVALUADOR"));
-        validarTitularidadExpediente(exp, usuarioId, username, esFuncionario);
-
+    public List<ObservacionExpedienteDto> listarObservaciones(UUID expedienteId) {
+        Expediente expediente = obtenerExpediente(expedienteId);
+        verificadorTitularidad.exigir(expediente, RolesInstitucionales.CONSULTA_EXPEDIENTES, PermisoOperador.CONSULTAR_EXPEDIENTE);
         return observacionRepository.findByExpedienteIdOrderByFechaObservacionDesc(expedienteId).stream()
                 .map(this::mapearDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
-     * Subsanación formal presentada por el administrado (Art. 136 Ley N° 27444).
-     * Mantiene estrictamente el mismo número de expediente y transiciona al flujo correspondiente.
-     * Exige que todas las observaciones pendientes sean satisfechas antes de transicionar a SUBSANADO.
+     * Subsanación presentada por el administrado. Exige atender la totalidad de las observaciones
+     * y, para las observaciones documentales, haber adjuntado una nueva versión del documento.
      */
     @Transactional
-    public void subsanarObservaciones(UUID expedienteId,
-                                      SubsanarObservacionesDto dto,
-                                      UUID usuarioId,
-                                      String username,
-                                      String rolUsuario) {
-        Expediente expediente = expedienteRepository.findById(expedienteId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
+    public void subsanarObservaciones(UUID expedienteId, SubsanarObservacionesDto dto) {
+        Expediente expediente = obtenerExpediente(expedienteId);
+        if (expediente.getEstado() != EstadoExpediente.OBSERVADO) {
+            throw new TransicionInvalidaException("Solo se pueden subsanar expedientes en estado OBSERVADO. Estado actual: " + expediente.getEstado());
+        }
+        verificadorTitularidad.exigir(expediente, RolesInstitucionales.ATENCION_PRESENCIAL, PermisoOperador.SUBSANAR_EXPEDIENTE);
 
-        EstadoExpediente actual = expediente.getEstado();
-        if (actual != EstadoExpediente.OBSERVADO) {
-            throw new IllegalStateException("Solo se pueden subsanar expedientes en estado OBSERVADO. Estado actual: " + actual);
+        List<ObservacionExpediente> aProcesar = (dto.getObservacionesIds() != null && !dto.getObservacionesIds().isEmpty())
+                ? dto.getObservacionesIds().stream().map(id -> obtenerObservacionDelExpediente(id, expedienteId)).toList()
+                : observacionRepository.findByExpedienteIdAndSubsanadaFalse(expedienteId);
+
+        LocalDateTime ahora = LocalDateTime.now(reloj);
+        for (ObservacionExpediente observacion : aProcesar) {
+            vincularDocumentoSubsanado(observacion, expedienteId);
+            observacion.setSubsanada(true);
+            observacion.setFechaSubsanacion(ahora);
+            observacion.setDetalleSubsanacion(dto.getDetalleSubsanacion());
+            observacionRepository.save(observacion);
         }
 
-        boolean esFuncionario = rolUsuario != null && (rolUsuario.contains("ADMIN") || rolUsuario.contains("EVALUADOR"));
-        validarTitularidadExpediente(expediente, usuarioId, username, esFuncionario);
-
-        List<ObservacionExpediente> observacionesAProcesar;
-        if (dto.getObservacionesIds() != null && !dto.getObservacionesIds().isEmpty()) {
-            observacionesAProcesar = new ArrayList<>();
-            for (UUID obsId : dto.getObservacionesIds()) {
-                ObservacionExpediente obs = observacionRepository.findById(obsId)
-                        .orElseThrow(() -> new RecursoNoEncontradoException("Observación no encontrada: " + obsId));
-                if (!obs.getExpedienteId().equals(expedienteId)) {
-                    throw new IllegalArgumentException("La observación " + obsId + " no pertenece al expediente " + expedienteId);
-                }
-                observacionesAProcesar.add(obs);
-            }
-        } else {
-            observacionesAProcesar = observacionRepository.findByExpedienteIdAndSubsanadaFalse(expedienteId);
+        if (observacionRepository.existsByExpedienteIdAndSubsanadaFalse(expedienteId)) {
+            throw new IllegalStateException("Quedan observaciones pendientes. El expediente pasa a SUBSANADO solo cuando se atienden todas las observaciones.");
         }
 
-        LocalDateTime ahora = LocalDateTime.now();
-
-        // Verificar que las observaciones documentales tengan nueva versión cargada
-        for (ObservacionExpediente obs : observacionesAProcesar) {
-            if (obs.getDocumentoId() != null && obs.getDocumentoSubsanacionId() == null) {
-                DocumentoVersionado docOriginal = documentoRepository.findById(obs.getDocumentoId()).orElse(null);
-                if (docOriginal != null) {
-                    Optional<DocumentoVersionado> versionReciente = documentoRepository
-                            .findFirstByExpedienteIdAndTipoDocumentoOrderByVersionDesc(expedienteId, docOriginal.getTipoDocumento());
-                    if (versionReciente.isEmpty() || versionReciente.get().getVersion() <= docOriginal.getVersion()) {
-                        throw new IllegalStateException("No se puede subsanar la observación sobre " + obs.getRequisitoAfectado() +
-                                " porque aún no se ha adjuntado una nueva versión corregida del documento.");
-                    }
-                    obs.setDocumentoSubsanacionId(versionReciente.get().getId());
-                }
-            }
-            obs.setSubsanada(true);
-            obs.setFechaSubsanacion(ahora);
-            obs.setDetalleSubsanacion(dto.getDetalleSubsanacion());
-            observacionRepository.save(obs);
-        }
-
-        // REGLA DE INTEGRIDAD I05.1: Comprobar que no queden observaciones pendientes
-        boolean quedanPendientes = observacionRepository.existsByExpedienteIdAndSubsanadaFalse(expedienteId);
-        if (quedanPendientes) {
-            log.warn("[SUBSANACION-PARCIAL] Expediente {} aún tiene observaciones pendientes no subsanadas.", expedienteId);
-            throw new IllegalStateException("Quedan observaciones pendientes por subsanar. No se puede transicionar el expediente a SUBSANADO hasta satisfacer la totalidad de observaciones.");
-        }
-
-        // Determinar estado objetivo oficial V2
-        EstadoExpediente nuevo = EstadoExpediente.SUBSANADO;
-
-        estadoValidator.validarTransicion(actual, nuevo);
-
-        expediente.setDetalleSubsanacion(dto.getDetalleSubsanacion());
+        expediente.setDetalleSubsanacion(recortar(dto.getDetalleSubsanacion()));
         expediente.setFechaSubsanacion(ahora);
-        expediente.cambiarEstado(nuevo);
         expedienteRepository.save(expediente);
 
-        String responsable = (username != null && !username.isBlank()) ? username : expediente.getNombreTitular();
-        auditoriaService.registrarTransicion(
-                expedienteId,
-                actual,
-                nuevo,
-                responsable,
-                "Subsanación integral de observaciones (LPAG Art. 136): " + dto.getDetalleSubsanacion()
-        );
-
-        log.info("[SUBSANACION-EXPEDIENTE] Expediente {} subsanado exitosamente. Nuevo estado: {}", expedienteId, nuevo);
+        comandosExpediente.registrar(expedienteId, EventoExpediente.OBSERVACIONES_SUBSANADAS,
+                "Subsanación de observaciones (TUO LPAG, art. 136): " + dto.getDetalleSubsanacion());
     }
 
     /**
-     * Calcula la fecha límite de subsanación sumando únicamente días hábiles (Lunes a Viernes),
-     * excluyendo fines de semana y feriados oficiales nacionales conforme a la LPAG (Art. 145).
+     * Verificación de la subsanación por el funcionario: el expediente retorna a la etapa en que fue observado.
      */
-    public LocalDateTime calcularFechaLimiteDiasHabiles(LocalDateTime fechaInicio, int diasHabiles) {
-        LocalDateTime cursor = fechaInicio;
-        int agregados = 0;
-        while (agregados < diasHabiles) {
-            cursor = cursor.plusDays(1);
-            DayOfWeek dow = cursor.getDayOfWeek();
-            if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY && !esFeriadoNacional(cursor.toLocalDate())) {
-                agregados++;
-            }
-        }
-        return cursor.withHour(23).withMinute(59).withSecond(59);
+    @Transactional
+    public void reanudarRevision(UUID expedienteId, String sustento) {
+        comandosExpediente.registrar(expedienteId, EventoExpediente.REVISION_REANUDADA, sustento);
     }
 
-    private boolean esFeriadoNacional(LocalDate fecha) {
-        int mes = fecha.getMonthValue();
-        int dia = fecha.getDayOfMonth();
-        // Feriados oficiales en Perú (D. Leg. 713 y normas conexas)
-        if (mes == 1 && dia == 1) return true;   // Año Nuevo
-        if (mes == 5 && dia == 1) return true;   // Día del Trabajo
-        if (mes == 6 && dia == 29) return true;  // San Pedro y San Pablo
-        if (mes == 7 && (dia == 28 || dia == 29)) return true; // Fiestas Patrias
-        if (mes == 8 && (dia == 6 || dia == 30)) return true;  // Batalla de Junín / Santa Rosa
-        if (mes == 10 && dia == 8) return true;  // Combate de Angamos
-        if (mes == 11 && dia == 1) return true;  // Todos los Santos
-        if (mes == 12 && (dia == 8 || dia == 9 || dia == 25)) return true; // Inmaculada Concepción / Batalla de Ayacucho / Navidad
-        return false;
+    private void vincularDocumentoSubsanado(ObservacionExpediente observacion, UUID expedienteId) {
+        if (observacion.getDocumentoId() == null || observacion.getDocumentoSubsanacionId() != null) {
+            return;
+        }
+        DocumentoVersionado original = documentoRepository.findById(observacion.getDocumentoId()).orElse(null);
+        if (original == null) {
+            return;
+        }
+        Optional<DocumentoVersionado> reciente = documentoRepository
+                .findFirstByExpedienteIdAndTipoDocumentoOrderByVersionDesc(expedienteId, original.getTipoDocumento());
+        if (reciente.isEmpty() || reciente.get().getVersion() <= original.getVersion()) {
+            throw new IllegalStateException("No se puede subsanar la observación sobre " + observacion.getRequisitoAfectado()
+                    + ": aún no se ha adjuntado una nueva versión corregida del documento.");
+        }
+        observacion.setDocumentoSubsanacionId(reciente.get().getId());
     }
 
-    private void validarTitularidadExpediente(Expediente exp, UUID usuarioId, String username, boolean esFuncionario) {
-        if (esFuncionario) return;
-
-        UUID cuentaOUsuarioId = usuarioId;
-        if (cuentaOUsuarioId == null && username != null) {
-            cuentaOUsuarioId = cuentaRepository.findByNumeroDocumento(username)
-                    .map(pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta::getId)
-                    .orElse(null);
+    private ObservacionExpediente obtenerObservacionDelExpediente(UUID observacionId, UUID expedienteId) {
+        ObservacionExpediente observacion = observacionRepository.findById(observacionId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Observación", observacionId));
+        if (!observacion.getExpedienteId().equals(expedienteId)) {
+            throw new IllegalArgumentException("La observación " + observacionId + " no pertenece al expediente indicado.");
         }
+        return observacion;
+    }
 
-        if (cuentaOUsuarioId != null) {
-            if (cuentaOUsuarioId.equals(exp.getSolicitanteId()) || cuentaOUsuarioId.equals(exp.getCuentaId())) {
-                return;
-            }
+    private Expediente obtenerExpediente(UUID expedienteId) {
+        return expedienteRepository.findById(expedienteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Expediente", expedienteId));
+    }
+
+    private static String recortar(String texto) {
+        if (texto == null) {
+            return null;
         }
-
-        if (exp.getCuentaId() != null && username != null) {
-            final UUID finalCuentaOUsuarioId = cuentaOUsuarioId;
-            boolean esOperador = operadorCuentaRepository.findByCuentaId(exp.getCuentaId()).stream()
-                    .anyMatch(op -> Boolean.TRUE.equals(op.getActivo()) &&
-                            (op.getDniOperador().equalsIgnoreCase(username) ||
-                                    (op.getUsuario() != null && op.getUsuario().getUsername().equalsIgnoreCase(username)) ||
-                                    (finalCuentaOUsuarioId != null && op.getUsuario() != null && finalCuentaOUsuarioId.equals(op.getUsuario().getId()))));
-            if (esOperador) return;
-        }
-
-        // REGLA I05.1: Se elimina tajantemente la coincidencia simple username == documentoIdentidad.
-        // Los expedientes históricos V1 no reclamados quedan bajo acceso municipal exclusivo.
-        log.warn("[SEGURIDAD - IDOR] Denegado: Usuario {} intentó acceder a observaciones de expediente {} sin titularidad persistente verificada",
-                DocumentoSecurityValidator.ofuscarDocumento(username), exp.getId());
-        throw new AccessDeniedException("No cuenta con autorización para acceder a las observaciones de este expediente.");
+        return texto.length() <= 500 ? texto : texto.substring(0, 500);
     }
 
     private ObservacionExpedienteDto mapearDto(ObservacionExpediente obs) {

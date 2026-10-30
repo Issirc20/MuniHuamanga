@@ -61,6 +61,12 @@ class ObservacionSubsanacionIntegrationTest {
     @Autowired
     private DocumentoVersionadoRepository documentoRepository;
 
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository operadorCuentaRepository;
+
     private Expediente expediente;
     private final String CIUDADANO_DNI = "43888801";
     private static final byte[] SAMPLE_PDF = "%PDF-1.4 test content for subsanacion".getBytes();
@@ -82,6 +88,7 @@ class ObservacionSubsanacionIntegrationTest {
                 .fechaCreacion(LocalDateTime.now())
                 .build();
         cuentaRepository.save(cuenta);
+        pe.gob.munihuamanga.licencias.expedientes.soporte.DatosDePrueba.vincularTitular(usuarioRepository, operadorCuentaRepository, cuenta, CIUDADANO_DNI, "Juan Carlos Quispe");
 
         expediente = Expediente.builder()
                 .id(UUID.randomUUID())
@@ -156,7 +163,7 @@ class ObservacionSubsanacionIntegrationTest {
     @DisplayName("Flujo completo de subsanación: adjuntar documento corregido y subsanar expediente")
     void flujoCompletoSubsanacion_conservaNumeroExpediente() throws Exception {
         // 1. Poner expediente en OBSERVADO con una observación pendiente
-        expediente.cambiarEstado(EstadoExpediente.OBSERVADO);
+        org.springframework.test.util.ReflectionTestUtils.setField(expediente, "estado", EstadoExpediente.OBSERVADO);
         expedienteRepository.save(expediente);
 
         ObservacionExpediente obs = ObservacionExpediente.builder()
@@ -232,7 +239,7 @@ class ObservacionSubsanacionIntegrationTest {
     @WithMockUser(username = CIUDADANO_DNI, roles = {"CIUDADANO"})
     @DisplayName("I05.1: Intento de subsanar dejando observaciones pendientes es rechazado")
     void subsanarObservaciones_parcialConPendientes_rechazado() throws Exception {
-        expediente.cambiarEstado(EstadoExpediente.OBSERVADO);
+        org.springframework.test.util.ReflectionTestUtils.setField(expediente, "estado", EstadoExpediente.OBSERVADO);
         expedienteRepository.save(expediente);
 
         ObservacionExpediente obs1 = observacionRepository.save(ObservacionExpediente.builder()

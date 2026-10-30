@@ -1,36 +1,45 @@
 package pe.gob.munihuamanga.licencias.common.enums;
 
 /**
- * Roles de usuario para el control de acceso basado en roles (RBAC)
- * en el Sistema de Gestión de Licencias de Funcionamiento — MuniHuamanga V2.
+ * Roles institucionales para el control de acceso basado en roles (RBAC).
+ * Un usuario puede tener varios roles. La segregación de funciones se garantiza
+ * asignando a cargos distintos la elaboración, la aprobación y la firma de los actos.
  */
 public enum RolUsuario {
-    /**
-     * Administrador general con acceso a catálogos TUPA, parámetros y auditoría.
-     */
+
+    /** Administrador del sistema: usuarios, parámetros, catálogos y tarifario. Sin facultades sobre expedientes. */
     ROLE_ADMIN,
 
-    /**
-     * Funcionario de la Gerencia de Licencias: revisión documental, zonificación,
-     * formulación de observaciones, emisión de informes y aprobación de licencias.
-     */
+    /** Mesa de partes: admisibilidad, recepción presencial y registro de notificaciones. */
+    ROLE_MESA_DE_PARTES,
+
+    /** Evaluador de licencias: validación del ITSE, observaciones, zonificación y elaboración de informes. */
     ROLE_EVALUADOR,
 
-    /**
-     * Personal de caja/recaudación: emisión de vouchers y validación manual de pagos SAT.
-     */
+    /** Supervisor de licencias: revisión y aprobación de informes administrativos. */
+    ROLE_SUPERVISOR_LICENCIAS,
+
+    /** Autoridad resolutiva: aprobación y firma de resoluciones y emisión de licencias. */
+    ROLE_AUTORIDAD_RESOLUTIVA,
+
+    /** Cajero del SAT: validación de comprobantes de pago. */
     ROLE_CAJERO,
 
-    /**
-     * Administrado / Ciudadano solicitante: acceso restringido únicamente a sus propios
-     * trámites, expedientes y documentos.
-     */
-    ROLE_CIUDADANO,
+    /** Inspector municipal: consulta ampliada de licencias mediante código de verificación. */
+    ROLE_INSPECTOR,
 
-    /**
-     * Inspector municipal autorizado: consulta de solo lectura para verificación de
-     * autenticidad y ubicación en campo. Sin facultades de edición, actas ni sanciones.
-     */
-    ROLE_INSPECTOR
+    /** Auditor: consulta de solo lectura de expedientes y de la trazabilidad del sistema. */
+    ROLE_AUDITOR,
+
+    /** Administrado: actúa sobre los trámites de las cuentas que representa. */
+    ROLE_CIUDADANO;
+
+    public boolean esFuncionario() {
+        return this != ROLE_CIUDADANO;
+    }
+
+    /** Nombre sin el prefijo de Spring Security, para su uso en {@code hasRole}. */
+    public String nombreCorto() {
+        return name().substring("ROLE_".length());
+    }
 }
-

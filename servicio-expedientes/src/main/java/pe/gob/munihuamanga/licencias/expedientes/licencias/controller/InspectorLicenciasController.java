@@ -31,7 +31,7 @@ public class InspectorLicenciasController {
     private final LicenciaService licenciaService;
 
     @GetMapping("/verificar/{token}")
-    @PreAuthorize("hasAnyRole('INSPECTOR', 'ADMIN')")
+    @PreAuthorize("hasRole('INSPECTOR')")
     @Operation(summary = "RF-VER-007 / CA-10: Consulta móvil autenticada de licencia con georreferenciación oficial y auditoría")
     public ResponseEntity<VerificacionInspectorDto> verificarParaInspector(
             @PathVariable String token,

@@ -38,7 +38,7 @@ public class ResolucionAdministrativaController {
     private final ResolucionAdministrativaService resolucionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> crearBorrador(
             @Valid @RequestBody CrearResolucionDto dto,
             Authentication auth) {
@@ -48,7 +48,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> actualizarBorrador(
             @PathVariable UUID id,
             @Valid @RequestBody ActualizarResolucionDto dto,
@@ -57,7 +57,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PostMapping("/{id}/aprobar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
     public ResponseEntity<ResolucionAdministrativaDto> aprobarResolucion(
             @PathVariable UUID id,
             @RequestBody(required = false) AprobarResolucionDto dto,
@@ -67,7 +67,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PostMapping("/{id}/firmar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
     public ResponseEntity<ResolucionAdministrativaDto> solicitarFirmaDigital(
             @PathVariable UUID id,
             @RequestBody(required = false) SolicitarFirmaDto dto,
@@ -77,25 +77,25 @@ public class ResolucionAdministrativaController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR', 'INSPECTOR') or @resolucionSecurity.puedeVerResolucion(authentication, #id)")
+    @PreAuthorize("@resolucionSecurity.puedeVerResolucion(authentication, #id)")
     public ResponseEntity<ResolucionAdministrativaDto> obtenerPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(resolucionService.obtenerPorId(id));
     }
 
     @GetMapping("/expediente/{expedienteId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR', 'INSPECTOR') or @expedienteSecurity.puedeVerExpediente(authentication, #expedienteId)")
+    @PreAuthorize("@expedienteSecurity.puedeVerExpediente(authentication, #expedienteId)")
     public ResponseEntity<ResolucionAdministrativaDto> obtenerPorExpediente(@PathVariable UUID expedienteId) {
         return ResponseEntity.ok(resolucionService.obtenerActualPorExpediente(expedienteId));
     }
 
     @GetMapping("/{id}/estado-firma")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR', 'INSPECTOR') or @resolucionSecurity.puedeVerResolucion(authentication, #id)")
+    @PreAuthorize("@resolucionSecurity.puedeVerResolucion(authentication, #id)")
     public ResponseEntity<EstadoFirmaDto> consultarEstadoFirma(@PathVariable UUID id) {
         return ResponseEntity.ok(resolucionService.consultarEstadoFirma(id));
     }
 
     @GetMapping("/{id}/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR', 'INSPECTOR') or @resolucionSecurity.puedeVerResolucion(authentication, #id)")
+    @PreAuthorize("@resolucionSecurity.puedeVerResolucion(authentication, #id)")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable UUID id) {
         byte[] pdfBytes = resolucionService.generarPdfResolucion(id);
         HttpHeaders headers = new HttpHeaders();

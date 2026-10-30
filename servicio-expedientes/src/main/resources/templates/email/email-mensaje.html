@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo}">Comunicación institucional</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; color: #333; }
+        .wrapper { max-width: 620px; margin: 30px auto; }
+        .header { background: #003380; padding: 24px 32px; border-radius: 8px 8px 0 0; text-align: center; }
+        .header h1 { color: #fff; font-size: 16px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .header p { color: #c7d6f5; font-size: 12px; }
+        .titulo { background: #e8eef9; padding: 14px 32px; border-bottom: 1px solid #d3ddef; }
+        .titulo h2 { font-size: 16px; color: #003380; font-weight: 700; }
+        .body { background: #fff; padding: 28px 36px 20px; }
+        .body p { font-size: 14px; line-height: 1.7; color: #444; margin-bottom: 14px; }
+        .referencia { background: #f7f9fc; border-left: 4px solid #003380; padding: 12px 18px; margin: 18px 0; font-size: 13px; color: #333; }
+        .btn-wrap { text-align: center; margin: 24px 0; }
+        .btn { display: inline-block; background: #003380; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 13px; font-weight: 700; }
+        .nota { font-size: 12px; color: #777; }
+        .footer { background: #f0f0f0; padding: 18px 32px; border-radius: 0 0 8px 8px; text-align: center; font-size: 11px; color: #888; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1>MUNICIPALIDAD PROVINCIAL DE HUAMANGA</h1>
+        <p>Gerencia de Desarrollo Económico - Subgerencia de Comercio, Licencias y Control Sanitario</p>
+    </div>
+    <div class="titulo">
+        <h2 th:text="${titulo}">Comunicación institucional</h2>
+    </div>
+    <div class="body">
+        <p>Estimado(a) <strong th:text="${destinatario}">administrado</strong>:</p>
+        <p th:text="${mensaje}">Contenido de la comunicación.</p>
+        <div class="referencia" th:if="${referencia != null}" th:text="${referencia}">Referencia</div>
+        <div class="btn-wrap" th:if="${enlace != null}">
+            <a th:href="${enlace}" class="btn" th:text="${textoEnlace}">Ingresar</a>
+        </div>
+        <p class="nota" th:if="${enlace != null}">
+            Si el botón no funciona, copie la siguiente dirección en su navegador:
+            <span th:text="${enlace}">enlace</span>
+        </p>
+        <p class="nota">Si usted no realizó esta solicitud, puede ignorar esta comunicación.</p>
+    </div>
+    <div class="footer">
+        Comunicación generada por el Sistema de Licencias de Funcionamiento.<br>
+        Municipalidad Provincial de Huamanga - Ayacucho, Perú.
+    </div>
+</div>
+</body>
+</html>

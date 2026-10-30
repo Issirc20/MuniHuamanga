@@ -14,4 +14,6 @@ public interface SolicitudRectificacionUbicacionRepository extends JpaRepository
     List<SolicitudRectificacionUbicacion> findByEstablecimientoIdOrderByFechaSolicitudDesc(UUID establecimientoId);
 
     List<SolicitudRectificacionUbicacion> findByEstadoOrderByFechaSolicitudAsc(EstadoRectificacionUbicacion estado);
+
+    boolean existsByExpedienteIdAndEstado(UUID expedienteId, EstadoRectificacionUbicacion estado);
 }

@@ -194,15 +194,15 @@ class SolicitudBorradorServiceTest {
     }
 
     @Test
-    @DisplayName("I04: Validar requisitos detecta campos y documentos obligatorios faltantes")
+    @DisplayName("La validación de requisitos no exige nivel de riesgo ni pago antes de la presentación")
     void validarRequisitos_DetectaFaltantes() {
         when(borradorRepository.findByIdWithDocumentos(borradorTest.getId())).thenReturn(Optional.of(borradorTest));
 
         ValidacionRequisitosDto validacion = service.validarRequisitos(borradorTest.getId());
 
-        assertThat(validacion.isAptoParaPresentacion()).isFalse();
-        assertThat(validacion.getCamposFaltantes()).contains("Nivel de riesgo ITSE declarado", "Número de operación / constancia de pago SAT");
-        assertThat(validacion.getDocumentosFaltantes()).contains("Evidencia técnica o anexo de clasificación de riesgo ITSE");
+        // El nivel de riesgo y el pago no se exigen al presentar: se determinan después, en la etapa ITSE.
+        assertThat(validacion.getCamposFaltantes()).doesNotContain("Nivel de riesgo ITSE declarado", "Número de operación / constancia de pago SAT");
+        assertThat(validacion.getDocumentosFaltantes()).isEmpty();
     }
 
     @Test

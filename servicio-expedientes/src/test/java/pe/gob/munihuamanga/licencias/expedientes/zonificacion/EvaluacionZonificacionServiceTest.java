@@ -86,7 +86,7 @@ class EvaluacionZonificacionServiceTest {
                 .documentoIdentidad("42567891")
                 .giroNegocio("Farmacia y Botica")
                 .direccionEstablecimiento("Jr. 28 de Julio 450")
-                .estado(EstadoExpediente.DOCUMENTOS_VALIDADOS)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .build();
 
         establecimiento = Establecimiento.builder()

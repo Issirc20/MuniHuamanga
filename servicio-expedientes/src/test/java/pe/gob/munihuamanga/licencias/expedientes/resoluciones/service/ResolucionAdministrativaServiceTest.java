@@ -65,6 +65,12 @@ class ResolucionAdministrativaServiceTest {
     private ResolucionPdfGenerator resolucionPdfGenerator;
     @Mock
     private FirmaDigitalPort firmaDigitalPort;
+
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente comandosExpediente;
+
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService notificacionEmailService;
     @Mock
     private UsuarioRepository usuarioRepository;
     @Mock
@@ -126,7 +132,7 @@ class ResolucionAdministrativaServiceTest {
     @Test
     @DisplayName("I08-02: No permite resolución FAVORABLE si el expediente no está en APTO_PARA_RESOLUCION")
     void testCrearBorrador_DecisionFavorable_ExpedienteNoApto_LanzaExcepcion() {
-        expediente.setEstado(EstadoExpediente.EN_EVALUACION);
+        org.springframework.test.util.ReflectionTestUtils.setField(expediente, "estado", EstadoExpediente.EN_EVALUACION);
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expediente));
         when(informeAdministrativoRepository.findByExpedienteIdAndEsVersionActualTrue(expedienteId)).thenReturn(Optional.of(informe));
 
@@ -138,7 +144,7 @@ class ResolucionAdministrativaServiceTest {
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 resolucionService.crearBorrador(dto, auth));
-        assertTrue(ex.getMessage().contains("debe encontrarse en estado APTO_PARA_RESOLUCION"));
+        assertTrue(ex.getMessage().contains("APTO_PARA_RESOLUCION"));
     }
 
     @Test

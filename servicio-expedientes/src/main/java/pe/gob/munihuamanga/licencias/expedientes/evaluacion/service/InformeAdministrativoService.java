@@ -20,9 +20,14 @@ import pe.gob.munihuamanga.licencias.expedientes.evaluacion.model.HistorialInfor
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.model.InformeAdministrativo;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.repository.HistorialInformeAdministrativoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.repository.InformeAdministrativoRepository;
+import pe.gob.munihuamanga.licencias.common.dto.CrearObservacionDto;
+import pe.gob.munihuamanga.licencias.common.enums.TipoObservacion;
+import pe.gob.munihuamanga.licencias.common.exception.TransicionInvalidaException;
+import pe.gob.munihuamanga.licencias.expedientes.documentos.service.ObservacionExpedienteService;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
 
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -45,7 +50,8 @@ public class InformeAdministrativoService {
     private final ExpedienteRepository expedienteRepository;
     private final ChecklistAdministrativoService checklistAdministrativoService;
     private final InformePdfGenerator informePdfGenerator;
-    private final AuditoriaService auditoriaService;
+    private final ComandosExpediente comandosExpediente;
+    private final ObservacionExpedienteService observacionExpedienteService;
     private final ObjectMapper objectMapper;
     private final SecuenciaInformeService secuenciaInformeService;
 
@@ -56,6 +62,11 @@ public class InformeAdministrativoService {
 
         Expediente exp = expedienteRepository.findById(dto.getExpedienteId())
                 .orElseThrow(() -> new IllegalArgumentException("Expediente no encontrado: " + dto.getExpedienteId()));
+
+        if (exp.getEstado() != EstadoExpediente.EN_EVALUACION) {
+            throw new TransicionInvalidaException("El informe administrativo se elabora con el expediente completo en evaluación. Estado actual: "
+                    + exp.getEstado());
+        }
 
         // Ejecutar Checklist Administrativo Integral
         ChecklistAdministrativoDto checklist = checklistAdministrativoService.generarChecklist(exp.getId());
@@ -121,15 +132,6 @@ public class InformeAdministrativoService {
         // Registrar Historial Inmutable
         registrarHistorial(guardado, "ELABORACION_INFORME", null, EstadoInforme.BORRADOR, actor,
                 "Elaboración de informe administrativo con conclusión " + dto.getConclusion());
-
-        // Actualizar estado del expediente si estaba presentado o subsanado
-        if (exp.getEstado() == EstadoExpediente.PRESENTADO || exp.getEstado() == EstadoExpediente.SUBSANADO || exp.getEstado() == EstadoExpediente.DOCUMENTOS_VALIDADOS) {
-            EstadoExpediente anterior = exp.getEstado();
-            exp.setEstado(EstadoExpediente.EN_EVALUACION);
-            expedienteRepository.save(exp);
-            auditoriaService.registrarTransicion(exp.getId(), anterior, EstadoExpediente.EN_EVALUACION, actor,
-                    "Inicio formal de evaluación administrativa técnica");
-        }
 
         return mapearDto(guardado);
     }
@@ -262,25 +264,18 @@ public class InformeAdministrativoService {
 
         registrarHistorial(guardado, "APROBACION_ADMINISTRATIVA", anterior, EstadoInforme.APROBADO, actor, dto.getObservacionesAprobacion());
 
-        // Actualizar estado del expediente según conclusión
+        // Comunicar al expediente el resultado de la evaluación. Toda conclusión de fondo (favorable o
+        // desfavorable) conduce a resolución; la denegatoria también exige acto resolutivo motivado.
         Expediente exp = inf.getExpediente();
-        EstadoExpediente estExpAnterior = exp.getEstado();
-
-        if (inf.getConclusion() == ConclusionInforme.FAVORABLE) {
-            exp.setEstado(EstadoExpediente.APTO_PARA_RESOLUCION);
-            expedienteRepository.save(exp);
-            auditoriaService.registrarTransicion(exp.getId(), estExpAnterior, EstadoExpediente.APTO_PARA_RESOLUCION, actor,
-                    "Aprobación de Informe Administrativo Favorable " + inf.getNumeroInforme());
-        } else if (inf.getConclusion() == ConclusionInforme.DESFAVORABLE) {
-            exp.setEstado(EstadoExpediente.RECHAZADO);
-            expedienteRepository.save(exp);
-            auditoriaService.registrarTransicion(exp.getId(), estExpAnterior, EstadoExpediente.RECHAZADO, actor,
-                    "Informe Administrativo Desfavorable " + inf.getNumeroInforme());
-        } else if (inf.getConclusion() == ConclusionInforme.REQUIERE_SUBSANACION) {
-            exp.setEstado(EstadoExpediente.OBSERVADO);
-            expedienteRepository.save(exp);
-            auditoriaService.registrarTransicion(exp.getId(), estExpAnterior, EstadoExpediente.OBSERVADO, actor,
-                    "Informe Administrativo con requerimiento de subsanación " + inf.getNumeroInforme());
+        if (inf.getConclusion() == ConclusionInforme.REQUIERE_SUBSANACION) {
+            observacionExpedienteService.formularObservaciones(exp.getId(), List.of(CrearObservacionDto.builder()
+                    .requisitoAfectado("Informe administrativo " + inf.getNumeroInforme())
+                    .motivo(inf.getFundamentosAdministrativos())
+                    .tipoObservacion(TipoObservacion.EVALUACION_ADMINISTRATIVA)
+                    .build()));
+        } else {
+            comandosExpediente.registrar(exp.getId(), EventoExpediente.INFORME_APROBADO,
+                    "Informe administrativo " + inf.getNumeroInforme() + " aprobado con conclusión " + inf.getConclusion() + ".");
         }
 
         return mapearDto(guardado);

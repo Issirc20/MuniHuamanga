@@ -19,6 +19,8 @@ public class HistorialEstadoDto {
     private UUID expedienteId;
     private EstadoExpediente estadoAnterior;
     private EstadoExpediente estadoNuevo;
+    private String evento;
+    private UUID usuarioId;
     private String usuario;
     private String motivo;
     private LocalDateTime fecha;

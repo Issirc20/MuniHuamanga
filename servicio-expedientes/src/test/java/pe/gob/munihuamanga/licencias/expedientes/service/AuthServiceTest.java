@@ -10,124 +10,137 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import pe.gob.munihuamanga.licencias.common.dto.LoginRequestDto;
-import pe.gob.munihuamanga.licencias.common.dto.LoginResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.UsuarioDto;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
 import pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository;
 import pe.gob.munihuamanga.licencias.expedientes.security.JwtTokenProvider;
+import pe.gob.munihuamanga.licencias.expedientes.security.ProteccionIntentosAcceso;
+import pe.gob.munihuamanga.licencias.expedientes.security.ServicioRepresentacion;
+import pe.gob.munihuamanga.licencias.expedientes.security.sesion.GestorSesiones;
+import pe.gob.munihuamanga.licencias.expedientes.security.sesion.SesionUsuario;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
-    private JwtTokenProvider tokenProvider;
-
-    @Mock
-    private UsuarioRepository usuarioRepository;
+    @Mock private AuthenticationManager authenticationManager;
+    @Mock private JwtTokenProvider tokenProvider;
+    @Mock private UsuarioRepository usuarioRepository;
+    @Mock private ProteccionIntentosAcceso proteccionIntentos;
+    @Mock private GestorSesiones gestorSesiones;
+    @Mock private ServicioRepresentacion servicioRepresentacion;
 
     @InjectMocks
     private AuthService authService;
 
-    private Usuario usuarioPrueba;
+    private Usuario evaluador;
 
     @BeforeEach
     void setUp() {
-        usuarioPrueba = Usuario.builder()
+        evaluador = Usuario.builder()
                 .id(UUID.randomUUID())
                 .username("evaluador")
-                .password("$2a$10$encryptedPassword")
-                .nombreCompleto("Ing. Carlos Mendoza")
-                .email("cmendoza@munihuamanga.gob.pe")
-                .rol(RolUsuario.ROLE_EVALUADOR)
+                .password("$2a$10$hash")
+                .nombreCompleto("Evaluador de Licencias")
+                .email("evaluador@munihuamanga.gob.pe")
+                .roles(new HashSet<>(Set.of(RolUsuario.ROLE_EVALUADOR)))
                 .activo(true)
                 .fechaCreacion(LocalDateTime.now())
                 .build();
     }
 
     @Test
-    @DisplayName("Debe autenticar correctamente con credenciales válidas y devolver token")
-    void testAutenticar_Exitoso() {
-        LoginRequestDto request = LoginRequestDto.builder()
-                .username("evaluador")
-                .password("eval123")
-                .build();
+    @DisplayName("El inicio de sesión exitoso abre una sesión y emite token de acceso y de renovación")
+    void autenticarExitoso() {
+        SesionUsuario sesion = SesionUsuario.builder().id(UUID.randomUUID()).usuarioId(evaluador.getId()).build();
+        when(proteccionIntentos.estaBloqueado("evaluador")).thenReturn(false);
+        when(usuarioRepository.findByUsername("evaluador")).thenReturn(Optional.of(evaluador));
+        when(gestorSesiones.abrir(eq(evaluador.getId()), anyString(), anyString()))
+                .thenReturn(new GestorSesiones.SesionEmitida(sesion, "token-renovacion"));
+        when(tokenProvider.generarTokenAcceso(any(), eq(sesion.getId()))).thenReturn("token.acceso");
+        when(servicioRepresentacion.listar(evaluador.getId())).thenReturn(List.of());
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                "evaluador",
-                "eval123",
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_EVALUADOR"))
-        );
+        AuthService.SesionIniciada resultado = authService.autenticar(solicitud("Licencias.Huamanga26"), "127.0.0.1", "navegador");
 
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(auth);
-        when(usuarioRepository.findByUsername("evaluador")).thenReturn(Optional.of(usuarioPrueba));
-        when(tokenProvider.generarToken(auth, usuarioPrueba.getId(), usuarioPrueba.getNombreCompleto()))
-                .thenReturn("mocked.jwt.token");
-        when(tokenProvider.getExpirationMs()).thenReturn(86400000L);
-
-        LoginResponseDto response = authService.autenticar(request);
-
-        assertNotNull(response);
-        assertEquals("mocked.jwt.token", response.getToken());
-        assertEquals("Bearer", response.getTipo());
-        assertEquals("evaluador", response.getUsername());
-        assertEquals("ROLE_EVALUADOR", response.getRol());
-        assertEquals("Ing. Carlos Mendoza", response.getNombreCompleto());
-
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        assertThat(resultado.respuesta().getToken()).isEqualTo("token.acceso");
+        assertThat(resultado.respuesta().getRoles()).containsExactly("ROLE_EVALUADOR");
+        assertThat(resultado.tokenRenovacion()).isEqualTo("token-renovacion");
+        verify(proteccionIntentos).registrarExito("evaluador");
     }
 
     @Test
-    @DisplayName("Debe lanzar excepción si las credenciales son incorrectas")
-    void testAutenticar_CredencialesInvalidas() {
-        LoginRequestDto request = LoginRequestDto.builder()
-                .username("evaluador")
-                .password("claveIncorrecta")
-                .build();
-
+    @DisplayName("Las credenciales incorrectas registran el intento fallido y devuelven un mensaje neutro")
+    void credencialesInvalidas() {
+        when(proteccionIntentos.estaBloqueado("evaluador")).thenReturn(false);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Credenciales incorrectas"));
+                .thenThrow(new BadCredentialsException("x"));
 
-        assertThrows(BadCredentialsException.class, () -> authService.autenticar(request));
+        assertThatThrownBy(() -> authService.autenticar(solicitud("incorrecta"), "127.0.0.1", "navegador"))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessage(AuthService.MENSAJE_CREDENCIALES_INVALIDAS);
+        verify(proteccionIntentos).registrarFallo("evaluador");
     }
 
     @Test
-    @DisplayName("Debe obtener el perfil actual del usuario autenticado")
-    void testObtenerPerfilActual_Exitoso() {
-        when(usuarioRepository.findByUsername("evaluador")).thenReturn(Optional.of(usuarioPrueba));
+    @DisplayName("Un usuario bloqueado no llega a validar su contraseña")
+    void usuarioBloqueado() {
+        when(proteccionIntentos.estaBloqueado("evaluador")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.autenticar(solicitud("Licencias.Huamanga26"), "127.0.0.1", "navegador"))
+                .isInstanceOf(BadCredentialsException.class);
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    @DisplayName("La renovación con una persona inhabilitada revoca la sesión")
+    void renovacionDePersonaInhabilitada() {
+        evaluador.setActivo(false);
+        SesionUsuario sesion = SesionUsuario.builder().id(UUID.randomUUID()).usuarioId(evaluador.getId()).build();
+        when(gestorSesiones.renovar("token")).thenReturn(new GestorSesiones.SesionEmitida(sesion, "nuevo"));
+        when(usuarioRepository.findById(evaluador.getId())).thenReturn(Optional.of(evaluador));
+
+        assertThatThrownBy(() -> authService.renovar("token")).isInstanceOf(BadCredentialsException.class);
+        verify(gestorSesiones).revocar(eq(sesion.getId()), anyString());
+    }
+
+    @Test
+    @DisplayName("El perfil incluye los roles y las representaciones de la persona")
+    void perfilActual() {
+        when(usuarioRepository.findByUsername("evaluador")).thenReturn(Optional.of(evaluador));
+        when(servicioRepresentacion.listar(evaluador.getId())).thenReturn(List.of());
 
         UsuarioDto perfil = authService.obtenerPerfilActual("evaluador");
 
-        assertNotNull(perfil);
-        assertEquals("evaluador", perfil.getUsername());
-        assertEquals(RolUsuario.ROLE_EVALUADOR, perfil.getRol());
-        assertEquals("Ing. Carlos Mendoza", perfil.getNombreCompleto());
+        assertThat(perfil.getRoles()).containsExactly(RolUsuario.ROLE_EVALUADOR);
+        assertThat(perfil.getRepresentaciones()).isEmpty();
     }
 
     @Test
-    @DisplayName("Debe fallar al obtener perfil si el usuario no existe")
-    void testObtenerPerfilActual_UsuarioNoExiste() {
+    @DisplayName("El perfil de un usuario inexistente no se obtiene")
+    void perfilDeUsuarioInexistente() {
         when(usuarioRepository.findByUsername("desconocido")).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> authService.obtenerPerfilActual("desconocido")).isInstanceOf(UsernameNotFoundException.class);
+    }
 
-        assertThrows(UsernameNotFoundException.class, () -> authService.obtenerPerfilActual("desconocido"));
+    private static LoginRequestDto solicitud(String contrasena) {
+        return LoginRequestDto.builder().username("evaluador").password(contrasena).build();
     }
 }

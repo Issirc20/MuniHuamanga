@@ -50,6 +50,17 @@ munihuamanga:
     enabled: ${FIRMA_DIGITAL_ENABLED:true}
     proveedor: ${FIRMA_DIGITAL_PROVEEDOR:RENIEC_REFIRMA_DEMO}
     modo-dev-simulado: ${FIRMA_DIGITAL_SIMULADA:true}
+  # Identidad y sesiones (Módulo 2)
+  seguridad:
+    origenes-permitidos: ${ORIGENES_PERMITIDOS:http://localhost:8081}
+    cookie-segura: ${COOKIE_SEGURA:false}
+    duracion-sesion-horas: ${DURACION_SESION_HORAS:8}
+    intentos-maximos: ${INTENTOS_MAXIMOS_ACCESO:5}
+    minutos-bloqueo: ${MINUTOS_BLOQUEO_ACCESO:15}
+  # Vigilancia diaria de plazos del procedimiento (Módulo 1)
+  plazos:
+    vigilancia-programada: ${VIGILANCIA_PLAZOS:true}
+    cron-vigilancia: "0 0 6 * * MON-FRI"
 
 
 # Observabilidad (RNF-21)
@@ -91,7 +102,7 @@ portal:
 # ──────────────────────────────────────────────────────────────────────────────
 jwt:
   secret: ${JWT_SECRET:MunicipalidadProvincialDeHuamangaGestionLicenciasSecretKeySegura2026!}
-  expiration-ms: ${JWT_EXPIRATION_MS:28800000} # 8 horas (jornada laboral municipal)
+  expiration-ms: ${JWT_EXPIRATION_MS:1800000} # 30 minutos; la sesión se renueva con el token de renovación
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Generación Documental Oficial (Anexo 1, Escudo Institucional)

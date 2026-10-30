@@ -19,6 +19,7 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ public class DocumentoPdfService {
     private final Anexo4PdfGenerator anexo4PdfGenerator;
     private final LicenciaPdfGenerator licenciaPdfGenerator;
 
+    @Autowired
     public DocumentoPdfService(Anexo1PdfGenerator anexo1PdfGenerator,
                                Anexo1ItsePdfGenerator anexo1ItsePdfGenerator,
                                Anexo2ItsePdfGenerator anexo2ItsePdfGenerator,
@@ -57,6 +59,13 @@ public class DocumentoPdfService {
         this.anexo3PdfGenerator = anexo3PdfGenerator;
         this.anexo4PdfGenerator = anexo4PdfGenerator;
         this.licenciaPdfGenerator = licenciaPdfGenerator;
+    }
+
+    public DocumentoPdfService(Anexo1PdfGenerator anexo1PdfGenerator,
+                               Anexo3PdfGenerator anexo3PdfGenerator,
+                               Anexo4PdfGenerator anexo4PdfGenerator,
+                               LicenciaPdfGenerator licenciaPdfGenerator) {
+        this(anexo1PdfGenerator, new Anexo1ItsePdfGenerator(), new Anexo2ItsePdfGenerator(), anexo3PdfGenerator, anexo4PdfGenerator, licenciaPdfGenerator);
     }
 
     @Value("${portal.verificacion.url:http://localhost:8081/verificar-licencia.html?codigo=}")

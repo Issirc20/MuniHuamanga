@@ -73,14 +73,14 @@ public class PlantillaDocumentalController {
 
     @Operation(summary = "Consultar historial de versiones de una plantilla")
     @GetMapping("/{codigo}/versiones")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ADMINISTRADOR', 'SUBGERENTE', 'INSPECTOR', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'INSPECTOR', 'AUDITOR')")
     public ResponseEntity<List<VersionPlantillaDto>> listarHistorial(@PathVariable String codigo) {
         return ResponseEntity.ok(plantillaService.listarHistorialVersiones(codigo));
     }
 
     @Operation(summary = "Descargar una versión histórica específica de la plantilla")
     @GetMapping("/{codigo}/versiones/{version}/descargar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ADMINISTRADOR', 'SUBGERENTE', 'INSPECTOR', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'INSPECTOR', 'AUDITOR')")
     public ResponseEntity<byte[]> descargarVersionHistorica(@PathVariable String codigo, @PathVariable Integer version) {
         byte[] pdf = plantillaService.obtenerContenidoVersion(codigo, version);
 
@@ -94,7 +94,7 @@ public class PlantillaDocumentalController {
 
     @Operation(summary = "Sustituir una plantilla oficial por una nueva versión (Admin)")
     @PostMapping("/{codigo}/sustituir")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ADMINISTRADOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlantillaDocumentalDto> sustituirPlantilla(
             @PathVariable String codigo,
             @Valid @RequestBody SustituirPlantillaDto dto,
@@ -106,7 +106,7 @@ public class PlantillaDocumentalController {
 
     @Operation(summary = "Restaurar una versión previa mediante nueva versión controlada (Admin)")
     @PostMapping("/{codigo}/versiones/{version}/restaurar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ADMINISTRADOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PlantillaDocumentalDto> restaurarVersion(
             @PathVariable String codigo,
             @PathVariable Integer version,

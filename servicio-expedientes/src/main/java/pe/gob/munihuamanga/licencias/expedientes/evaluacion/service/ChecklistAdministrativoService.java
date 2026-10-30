@@ -17,7 +17,10 @@ import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.model.DocumentoVersionado;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.repository.DocumentoVersionadoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.documentos.repository.ObservacionExpedienteRepository;
+import pe.gob.munihuamanga.licencias.common.enums.EstadoItse;
 import pe.gob.munihuamanga.licencias.expedientes.establecimientos.repository.EstablecimientoRepository;
+import pe.gob.munihuamanga.licencias.expedientes.itse.model.ExpedienteItse;
+import pe.gob.munihuamanga.licencias.expedientes.itse.repository.ExpedienteItseRepository;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.model.PagoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.repository.PagoExpedienteRepository;
@@ -48,6 +51,7 @@ public class ChecklistAdministrativoService {
     private final PagoExpedienteRepository pagoExpedienteRepository;
     private final EvaluacionZonificacionRepository evaluacionZonificacionRepository;
     private final EstablecimientoRepository establecimientoRepository;
+    private final ExpedienteItseRepository expedienteItseRepository;
 
     @Transactional(readOnly = true)
     public ChecklistAdministrativoDto generarChecklist(UUID expedienteId) {
@@ -104,14 +108,8 @@ public class ChecklistAdministrativoService {
 
     private ItemChecklistDto verificarEstadoExpediente(Expediente exp) {
         EstadoExpediente est = exp.getEstado();
-        boolean permitido = est == EstadoExpediente.PRESENTADO
-                || est == EstadoExpediente.EN_EVALUACION
-                || est == EstadoExpediente.SUBSANADO
-                || est == EstadoExpediente.APTO_PARA_RESOLUCION
-                || est == EstadoExpediente.OBSERVADO
-                // Compatibilidad histórica para expedientes heredados de V1
-                || est == EstadoExpediente.DOCUMENTOS_VALIDADOS
-                || est == EstadoExpediente.EN_EVALUACION_FINAL;
+        boolean permitido = est == EstadoExpediente.EN_EVALUACION
+                || est == EstadoExpediente.APTO_PARA_RESOLUCION;
 
         return ItemChecklistDto.builder()
                 .codigo("CHK-01-EXPEDIENTE")
@@ -310,65 +308,24 @@ public class ChecklistAdministrativoService {
     }
 
     private ItemChecklistDto verificarSustentoItse(Expediente exp) {
-        NivelRiesgo riesgo = exp.getNivelRiesgo();
-        if (riesgo == null) {
-            return ItemChecklistDto.builder()
-                    .codigo("CHK-08-SUSTENTO_ITSE")
-                    .descripcion("Verificación administrativa del sustento técnico ITSE según nivel de riesgo")
-                    .estado(EstadoChecklist.NO_CUMPLE)
-                    .motivo("No se ha registrado el nivel de riesgo declarado del establecimiento")
-                    .fuenteEvidencia("expedientes.nivel_riesgo")
-                    .build();
-        }
-
-        List<DocumentoVersionado> docs = documentoVersionadoRepository
-                .findByExpedienteIdAndEsVersionActualTrue(exp.getId());
-
-        // Para riesgo ALTO o MUY_ALTO (ITSE Previa según D.S. 002-2018-PCM):
-        // Exige planos técnicos o plan de seguridad / certificado previo
-        if (riesgo == NivelRiesgo.ALTO || riesgo == NivelRiesgo.MUY_ALTO) {
-            boolean tieneDocsItsePrevia = docs.stream().anyMatch(d ->
-                    d.getTipoDocumento() == TipoDocumentoAdjunto.CERTIFICADO_ITSE_PREVIO
-                            || d.getTipoDocumento() == TipoDocumentoAdjunto.PLANO_DISTRIBUCION
-                            || d.getTipoDocumento() == TipoDocumentoAdjunto.PLANO_ARQUITECTURA
-                            || d.getTipoDocumento() == TipoDocumentoAdjunto.PLAN_SEGURIDAD_ITSE
-                            || d.getTipoDocumento() == TipoDocumentoAdjunto.MEMORIA_DESCRIPTIVA);
-            if (!tieneDocsItsePrevia) {
-                return ItemChecklistDto.builder()
-                        .codigo("CHK-08-SUSTENTO_ITSE")
-                        .descripcion("Verificación administrativa del sustento técnico ITSE (" + exp.getTipoItse() + " - " + riesgo + ")")
-                        .estado(EstadoChecklist.NO_CUMPLE)
-                        .motivo("Para nivel de riesgo " + riesgo + " (ITSE Previa) es obligatorio adjuntar documentación técnica: planos arquitectónicos/distribución o plan de seguridad ITSE")
-                        .fuenteEvidencia("expediente.nivelRiesgo=" + riesgo + ", documentos_versionados")
-                        .build();
-            }
-        }
-
-        // Para BAJO y MEDIO (ITSE Posterior): Debe constar Anexo ITSE o Declaración jurada
-        boolean tieneSustentoItse = docs.stream().anyMatch(d ->
-                d.getTipoDocumento() == TipoDocumentoAdjunto.ANEXO_ITSE_DECLARACION
-                        || d.getTipoDocumento() == TipoDocumentoAdjunto.EVIDENCIA_RIESGO_ITSE
-                        || d.getTipoDocumento() == TipoDocumentoAdjunto.CROQUIS_UBICACION
-                        || d.getTipoDocumento() == TipoDocumentoAdjunto.PLANO_DISTRIBUCION);
-
-        // Si además el expediente tiene las condiciones de Anexo 4 embebidas en la base de datos
-        boolean anexo4Embebido = exp.getAnexo4Condiciones() != null;
-
-        boolean cumple = tieneSustentoItse || anexo4Embebido;
+        Optional<ExpedienteItse> etapa = expedienteItseRepository.findByExpedienteId(exp.getId());
+        boolean validado = etapa.map(e -> e.getEstado() == EstadoItse.VALIDADO).orElse(false);
 
         return ItemChecklistDto.builder()
                 .codigo("CHK-08-SUSTENTO_ITSE")
-                .descripcion("Verificación administrativa del sustento técnico ITSE (" + exp.getTipoItse() + " - " + riesgo + ")")
-                .estado(cumple ? EstadoChecklist.CUMPLE : EstadoChecklist.NO_CUMPLE)
-                .motivo(cumple ? "Sustento documental y técnico ITSE verificado conforme a modalidad " + exp.getTipoItse()
-                        : "Falta adjuntar formato de condiciones de seguridad o documentación técnica ITSE requerida")
-                .fuenteEvidencia("expediente.tipoItse=" + exp.getTipoItse() + ", nivelRiesgo=" + riesgo)
+                .descripcion("Anexos ITSE firmados por Defensa Civil y validados por la oficina de licencias")
+                .estado(validado ? EstadoChecklist.CUMPLE : EstadoChecklist.NO_CUMPLE)
+                .motivo(validado
+                        ? "ITSE validado con nivel de riesgo oficial " + etapa.get().getNivelOficial()
+                        + " por " + etapa.get().getValidadoPor()
+                        : "La etapa ITSE no ha sido validada")
+                .fuenteEvidencia("itse_expedientes.estado=" + etapa.map(e -> e.getEstado().name()).orElse("SIN_ETAPA"))
                 .build();
     }
 
     private ItemChecklistDto verificarImpedimentos(Expediente exp) {
-        // Verifica que no haya rechazo previo irreversible o bloqueo administrativo
-        boolean sinImpedimento = exp.getEstado() != EstadoExpediente.RECHAZADO;
+        // Verifica que el procedimiento no se encuentre concluido de forma desfavorable o archivado
+        boolean sinImpedimento = !exp.getEstado().esTerminal();
 
         return ItemChecklistDto.builder()
                 .codigo("CHK-09-IMPEDIMENTOS")

@@ -166,9 +166,7 @@ public class SolicitudBorradorController {
             @Valid @RequestBody PresentarBorradorDto dto,
             Authentication authentication
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
-        String username = authentication.getName();
-        ExpedienteResponseDto expediente = presentacionFormalService.presentarBorrador(id, dto, usuarioId, username);
+        ExpedienteResponseDto expediente = presentacionFormalService.presentarBorrador(id, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(expediente);
     }
 

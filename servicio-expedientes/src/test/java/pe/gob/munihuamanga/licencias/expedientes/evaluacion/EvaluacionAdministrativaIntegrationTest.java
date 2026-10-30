@@ -93,6 +93,17 @@ class EvaluacionAdministrativaIntegrationTest {
     @Autowired
     private SolicitudRectificacionUbicacionRepository solicitudRectificacionRepository;
 
+    private static final String DNI_TITULAR = "46557788";
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository operadorCuentaRepository;
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.itse.repository.ExpedienteItseRepository expedienteItseRepository;
+
     private Expediente expedientePrueba;
     private Establecimiento establecimientoPrueba;
 
@@ -104,12 +115,13 @@ class EvaluacionAdministrativaIntegrationTest {
                 .id(cuentaId)
                 .tipoPersona(TipoPersona.NATURAL)
                 .tipoDocumento(TipoDocumento.DNI)
-                .numeroDocumento(String.format("%08d", rnd))
+                .numeroDocumento(DNI_TITULAR)
                 .razonSocialONombre("Mario Vargas Llosa")
                 .email("mario.vargas@gmail.com")
                 .fechaCreacion(LocalDateTime.now())
                 .build();
         cuentaRepository.save(cuenta);
+        pe.gob.munihuamanga.licencias.expedientes.soporte.DatosDePrueba.vincularTitular(usuarioRepository, operadorCuentaRepository, cuenta, DNI_TITULAR, "Mario Vargas Llosa");
 
         UUID estId = UUID.randomUUID();
         establecimientoPrueba = Establecimiento.builder()
@@ -141,7 +153,7 @@ class EvaluacionAdministrativaIntegrationTest {
                 .nombreComercial("Librería Huamanga")
                 .giroNegocio("Venta de libros y revistas")
                 .direccionEstablecimiento("Portal Constitución 45")
-                .estado(EstadoExpediente.PRESENTADO)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .nivelRiesgo(NivelRiesgo.BAJO)
                 .montoTasa(new BigDecimal("154.50"))
                 .anexo4Condiciones(new Anexo4Condiciones())
@@ -149,6 +161,14 @@ class EvaluacionAdministrativaIntegrationTest {
                 .fechaLimite(LocalDateTime.now().plusDays(10))
                 .build();
         expedienteRepository.save(expedientePrueba);
+        expedienteItseRepository.save(pe.gob.munihuamanga.licencias.expedientes.itse.model.ExpedienteItse.builder()
+                .id(UUID.randomUUID())
+                .expedienteId(expedientePrueba.getId())
+                .estado(pe.gob.munihuamanga.licencias.common.enums.EstadoItse.VALIDADO)
+                .nivelOficial(NivelRiesgo.BAJO)
+                .validadoPor("Evaluador de Licencias")
+                .fechaCreacion(LocalDateTime.now())
+                .build());
     }
 
     @Test
@@ -246,7 +266,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("Flujo completo: BORRADOR -> EN_REVISION -> VISADO -> APROBADO con APTO_PARA_RESOLUCION")
-    @WithMockUser(username = "admin_master", roles = {"ADMIN"})
+    @WithMockUser(username = "supervisor_muni", roles = {"SUPERVISOR_LICENCIAS"})
     void flujoCompleto_informeAprobado_habilitaAptoParaResolucion() throws Exception {
         InformeAdministrativo inf = InformeAdministrativo.builder()
                 .id(UUID.randomUUID())
@@ -348,7 +368,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("POST /rectificaciones-ubicacion -> 201 Created para ciudadano autenticado")
-    @WithMockUser(username = "mario.vargas@gmail.com", roles = {"CIUDADANO"})
+    @WithMockUser(username = DNI_TITULAR, roles = {"CIUDADANO"})
     void solicitarRectificacion_ciudadano_retorna201() throws Exception {
         SolicitarRectificacionUbicacionDto dto = SolicitarRectificacionUbicacionDto.builder()
                 .establecimientoId(establecimientoPrueba.getId())

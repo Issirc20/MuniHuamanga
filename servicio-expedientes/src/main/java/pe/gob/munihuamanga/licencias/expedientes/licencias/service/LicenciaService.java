@@ -22,6 +22,7 @@ import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.HistorialE
 import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.LicenciaEmitidaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.ResolucionAdministrativa;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.ResolucionAdministrativaRepository;
@@ -59,6 +60,8 @@ public class LicenciaService {
     private final ExpedienteMapper expedienteMapper;
     private final AuditoriaService auditoriaService;
     private final NotificacionEmailService notificacionEmailService;
+    private final pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente comandosExpediente;
+    private final pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor proveedorActor;
     private final pe.gob.munihuamanga.licencias.expedientes.rectificacion.repository.SolicitudRectificacionUbicacionRepository solicitudRectificacionUbicacionRepository;
     private final pe.gob.munihuamanga.licencias.expedientes.licencias.repository.AuditoriaConsultaInspeccionRepository auditoriaConsultaInspeccionRepository;
 
@@ -196,22 +199,15 @@ public class LicenciaService {
                 .build();
         historialEmisionRepository.save(hist);
 
-        // Actualizar formalmente el expediente a estado APROBADO final
-        EstadoExpediente antExp = exp.getEstado();
-        exp.setEstado(EstadoExpediente.APROBADO);
+        // Referencias de la licencia en el expediente, para su consulta y para los formatos documentales
         exp.setNumeroLicencia(numeroLicencia);
         exp.setLicenciaQrCode(codigoVerificacionQr);
-        exp.setFirmaDigitalValida(true);
+        exp.setFirmaDigitalValida(!esSimulada);
         exp.setFechaAprobacion(LocalDateTime.now());
         expedienteRepository.save(exp);
 
-        auditoriaService.registrarTransicion(
-                exp.getId(),
-                antExp,
-                EstadoExpediente.APROBADO,
-                actor,
-                "Licencia de Funcionamiento oficial emitida: " + numeroLicencia + " vinculada a resolución " + res.getNumeroResolucion()
-        );
+        comandosExpediente.registrar(exp.getId(), EventoExpediente.LICENCIA_EMITIDA,
+                "Licencia de funcionamiento " + numeroLicencia + " emitida en mérito de la resolución " + res.getNumeroResolucion() + ".");
 
         // Notificación al administrado
         try {
@@ -239,15 +235,45 @@ public class LicenciaService {
 
     @Transactional(readOnly = true)
     public LicenciaEmitidaDto obtenerPorCodigoQr(String codigoQr) {
-        LicenciaEmitida lic = licenciaRepository.findByCodigoVerificacionQr(codigoQr.trim().toUpperCase())
+        LicenciaEmitida lic = licenciaRepository.findByCodigoVerificacionQr(codigoQr.trim())
                 .orElseThrow(() -> new IllegalArgumentException("Código de verificación de licencia no encontrado: " + codigoQr));
         return mapearDto(lic);
     }
 
     @Transactional(readOnly = true)
+    public LicenciaEmitida obtenerEntidadPorExpediente(UUID expedienteId) {
+        return licenciaRepository.findByExpedienteId(expedienteId)
+                .orElseThrow(() -> new pe.gob.munihuamanga.licencias.common.exception.RecursoNoEncontradoException(
+                        "El expediente no cuenta con licencia emitida."));
+    }
+
+    /**
+     * Registra la notificación de la licencia. La primera notificación válida inicia el plazo de recursos.
+     */
+    @Transactional
+    public LicenciaEmitidaDto registrarNotificacion(UUID licenciaId, pe.gob.munihuamanga.licencias.common.dto.RegistrarNotificacionLicenciaDto dto) {
+        LicenciaEmitida licencia = licenciaRepository.findByIdWithLock(licenciaId)
+                .orElseThrow(() -> new IllegalArgumentException("Licencia no encontrada: " + licenciaId));
+        if (licencia.estaNotificada()) {
+            throw new IllegalStateException("La licencia ya fue notificada el " + licencia.getFechaNotificacion().toLocalDate() + ".");
+        }
+        marcarNotificada(licencia, dto.getMedio(), dto.getConstancia());
+        return mapearDto(licencia);
+    }
+
+    /**
+     * Entrega el documento de la licencia. Si quien descarga es el administrado o su representante,
+     * la descarga constituye acuse de notificación.
+     */
+    @Transactional
     public byte[] descargarPdfLicencia(UUID licenciaId) {
         LicenciaEmitida lic = licenciaRepository.findById(licenciaId)
                 .orElseThrow(() -> new IllegalArgumentException("Licencia no encontrada: " + licenciaId));
+
+        if (!lic.estaNotificada() && proveedorActor.actual().tieneRol(pe.gob.munihuamanga.licencias.common.enums.RolUsuario.ROLE_CIUDADANO)) {
+            marcarNotificada(lic, pe.gob.munihuamanga.licencias.common.enums.MedioNotificacion.DESCARGA_PORTAL,
+                    "Descarga desde el portal ciudadano por " + proveedorActor.actual().nombreParaRegistro());
+        }
 
         if (lic.getArchivoPdf() != null && lic.getArchivoPdf().length > 0) {
             return lic.getArchivoPdf();
@@ -262,6 +288,16 @@ public class LicenciaService {
         expDto.setFechaAprobacion(lic.getFechaEmision().atStartOfDay());
 
         return licenciaPdfGenerator.generarLicencia(expDto, qrBytes);
+    }
+
+    private void marcarNotificada(LicenciaEmitida licencia, pe.gob.munihuamanga.licencias.common.enums.MedioNotificacion medio, String constancia) {
+        licencia.setFechaNotificacion(LocalDateTime.now());
+        licencia.setMedioNotificacion(medio);
+        licencia.setConstanciaNotificacion(constancia);
+        licenciaRepository.save(licencia);
+        auditoriaService.registrarTransicion(licencia.getExpediente().getId(), licencia.getExpediente().getEstado(),
+                licencia.getExpediente().getEstado(), proveedorActor.actual().nombreParaRegistro(),
+                "Licencia " + licencia.getNumeroLicencia() + " notificada por " + medio + ".");
     }
 
     @Transactional(readOnly = true)
