@@ -4,14 +4,17 @@ import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Implementación de UserDetails que envuelve la entidad Usuario municipal.
+ * Representación de la persona autenticada para Spring Security.
  */
 @Getter
 public class CustomUserDetails implements UserDetails {
@@ -21,19 +24,31 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final String nombreCompleto;
     private final String email;
+    private final Set<RolUsuario> roles;
     private final boolean activo;
-    private final Collection<? extends GrantedAuthority> authorities;
+    private final boolean pendienteActivacion;
+    private final LocalDateTime bloqueadoHasta;
+    private final UUID sesionId;
+    private final List<GrantedAuthority> authorities;
 
     public CustomUserDetails(Usuario usuario) {
+        this(usuario, null);
+    }
+
+    public CustomUserDetails(Usuario usuario, UUID sesionId) {
         this.id = usuario.getId();
         this.username = usuario.getUsername();
         this.password = usuario.getPassword();
         this.nombreCompleto = usuario.getNombreCompleto();
         this.email = usuario.getEmail();
+        this.roles = usuario.rolesInmutables();
         this.activo = usuario.isActivo();
-        this.authorities = Collections.singletonList(
-                new SimpleGrantedAuthority(usuario.getRol().name())
-        );
+        this.pendienteActivacion = usuario.isPendienteActivacion();
+        this.bloqueadoHasta = usuario.getBloqueadoHasta();
+        this.sesionId = sesionId;
+        this.authorities = roles.stream()
+                .map(rol -> (GrantedAuthority) new SimpleGrantedAuthority(rol.name()))
+                .toList();
     }
 
     @Override
@@ -58,7 +73,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return bloqueadoHasta == null || bloqueadoHasta.isBefore(LocalDateTime.now());
     }
 
     @Override
@@ -68,6 +83,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return activo;
+        return activo && !pendienteActivacion;
     }
 }

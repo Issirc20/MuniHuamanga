@@ -16,8 +16,14 @@ import pe.gob.munihuamanga.licencias.common.dto.ValidarPagoManualDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoValidacionPago;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.security.ServicioRepresentacion;
+import pe.gob.munihuamanga.licencias.expedientes.security.VerificadorTitularidad;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.model.HistorialDecisionPago;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.model.PagoExpediente;
@@ -26,7 +32,6 @@ import pe.gob.munihuamanga.licencias.expedientes.pagos.repository.PagoExpediente
 import pe.gob.munihuamanga.licencias.expedientes.pagos.service.PagoExpedienteService;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
-import pe.gob.munihuamanga.licencias.expedientes.service.CalculadoraDeTasa;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,6 +44,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,13 +62,13 @@ class PagoExpedienteServiceTest {
     private ExpedienteRepository expedienteRepository;
 
     @Mock
-    private CuentaRepository cuentaRepository;
+    private ComandosExpediente comandosExpediente;
 
     @Mock
-    private OperadorCuentaRepository operadorCuentaRepository;
+    private ProveedorActor proveedorActor;
 
     @Mock
-    private CalculadoraDeTasa calculadoraDeTasa;
+    private ServicioRepresentacion servicioRepresentacion;
 
     @Mock
     private AuditoriaService auditoriaService;
@@ -74,18 +81,13 @@ class PagoExpedienteServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PagoExpedienteService(
-                pagoRepository,
-                historialRepository,
-                expedienteRepository,
-                cuentaRepository,
-                operadorCuentaRepository,
-                calculadoraDeTasa,
-                auditoriaService
-        );
+        service = new PagoExpedienteService(pagoRepository, historialRepository, expedienteRepository, auditoriaService,
+                comandosExpediente, new VerificadorTitularidad(proveedorActor, servicioRepresentacion));
 
         expedienteId = UUID.randomUUID();
         titularId = UUID.randomUUID();
+        lenient().when(proveedorActor.actual()).thenReturn(new Actor(titularId, "42567891", "Titular de prueba", java.util.EnumSet.of(RolUsuario.ROLE_CIUDADANO)));
+        lenient().when(servicioRepresentacion.tieneFacultad(any(), any(), any(PermisoOperador[].class))).thenReturn(true);
 
         expediente = Expediente.builder()
                 .id(expedienteId)
@@ -93,7 +95,7 @@ class PagoExpedienteServiceTest {
                 .solicitanteId(titularId)
                 .cuentaId(titularId)
                 .documentoIdentidad("42567891")
-                .estado(EstadoExpediente.PRESENTADO)
+                .estado(EstadoExpediente.PENDIENTE_PAGO)
                 .nivelRiesgo(NivelRiesgo.MEDIO)
                 .montoTasa(new BigDecimal("218.00"))
                 .build();
@@ -113,7 +115,7 @@ class PagoExpedienteServiceTest {
                 .observacionesAdministrado("Pago en agencia SAT Jr. Arequipa")
                 .build();
 
-        PagoExpedienteDto res = service.declararPago(expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO");
+        PagoExpedienteDto res = service.declararPago(expedienteId, dto);
 
         assertThat(res).isNotNull();
         assertThat(res.getCodigoComprobante()).isEqualTo("VCH-2026-9901");
@@ -134,7 +136,7 @@ class PagoExpedienteServiceTest {
                 .montoDeclarado(new BigDecimal("218.00"))
                 .build();
 
-        assertThatThrownBy(() -> service.declararPago(expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.declararPago(expedienteId, dto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ya se encuentra registrado");
     }
@@ -174,9 +176,7 @@ class PagoExpedienteServiceTest {
         assertThat(res.getValidadorNombre()).isEqualTo("cajero_muni");
 
         // Regla I06.1: Independencia de estados — el expediente NO muta a DOCUMENTOS_VALIDADOS ni APROBADO
-        assertThat(expediente.getEstado()).isEqualTo(EstadoExpediente.PRESENTADO);
-        assertThat(expediente.getEstado()).isNotEqualTo(EstadoExpediente.APROBADO);
-        assertThat(expediente.getEstado()).isNotEqualTo(EstadoExpediente.DOCUMENTOS_VALIDADOS);
+        verify(comandosExpediente).registrar(eq(expedienteId), eq(EventoExpediente.PAGO_VALIDADO), any());
         assertThat(expediente.getVoucherId()).isEqualTo("VCH-2026-5511");
         assertThat(expediente.getNumeroOperacionSat()).isEqualTo("OP-SAT-998822");
         verify(historialRepository).save(any(HistorialDecisionPago.class));
@@ -244,7 +244,7 @@ class PagoExpedienteServiceTest {
                 .montoDeclarado(new BigDecimal("218.00"))
                 .build();
 
-        assertThatThrownBy(() -> service.declararPago(expedienteId, dto, titularId, "42567891", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.declararPago(expedienteId, dto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ya se encuentra registrado");
     }
@@ -309,9 +309,9 @@ class PagoExpedienteServiceTest {
     @DisplayName("Control BOLA/IDOR: deniega acceso a pagos de expediente ajeno")
     void consultarPagos_expedienteAjeno_deniegaAcceso() {
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expediente));
-        UUID usuarioAjeno = UUID.randomUUID();
+        when(servicioRepresentacion.tieneFacultad(any(), any(), any(PermisoOperador[].class))).thenReturn(false);
 
-        assertThatThrownBy(() -> service.listarPagosPorExpediente(expedienteId, usuarioAjeno, "99887766", "ROLE_CIUDADANO"))
+        assertThatThrownBy(() -> service.listarPagosPorExpediente(expedienteId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("No cuenta con autorización");
     }
@@ -338,7 +338,7 @@ class PagoExpedienteServiceTest {
                 .build();
         when(historialRepository.findByPagoIdOrderByFechaDecisionDesc(pagoId)).thenReturn(List.of(h1));
 
-        List<HistorialDecisionPagoDto> lista = service.obtenerHistorialPago(pagoId, titularId, "42567891", "ROLE_CIUDADANO");
+        List<HistorialDecisionPagoDto> lista = service.obtenerHistorialPago(pagoId);
         assertThat(lista).hasSize(1);
         assertThat(lista.get(0).getEstadoNuevo()).isEqualTo(EstadoValidacionPago.VALIDADO_MANUALMENTE);
     }

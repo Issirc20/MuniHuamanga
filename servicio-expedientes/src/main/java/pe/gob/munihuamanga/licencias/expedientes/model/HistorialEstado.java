@@ -43,6 +43,13 @@ public class HistorialEstado {
     @Column(name = "estado_nuevo", nullable = false, length = 30)
     private EstadoExpediente estadoNuevo;
 
+    /** Hecho del procedimiento que originó el registro; es nulo para anotaciones sin cambio de estado. */
+    @Column(name = "evento", length = 50)
+    private String evento;
+
+    @Column(name = "usuario_id")
+    private UUID usuarioId;
+
     @Column(name = "usuario", nullable = false, length = 100)
     private String usuario;
 

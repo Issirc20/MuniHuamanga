@@ -7,6 +7,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,9 +17,14 @@ import lombok.Setter;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.FuncionEdificacion;
 import pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite;
+import pe.gob.munihuamanga.licencias.common.enums.MotivoArchivo;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
+import pe.gob.munihuamanga.licencias.common.exception.TransicionInvalidaException;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.TransicionExpediente;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -208,10 +215,24 @@ public class Expediente {
     @Column(name = "sector_numero", length = 50)
     private String sectorNumero;
 
-    // Estados, ITSE y Flujo Transaccional
+    // Estado del procedimiento: solo se modifica mediante aplicar(...)
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 30)
+    @Setter(AccessLevel.NONE)
     private EstadoExpediente estado;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_previo_observacion", length = 30)
+    @Setter(AccessLevel.NONE)
+    private EstadoExpediente estadoPrevioObservacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motivo_archivo", length = 30)
+    private MotivoArchivo motivoArchivo;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "nivel_riesgo", length = 20)
@@ -279,7 +300,8 @@ public class Expediente {
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
 
-    @Column(name = "fecha_limite", nullable = false)
+    /** Vencimiento estimado del plazo legal de evaluación; es nulo mientras el plazo no corre. */
+    @Column(name = "fecha_limite")
     private LocalDateTime fechaLimite;
 
     /**
@@ -295,10 +317,45 @@ public class Expediente {
     }
 
     /**
-     * Actualiza el estado del expediente.
-     * @param nuevo nuevo estado asignado.
+     * Aplica un hecho del procedimiento sobre el expediente. Es la única operación que modifica su estado.
+     *
+     * @throws TransicionInvalidaException si el hecho no puede ocurrir desde el estado actual.
      */
-    public void cambiarEstado(EstadoExpediente nuevo) {
-        this.estado = nuevo;
+    public TransicionExpediente aplicar(EventoExpediente evento, Actor actor, LocalDateTime momento, String sustento) {
+        if (evento == null || actor == null || momento == null) {
+            throw new IllegalArgumentException("El evento, el actor y el momento de la transición son obligatorios.");
+        }
+        if (!evento.admiteOrigen(estado)) {
+            throw new TransicionInvalidaException(String.format(
+                    "El hecho '%s' no procede para el expediente %s en estado '%s'.", evento, numeroTramite, estado));
+        }
+
+        EstadoExpediente anterior = estado;
+        EstadoExpediente nuevo = resolverDestino(evento);
+
+        if (nuevo == EstadoExpediente.OBSERVADO) {
+            estadoPrevioObservacion = anterior;
+        } else if (anterior == EstadoExpediente.SUBSANADO || nuevo == EstadoExpediente.ARCHIVADO) {
+            estadoPrevioObservacion = null;
+        }
+        estado = nuevo;
+
+        return new TransicionExpediente(id, numeroTramite, anterior, nuevo, evento, actor, momento, sustento);
+    }
+
+    private EstadoExpediente resolverDestino(EventoExpediente evento) {
+        if (evento == EventoExpediente.REVISION_REANUDADA) {
+            if (estadoPrevioObservacion == null) {
+                throw new TransicionInvalidaException(
+                        "No es posible reanudar la revisión del expediente " + numeroTramite + ": no se registró el estado previo a la observación.");
+            }
+            return estadoPrevioObservacion;
+        }
+        if (evento == EventoExpediente.SOLICITUD_TENIDA_POR_NO_PRESENTADA
+                && estadoPrevioObservacion != EstadoExpediente.PRESENTADO) {
+            throw new TransicionInvalidaException(
+                    "Solo puede tenerse por no presentada una solicitud observada en la etapa de admisibilidad.");
+        }
+        return evento.destino();
     }
 }

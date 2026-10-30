@@ -34,14 +34,14 @@ public class AdaptadorController {
     private final EdificacionesPort edificacionesPort;
 
     @GetMapping("/sat/validar-pago/{voucherId}")
-    @PreAuthorize("hasAnyRole('CAJERO', 'ADMIN')")
+    @PreAuthorize("hasRole('CAJERO')")
     @Operation(summary = "SAT: Consultar validación y conciliación de pago de tasa administrativa")
     public ResponseEntity<Map<String, Object>> validarPagoSat(@PathVariable String voucherId) {
         return ResponseEntity.ok(satPort.validarEstadoPago(voucherId));
     }
 
     @GetMapping("/edificaciones/zonificacion")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     @Operation(summary = "Edificaciones: Consulta de compatibilidad de uso y zonificación PDU de referencia")
     public ResponseEntity<Map<String, Object>> consultarZonificacion(
             @RequestParam String direccion,

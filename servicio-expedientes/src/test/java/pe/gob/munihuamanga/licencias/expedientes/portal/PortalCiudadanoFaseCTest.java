@@ -60,7 +60,7 @@ public class PortalCiudadanoFaseCTest {
     @Test
     @DisplayName("Fase C.1 - 01: Autenticación de ciudadano semilla devuelve token JWT y perfil correcto")
     void testAutenticacionCiudadano() throws Exception {
-        LoginRequestDto loginDto = new LoginRequestDto("42567891", "ciud123");
+        LoginRequestDto loginDto = new LoginRequestDto("42567891", "Ciudadano.Huamanga26");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,7 +107,7 @@ public class PortalCiudadanoFaseCTest {
     @Test
     @DisplayName("Fase C.1 - 03: Control BOLA/IDOR: Ciudadano A no puede consultar ni registrar en cuenta de Ciudadano B")
     void testAislamientoBolaEntreCuentas() throws Exception {
-        String tokenAjeno = obtenerToken("78999999", "ciud123");
+        String tokenAjeno = obtenerToken("78999999", "Ciudadano.Huamanga26");
         UUID cuentaMariaQuispe = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479");
 
         CrearEstablecimientoDto estDto = CrearEstablecimientoDto.builder()
@@ -131,7 +131,7 @@ public class PortalCiudadanoFaseCTest {
     @Test
     @DisplayName("Fase C.1 - 04: Flujo integral del Wizard Ciudadano V2: Establecimiento con Leaflet GPS, Borrador, Carga SHA-256 y Presentación Formal")
     void testFlujoCompletoWizardCiudadanoV2() throws Exception {
-        String tokenTitular = obtenerToken("42567891", "ciud123");
+        String tokenTitular = obtenerToken("42567891", "Ciudadano.Huamanga26");
         UUID cuentaId = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479");
 
         // 1. Registrar establecimiento con coordenadas geográficas Leaflet

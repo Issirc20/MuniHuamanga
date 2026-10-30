@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Data
@@ -19,7 +21,9 @@ public class UsuarioDto {
     private String username;
     private String nombreCompleto;
     private String email;
-    private RolUsuario rol;
+    private Set<RolUsuario> roles;
     private boolean activo;
+    private boolean pendienteActivacion;
     private LocalDateTime fechaCreacion;
+    private List<RepresentacionDto> representaciones;
 }

@@ -61,6 +61,12 @@ class AnexosItseGeneracionTest {
     @Autowired
     private SolicitudBorradorRepository borradorRepository;
 
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository operadorCuentaRepository;
+
     private SolicitudBorrador borrador;
     private final String CIUDADANO_DNI = "43777701";
 
@@ -80,6 +86,7 @@ class AnexosItseGeneracionTest {
                 .fechaCreacion(LocalDateTime.now())
                 .build();
         cuenta = cuentaRepository.save(cuenta);
+        pe.gob.munihuamanga.licencias.expedientes.soporte.DatosDePrueba.vincularTitular(usuarioRepository, operadorCuentaRepository, cuenta, CIUDADANO_DNI, "Maria Elena Huaman");
 
         Establecimiento est = Establecimiento.builder()
                 .id(UUID.randomUUID())

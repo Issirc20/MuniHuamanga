@@ -3,92 +3,92 @@ package pe.gob.munihuamanga.licencias.expedientes.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.beans.factory.annotation.Autowired;
 import pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.HistorialEstadoDto;
+import pe.gob.munihuamanga.licencias.common.dto.SeguimientoCiudadanoDto;
 import pe.gob.munihuamanga.licencias.expedientes.model.Anexo4Condiciones;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.model.HistorialEstado;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.CalculadoraPlazos;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Mapper MapStruct para transformar entre entidades de base de datos y DTOs expuestos.
+ * Conversión entre la entidad Expediente y los DTO expuestos.
+ * Los días hábiles restantes se calculan con el calendario institucional (incluye feriados).
  */
 @Mapper(componentModel = "spring")
-public interface ExpedienteMapper {
+public abstract class ExpedienteMapper {
+
+    private static final long DIAS_ALERTA_VENCIMIENTO = 3;
+
+    @Autowired
+    protected CalculadoraPlazos calculadoraPlazos;
 
     @Mapping(target = "diasHabilesRestantes", source = "fechaLimite", qualifiedByName = "calcularDiasHabiles")
     @Mapping(target = "alertaVencimiento", source = "fechaLimite", qualifiedByName = "evaluarAlertaVencimiento")
     @Mapping(target = "tipoItse", expression = "java(expediente.getTipoItse())")
-    ExpedienteResponseDto toDto(Expediente expediente);
+    public abstract ExpedienteResponseDto toDto(Expediente expediente);
 
     @Mapping(target = "diasHabilesRestantes", source = "fechaLimite", qualifiedByName = "calcularDiasHabiles")
     @Mapping(target = "alertaVencimiento", source = "fechaLimite", qualifiedByName = "evaluarAlertaVencimiento")
     @Mapping(target = "titularOfuscado", source = "nombreTitular", qualifiedByName = "ofuscarNombre")
     @Mapping(target = "documentoIdentidadOfuscado", source = "documentoIdentidad", qualifiedByName = "ofuscarDocumento")
     @Mapping(target = "tipoItse", expression = "java(expediente.getTipoItse())")
-    pe.gob.munihuamanga.licencias.common.dto.SeguimientoCiudadanoDto toSeguimientoDto(Expediente expediente);
+    @Mapping(target = "motivoObservacion", ignore = true)
+    @Mapping(target = "detalleSubsanacion", ignore = true)
+    @Mapping(target = "voucherId", ignore = true)
+    @Mapping(target = "licenciaQrCode", ignore = true)
+    public abstract SeguimientoCiudadanoDto toSeguimientoDto(Expediente expediente);
 
-    List<ExpedienteResponseDto> toDtoList(List<Expediente> expedientes);
+    public abstract List<ExpedienteResponseDto> toDtoList(List<Expediente> expedientes);
 
-    HistorialEstadoDto toHistorialDto(HistorialEstado historial);
+    public abstract HistorialEstadoDto toHistorialDto(HistorialEstado historial);
 
-    List<HistorialEstadoDto> toHistorialDtoList(List<HistorialEstado> historiales);
+    public abstract List<HistorialEstadoDto> toHistorialDtoList(List<HistorialEstado> historiales);
 
-    Anexo4CondicionesDto toAnexo4Dto(Anexo4Condiciones entity);
+    public abstract Anexo4CondicionesDto toAnexo4Dto(Anexo4Condiciones entity);
 
-    Anexo4Condiciones toAnexo4Entity(Anexo4CondicionesDto dto);
+    public abstract Anexo4Condiciones toAnexo4Entity(Anexo4CondicionesDto dto);
 
+    /** Días hábiles restantes del plazo legal; es nulo mientras el plazo no corre. */
     @Named("calcularDiasHabiles")
-    default Long calcularDiasHabiles(LocalDateTime fechaLimite) {
-        if (fechaLimite == null) return null;
-        LocalDate hoy = LocalDate.now();
-        LocalDate limite = fechaLimite.toLocalDate();
-        if (hoy.isAfter(limite)) {
-            return 0L;
+    protected Long calcularDiasHabiles(LocalDateTime fechaLimite) {
+        if (fechaLimite == null || calculadoraPlazos == null) {
+            return null;
         }
-
-        long diasHabiles = 0;
-        LocalDate actual = hoy;
-        while (!actual.isAfter(limite)) {
-            DayOfWeek dow = actual.getDayOfWeek();
-            if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
-                diasHabiles++;
-            }
-            actual = actual.plusDays(1);
-        }
-        return diasHabiles;
+        return (long) calculadoraPlazos.contarDiasHabiles(LocalDate.now(), fechaLimite.toLocalDate());
     }
 
     @Named("evaluarAlertaVencimiento")
-    default Boolean evaluarAlertaVencimiento(LocalDateTime fechaLimite) {
+    protected Boolean evaluarAlertaVencimiento(LocalDateTime fechaLimite) {
         Long dias = calcularDiasHabiles(fechaLimite);
-        if (dias == null) return false;
-        // Alerta si quedan 3 o menos días hábiles para el límite legal de 15 días hábiles (RNF-22)
-        return dias <= 3;
+        return dias != null && dias <= DIAS_ALERTA_VENCIMIENTO;
     }
 
     @Named("ofuscarNombre")
-    default String ofuscarNombre(String nombre) {
-        if (nombre == null || nombre.isBlank()) return "";
-        String[] partes = nombre.trim().split("\\s+");
+    protected String ofuscarNombre(String nombre) {
+        if (nombre == null || nombre.isBlank()) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
-        for (String p : partes) {
-            if (!p.isEmpty()) {
-                sb.append(p.charAt(0)).append("*** ");
+        for (String parte : nombre.trim().split("\\s+")) {
+            if (!parte.isEmpty()) {
+                sb.append(parte.charAt(0)).append("*** ");
             }
         }
         return sb.toString().trim();
     }
 
     @Named("ofuscarDocumento")
-    default String ofuscarDocumento(String doc) {
-        if (doc == null || doc.length() < 4) return "****";
+    protected String ofuscarDocumento(String doc) {
+        if (doc == null || doc.length() < 4) {
+            return "****";
+        }
         return doc.substring(0, 2) + "***" + doc.substring(doc.length() - 2);
     }
 }
-

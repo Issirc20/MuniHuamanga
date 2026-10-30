@@ -4,179 +4,133 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoCuenta;
+import pe.gob.munihuamanga.licencias.common.enums.MedioValidacionIdentidad;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
+import pe.gob.munihuamanga.licencias.common.enums.RolOperador;
 import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
 import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta;
+import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.OperadorCuenta;
 import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
 import pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * Inicializador de usuarios y cuentas semilla para desarrollo y pruebas del sistema municipal.
- * Excluido del entorno de producción ('prod') por razones de seguridad (H02).
+ * Accesos de prueba para los entornos de desarrollo y demostración: un funcionario por rol institucional
+ * y dos administrados de persona natural. No se ejecuta en producción.
  */
 @Slf4j
 @Component
 @Profile("!prod")
+@Order(1)
 @RequiredArgsConstructor
 public class UsuarioDataInitializer implements CommandLineRunner {
+
+    public static final UUID CUENTA_MARIA_QUISPE = UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479");
+    public static final UUID CUENTA_JUAN_PEREZ = UUID.fromString("78999999-0000-0000-0000-000000000001");
 
     private final UsuarioRepository usuarioRepository;
     private final CuentaRepository cuentaRepository;
     private final PasswordEncoder passwordEncoder;
-    private final org.springframework.core.env.Environment environment;
 
     @Override
+    @Transactional
     public void run(String... args) {
-        if (environment != null && environment.matchesProfiles("prod")) {
-            log.warn("[SEGURIDAD-PRODUCCION] Inicializador de datos semilla abortado por estar en entorno de producción.");
+        crearFuncionario("admin", "Sistemas.Huamanga26", "Administración del Sistema", "sistemas@munihuamanga.gob.pe", RolUsuario.ROLE_ADMIN);
+        crearFuncionario("mesapartes", "Ventanilla.Huamanga26", "Mesa de Partes de Licencias", "mesadepartes@munihuamanga.gob.pe", RolUsuario.ROLE_MESA_DE_PARTES);
+        crearFuncionario("evaluador", "Licencias.Huamanga26", "Evaluador de Licencias de Funcionamiento", "evaluacion.licencias@munihuamanga.gob.pe", RolUsuario.ROLE_EVALUADOR);
+        crearFuncionario("supervisor", "Revision.Huamanga26", "Subgerencia de Comercio y Licencias", "subgerencia.licencias@munihuamanga.gob.pe", RolUsuario.ROLE_SUPERVISOR_LICENCIAS);
+        crearFuncionario("autoridad", "Gerencia.Huamanga26", "Gerencia de Desarrollo Económico", "gerencia.desarrollo@munihuamanga.gob.pe", RolUsuario.ROLE_AUTORIDAD_RESOLUTIVA);
+        crearFuncionario("cajero", "Caja.Huamanga2026", "Caja del SAT Huamanga", "caja@sat-huamanga.gob.pe", RolUsuario.ROLE_CAJERO);
+        crearFuncionario("inspector", "Campo.Huamanga26", "Inspección Municipal", "inspeccion@munihuamanga.gob.pe", RolUsuario.ROLE_INSPECTOR);
+        crearFuncionario("auditor", "Control.Huamanga26", "Órgano de Control Institucional", "control@munihuamanga.gob.pe", RolUsuario.ROLE_AUDITOR);
+
+        crearAdministrado(CUENTA_MARIA_QUISPE, "42567891", "María Quispe Huamán", "maria.quispe@correo.pe",
+                "966123456", "Jr. 9 de Diciembre N° 142, Ayacucho");
+        crearAdministrado(CUENTA_JUAN_PEREZ, "78999999", "Juan Pérez Ramos", "juan.perez@correo.pe",
+                "966777888", "Jr. Manco Cápac N° 201, Ayacucho");
+    }
+
+    private void crearFuncionario(String username, String contrasena, String nombre, String email, RolUsuario rol) {
+        if (usuarioRepository.existsByUsername(username)) {
             return;
         }
-        crearUsuarioSiNoExiste(
-                "admin",
-                "admin123",
-                "Lic. Fernando Quispe - Administrador del Sistema",
-                "admin.licencias@munihuamanga.gob.pe",
-                RolUsuario.ROLE_ADMIN
-        );
-
-        crearUsuarioSiNoExiste(
-                "evaluador",
-                "eval123",
-                "Ing. Carlos Mendoza - Subgerencia de Comercio y Licencias",
-                "carlos.mendoza@munihuamanga.gob.pe",
-                RolUsuario.ROLE_EVALUADOR
-        );
-
-        crearUsuarioSiNoExiste(
-                "cajero",
-                "caja123",
-                "Rosa Flores - Ventanilla de Recaudación SAT Huamanga",
-                "rosa.flores@sat-huamanga.gob.pe",
-                RolUsuario.ROLE_CAJERO
-        );
-
-        crearUsuarioSiNoExiste(
-                "inspector",
-                "insp123",
-                "Téc. Raúl Cárdenas - Inspector Municipal",
-                "raul.cardenas@munihuamanga.gob.pe",
-                RolUsuario.ROLE_INSPECTOR
-        );
-
-        crearUsuarioSiNoExiste(
-                UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-                "42567891",
-                "ciud123",
-                "María Quispe Huamán - Administrada Titular",
-                "maria.quispe@gmail.com",
-                RolUsuario.ROLE_CIUDADANO
-        );
-        crearCuentaSiNoExiste(
-                UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
-                TipoPersona.NATURAL,
-                TipoDocumento.DNI,
-                "42567891",
-                "María Quispe Huamán",
-                "maria.quispe@gmail.com",
-                "966123456",
-                "Jr. 9 de Diciembre N° 142, Ayacucho"
-        );
-
-        crearUsuarioSiNoExiste(
-                UUID.fromString("78999999-0000-0000-0000-000000000001"),
-                "78999999",
-                "ciud123",
-                "Juan Pérez Otro - Administrado No Propietario",
-                "juan.perez@gmail.com",
-                RolUsuario.ROLE_CIUDADANO
-        );
-        crearCuentaSiNoExiste(
-                UUID.fromString("78999999-0000-0000-0000-000000000001"),
-                TipoPersona.NATURAL,
-                TipoDocumento.DNI,
-                "78999999",
-                "Juan Pérez Otro",
-                "juan.perez@gmail.com",
-                "966777888",
-                "Jr. Manco Cápac N° 201, Ayacucho"
-        );
+        usuarioRepository.save(Usuario.builder()
+                .id(UUID.randomUUID())
+                .username(username)
+                .password(passwordEncoder.encode(contrasena))
+                .nombreCompleto(nombre)
+                .email(email)
+                .roles(new HashSet<>(Set.of(rol)))
+                .activo(true)
+                .fechaCreacion(LocalDateTime.now())
+                .build());
+        log.info("[DATOS DE PRUEBA] Funcionario '{}' creado con el rol {}.", username, rol);
     }
 
-    private void crearCuentaSiNoExiste(
-            UUID id,
-            TipoPersona tipoPersona,
-            TipoDocumento tipoDocumento,
-            String numeroDocumento,
-            String razonSocialONombre,
-            String email,
-            String telefono,
-            String direccionFiscal
-    ) {
-        if (!cuentaRepository.existsByNumeroDocumento(numeroDocumento)) {
-            Cuenta cuenta = Cuenta.builder()
-                    .id(id)
-                    .tipoPersona(tipoPersona)
-                    .tipoDocumento(tipoDocumento)
-                    .numeroDocumento(numeroDocumento)
-                    .razonSocialONombre(razonSocialONombre)
-                    .email(email)
-                    .telefono(telefono)
-                    .direccionFiscal(direccionFiscal)
-                    .emailVerificado(true)
-                    .identidadValidadaOficialmente(true)
-                    .estado(EstadoCuenta.ACTIVA)
-                    .activo(true)
-                    .fechaCreacion(LocalDateTime.now())
-                    .operadores(new ArrayList<>())
-                    .establecimientos(new ArrayList<>())
-                    .build();
-
-            cuentaRepository.save(cuenta);
-            log.info("[CUENTAS] Cuenta semilla activa creada para documento: {} (ID: {})", numeroDocumento, id);
+    private void crearAdministrado(UUID cuentaId, String dni, String nombre, String email, String telefono, String direccion) {
+        if (cuentaRepository.existsByNumeroDocumento(dni)) {
+            return;
         }
-    }
+        Usuario persona = usuarioRepository.findByUsername(dni).orElseGet(() -> usuarioRepository.save(Usuario.builder()
+                .id(UUID.randomUUID())
+                .username(dni)
+                .password(passwordEncoder.encode("Ciudadano.Huamanga26"))
+                .nombreCompleto(nombre)
+                .email(email)
+                .roles(new HashSet<>(Set.of(RolUsuario.ROLE_CIUDADANO)))
+                .activo(true)
+                .fechaCreacion(LocalDateTime.now())
+                .build()));
 
-    private void crearUsuarioSiNoExiste(
-            String username,
-            String rawPassword,
-            String nombreCompleto,
-            String email,
-            RolUsuario rol
-    ) {
-        crearUsuarioSiNoExiste(UUID.randomUUID(), username, rawPassword, nombreCompleto, email, rol);
-    }
-
-    private void crearUsuarioSiNoExiste(
-            UUID id,
-            String username,
-            String rawPassword,
-            String nombreCompleto,
-            String email,
-            RolUsuario rol
-    ) {
-        if (!usuarioRepository.existsByUsername(username)) {
-            Usuario usuario = Usuario.builder()
-                    .id(id != null ? id : UUID.randomUUID())
-                    .username(username)
-                    .password(passwordEncoder.encode(rawPassword))
-                    .nombreCompleto(nombreCompleto)
-                    .email(email)
-                    .rol(rol)
-                    .activo(true)
-                    .fechaCreacion(LocalDateTime.now())
-                    .build();
-
-            usuarioRepository.save(usuario);
-            log.info("[SEGURIDAD] Usuario semilla creado: {} ({}) con rol: {}", username, usuario.getId(), rol);
-        }
+        Cuenta cuenta = Cuenta.builder()
+                .id(cuentaId)
+                .tipoPersona(TipoPersona.NATURAL)
+                .tipoDocumento(TipoDocumento.DNI)
+                .numeroDocumento(dni)
+                .razonSocialONombre(nombre)
+                .email(email)
+                .telefono(telefono)
+                .direccionFiscal(direccion)
+                .emailVerificado(true)
+                .identidadValidadaOficialmente(true)
+                .medioValidacionIdentidad(MedioValidacionIdentidad.PRESENCIAL_DOCUMENTO_ORIGINAL)
+                .referenciaValidacionIdentidad("Datos de prueba")
+                .identidadValidadaPor("SISTEMA")
+                .fechaValidacionIdentidad(LocalDateTime.now())
+                .estado(EstadoCuenta.ACTIVA)
+                .activo(true)
+                .fechaCreacion(LocalDateTime.now())
+                .operadores(new ArrayList<>())
+                .establecimientos(new ArrayList<>())
+                .build();
+        cuenta.getOperadores().add(OperadorCuenta.builder()
+                .id(UUID.randomUUID())
+                .cuenta(cuenta)
+                .usuario(persona)
+                .dniOperador(dni)
+                .nombreCompleto(nombre)
+                .email(email)
+                .rolOperador(RolOperador.TITULAR)
+                .permisos(EnumSet.allOf(PermisoOperador.class))
+                .activo(true)
+                .fechaAsignacion(LocalDateTime.now())
+                .asignadoPor("DATOS_DE_PRUEBA")
+                .build());
+        cuentaRepository.save(cuenta);
+        log.info("[DATOS DE PRUEBA] Cuenta de administrado creada para {}.", nombre);
     }
 }

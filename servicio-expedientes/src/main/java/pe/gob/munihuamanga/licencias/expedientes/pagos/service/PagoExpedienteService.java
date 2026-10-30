@@ -2,7 +2,6 @@ package pe.gob.munihuamanga.licencias.expedientes.pagos.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.gob.munihuamanga.licencias.common.dto.DeclararPagoDto;
@@ -13,19 +12,21 @@ import pe.gob.munihuamanga.licencias.common.dto.RechazarPagoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ValidarPagoManualDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoValidacionPago;
-import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
 import pe.gob.munihuamanga.licencias.common.exception.RecursoNoEncontradoException;
 import pe.gob.munihuamanga.licencias.expedientes.borradores.security.DocumentoSecurityValidator;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.model.HistorialDecisionPago;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.model.PagoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.repository.HistorialDecisionPagoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.pagos.repository.PagoExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
+import pe.gob.munihuamanga.licencias.expedientes.security.RolesInstitucionales;
+import pe.gob.munihuamanga.licencias.expedientes.security.VerificadorTitularidad;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
-import pe.gob.munihuamanga.licencias.expedientes.service.CalculadoraDeTasa;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -52,10 +53,9 @@ public class PagoExpedienteService {
     private final PagoExpedienteRepository pagoRepository;
     private final HistorialDecisionPagoRepository historialRepository;
     private final ExpedienteRepository expedienteRepository;
-    private final CuentaRepository cuentaRepository;
-    private final OperadorCuentaRepository operadorCuentaRepository;
-    private final CalculadoraDeTasa calculadoraDeTasa;
     private final AuditoriaService auditoriaService;
+    private final ComandosExpediente comandosExpediente;
+    private final VerificadorTitularidad verificadorTitularidad;
 
     public static String normalizarCodigoComprobante(String codigo) {
         if (codigo == null) return null;
@@ -84,17 +84,17 @@ public class PagoExpedienteService {
      * Declara un comprobante de pago para un expediente formal.
      */
     @Transactional
-    public PagoExpedienteDto declararPago(UUID expedienteId, DeclararPagoDto dto, UUID usuarioId, String username, String roles) {
+    public PagoExpedienteDto declararPago(UUID expedienteId, DeclararPagoDto dto) {
         Expediente exp = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
 
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("CAJERO") || roles.contains("EVALUADOR"));
-        if (!esFuncionario) {
-            validarTitularidad(exp, usuarioId, username);
-        }
+        Actor actor = verificadorTitularidad.exigir(exp, RolesInstitucionales.ATENCION_PRESENCIAL, PermisoOperador.PRESENTAR_EXPEDIENTE);
+        UUID usuarioId = actor.usuarioId();
+        String username = actor.nombreParaRegistro();
 
-        if (exp.getEstado() == EstadoExpediente.APROBADO || exp.getEstado() == EstadoExpediente.RECHAZADO) {
-            throw new IllegalStateException("No se puede registrar un comprobante de pago en un expediente concluido o rechazado.");
+        if (exp.getEstado() != EstadoExpediente.PENDIENTE_PAGO) {
+            throw new IllegalStateException("El comprobante de pago se registra una vez emitida la liquidación de la tasa. Estado actual del expediente: "
+                    + exp.getEstado() + ".");
         }
 
         String codigoLimpio = normalizarCodigoComprobante(dto.getCodigoComprobante());
@@ -115,10 +115,7 @@ public class PagoExpedienteService {
 
         BigDecimal tasaEsperada = exp.getMontoTasa();
         if (tasaEsperada == null) {
-            NivelRiesgo riesgo = exp.getNivelRiesgo() != null ? exp.getNivelRiesgo() : NivelRiesgo.BAJO;
-            tasaEsperada = calculadoraDeTasa.calcularTasa(riesgo);
-            exp.setMontoTasa(tasaEsperada);
-            expedienteRepository.save(exp);
+            throw new IllegalStateException("El expediente no cuenta con liquidación definitiva de la tasa.");
         }
 
         LocalDateTime ahora = LocalDateTime.now();
@@ -251,25 +248,21 @@ public class PagoExpedienteService {
                 .build();
         historialRepository.save(decision);
 
-        // Actualizar datos de pago del expediente formal sin auto-aprobar y sin mutar indebidamente a DOCUMENTOS_VALIDADOS (I06.1)
+        // Con el pago validado el expediente queda completo: se inicia la evaluación y corre el plazo legal.
         Expediente exp = expedienteRepository.findById(pago.getExpedienteId()).orElse(null);
         if (exp != null) {
             exp.setVoucherId(pago.getCodigoComprobante());
             exp.setNumeroOperacionSat(dto.getNumeroOperacionSat().trim());
             exp.setFechaPagoSat(dto.getFechaPagoReal().atStartOfDay());
-            // Mantener estricta independencia de estados (I06.1):
-            // VALIDADO_MANUALMENTE acredita el pago de la tasa ante tesorería, pero no altera
-            // automáticamente la evaluación documental ni técnica del expediente.
             expedienteRepository.save(exp);
 
-            auditoriaService.registrarTransicion(
-                    exp.getId(),
-                    exp.getEstado(),
-                    exp.getEstado(),
-                    cajeroNombre,
-                    String.format("Pago de tasa TUPA validado manualmente por %s. Comprobante: %s, Op. SAT: %s, Monto: S/. %s. Justificación: %s",
-                            cajeroNombre, pago.getCodigoComprobante(), dto.getNumeroOperacionSat().trim(), dto.getMontoValidado(), dto.getJustificacion().trim())
-            );
+            String sustento = String.format("Pago de la tasa validado. Comprobante: %s, operación SAT: %s, monto: S/ %s. %s",
+                    pago.getCodigoComprobante(), dto.getNumeroOperacionSat().trim(), dto.getMontoValidado(), dto.getJustificacion().trim());
+            if (exp.getEstado() == EstadoExpediente.PENDIENTE_PAGO) {
+                comandosExpediente.registrar(exp.getId(), EventoExpediente.PAGO_VALIDADO, sustento);
+            } else {
+                auditoriaService.registrarTransicion(exp.getId(), exp.getEstado(), exp.getEstado(), cajeroNombre, sustento);
+            }
         }
 
         log.info("[PAGOS-SAT] Pago {} validado manualmente por {} para expediente {}. Monto: S/. {}",
@@ -366,14 +359,10 @@ public class PagoExpedienteService {
      * Lista los pagos registrados para un expediente específico.
      */
     @Transactional(readOnly = true)
-    public List<PagoExpedienteDto> listarPagosPorExpediente(UUID expedienteId, UUID usuarioId, String username, String roles) {
+    public List<PagoExpedienteDto> listarPagosPorExpediente(UUID expedienteId) {
         Expediente exp = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
-
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("CAJERO") || roles.contains("EVALUADOR"));
-        if (!esFuncionario) {
-            validarTitularidad(exp, usuarioId, username);
-        }
+        verificadorTitularidad.exigir(exp, RolesInstitucionales.CONSULTA_EXPEDIENTES, PermisoOperador.CONSULTAR_EXPEDIENTE);
 
         return pagoRepository.findByExpedienteIdOrderByFechaRegistroDesc(expedienteId).stream()
                 .map(p -> mapearDto(p, exp.getNumeroTramite()))
@@ -394,30 +383,19 @@ public class PagoExpedienteService {
      * Consulta un pago individual con auditoría.
      */
     @Transactional(readOnly = true)
-    public PagoExpedienteDto obtenerPagoPorId(UUID pagoId, UUID usuarioId, String username, String roles) {
+    public PagoExpedienteDto obtenerPagoPorId(UUID pagoId) {
         PagoExpediente pago = obtenerPago(pagoId);
-        Expediente exp = expedienteRepository.findById(pago.getExpedienteId()).orElse(null);
-
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("CAJERO") || roles.contains("EVALUADOR"));
-        if (!esFuncionario && exp != null) {
-            validarTitularidad(exp, usuarioId, username);
-        }
-
-        return mapearDto(pago, exp != null ? exp.getNumeroTramite() : null);
+        Expediente exp = exigirAccesoAlExpedienteDelPago(pago);
+        return mapearDto(pago, exp.getNumeroTramite());
     }
 
     /**
      * Obtiene el historial de decisiones de un pago.
      */
     @Transactional(readOnly = true)
-    public List<HistorialDecisionPagoDto> obtenerHistorialPago(UUID pagoId, UUID usuarioId, String username, String roles) {
+    public List<HistorialDecisionPagoDto> obtenerHistorialPago(UUID pagoId) {
         PagoExpediente pago = obtenerPago(pagoId);
-        Expediente exp = expedienteRepository.findById(pago.getExpedienteId()).orElse(null);
-
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("CAJERO") || roles.contains("EVALUADOR"));
-        if (!esFuncionario && exp != null) {
-            validarTitularidad(exp, usuarioId, username);
-        }
+        exigirAccesoAlExpedienteDelPago(pago);
 
         return historialRepository.findByPagoIdOrderByFechaDecisionDesc(pagoId).stream()
                 .map(this::mapearHistorialDto)
@@ -429,32 +407,11 @@ public class PagoExpedienteService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Registro de pago no encontrado con ID: " + pagoId));
     }
 
-    private void validarTitularidad(Expediente exp, UUID usuarioId, String username) {
-        if (usuarioId == null && username != null) {
-            usuarioId = cuentaRepository.findByNumeroDocumento(username)
-                    .map(pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta::getId)
-                    .orElse(null);
-        }
-
-        if (usuarioId != null) {
-            if (usuarioId.equals(exp.getSolicitanteId()) || usuarioId.equals(exp.getCuentaId())) {
-                return;
-            }
-        }
-
-        if (exp.getCuentaId() != null && username != null) {
-            final UUID finalUsuarioId = usuarioId;
-            boolean esOperador = operadorCuentaRepository.findByCuentaId(exp.getCuentaId()).stream()
-                    .anyMatch(op -> Boolean.TRUE.equals(op.getActivo()) &&
-                            (op.getDniOperador().equalsIgnoreCase(username) ||
-                                    (op.getUsuario() != null && op.getUsuario().getUsername().equalsIgnoreCase(username)) ||
-                                    (finalUsuarioId != null && op.getUsuario() != null && finalUsuarioId.equals(op.getUsuario().getId()))));
-            if (esOperador) return;
-        }
-
-        log.warn("[SEGURIDAD-IDOR] Denegado: Usuario {} intentó acceder a pagos de expediente {}",
-                DocumentoSecurityValidator.ofuscarDocumento(username), exp.getId());
-        throw new AccessDeniedException("No cuenta con autorización para acceder a los comprobantes de este expediente.");
+    private Expediente exigirAccesoAlExpedienteDelPago(PagoExpediente pago) {
+        Expediente exp = expedienteRepository.findById(pago.getExpedienteId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Expediente", pago.getExpedienteId()));
+        verificadorTitularidad.exigir(exp, RolesInstitucionales.CONSULTA_EXPEDIENTES, PermisoOperador.CONSULTAR_EXPEDIENTE);
+        return exp;
     }
 
     private PagoExpedienteDto mapearDto(PagoExpediente pago, String numeroTramite) {

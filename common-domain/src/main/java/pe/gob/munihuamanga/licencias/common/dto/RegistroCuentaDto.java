@@ -48,7 +48,7 @@ public class RegistroCuentaDto {
     private String direccionFiscal;
 
     @NotBlank(message = "La contraseña de acceso es obligatoria")
-    @Size(min = 8, max = 100, message = "La contraseña debe tener al menos 8 caracteres")
+    @Size(min = 10, max = 100, message = "La contraseña debe tener al menos 10 caracteres")
     private String password;
 
     // Campos complementarios para personas jurídicas (RUC)

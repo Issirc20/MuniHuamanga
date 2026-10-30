@@ -141,7 +141,7 @@ public class EvaluacionZonificacionService {
         Expediente exp = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
 
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("EVALUADOR") || roles.contains("CAJERO"));
+        boolean esFuncionario = roles != null && (roles.contains("EVALUADOR") || roles.contains("SUPERVISOR_LICENCIAS") || roles.contains("AUTORIDAD_RESOLUTIVA") || roles.contains("AUDITOR"));
         if (!esFuncionario) {
             validarTitularidad(exp, usuarioId, username);
         }
@@ -159,7 +159,7 @@ public class EvaluacionZonificacionService {
         Expediente exp = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
 
-        boolean esFuncionario = roles != null && (roles.contains("ADMIN") || roles.contains("EVALUADOR") || roles.contains("CAJERO"));
+        boolean esFuncionario = roles != null && (roles.contains("EVALUADOR") || roles.contains("SUPERVISOR_LICENCIAS") || roles.contains("AUTORIDAD_RESOLUTIVA") || roles.contains("AUDITOR"));
         if (!esFuncionario) {
             validarTitularidad(exp, usuarioId, username);
         }

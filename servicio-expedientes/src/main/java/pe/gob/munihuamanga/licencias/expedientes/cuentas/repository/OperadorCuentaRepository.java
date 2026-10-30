@@ -19,7 +19,11 @@ public interface OperadorCuentaRepository extends JpaRepository<OperadorCuenta, 
 
     List<OperadorCuenta> findByUsuarioId(UUID usuarioId);
 
+    List<OperadorCuenta> findByUsuarioIdAndActivoTrue(UUID usuarioId);
+
     Optional<OperadorCuenta> findByCuentaIdAndUsuarioId(UUID cuentaId, UUID usuarioId);
+
+    Optional<OperadorCuenta> findByCuentaIdAndUsuarioIdAndActivoTrue(UUID cuentaId, UUID usuarioId);
 
     boolean existsByCuentaIdAndDniOperador(UUID cuentaId, String dniOperador);
 }

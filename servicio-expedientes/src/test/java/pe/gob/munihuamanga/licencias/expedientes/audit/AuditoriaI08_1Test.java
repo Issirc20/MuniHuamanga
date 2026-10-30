@@ -136,14 +136,14 @@ public class AuditoriaI08_1Test {
     }
 
     @Test
-    @DisplayName("AUD-01: Bloqueo de emisión en endpoint heredado V1 (/api/expedientes/{id}/emision-licencia)")
+    @DisplayName("AUD-01: La ruta heredada de emisión directa (/api/expedientes/{id}/emision-licencia) fue retirada")
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testBloqueoEmisionHeredadaV1_Rechazada() throws Exception {
         UUID expedienteId = UUID.randomUUID();
 
         mockMvc.perform(post("/api/expedientes/" + expedienteId + "/emision-licencia")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isMethodNotAllowed());
+                .andExpect(status().isNotFound());
     }
 
     @Test

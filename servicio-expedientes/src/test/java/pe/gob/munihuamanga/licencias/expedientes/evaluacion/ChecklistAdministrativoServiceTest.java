@@ -60,6 +60,9 @@ class ChecklistAdministrativoServiceTest {
     @Mock
     private EstablecimientoRepository establecimientoRepository;
 
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.itse.repository.ExpedienteItseRepository expedienteItseRepository;
+
     @InjectMocks
     private ChecklistAdministrativoService checklistService;
 
@@ -75,7 +78,7 @@ class ChecklistAdministrativoServiceTest {
         expediente = Expediente.builder()
                 .id(expedienteId)
                 .numeroTramite("EXP-2026-00100")
-                .estado(EstadoExpediente.PRESENTADO)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .nombreTitular("Juan Pérez Huamán")
                 .documentoIdentidad("42889911")
                 .establecimientoId(establecimientoId)
@@ -85,6 +88,12 @@ class ChecklistAdministrativoServiceTest {
                 .montoTasa(new BigDecimal("154.50"))
                 .anexo4Condiciones(new Anexo4Condiciones())
                 .build();
+        org.mockito.Mockito.lenient().when(expedienteItseRepository.findByExpedienteId(expedienteId)).thenReturn(Optional.of(
+                pe.gob.munihuamanga.licencias.expedientes.itse.model.ExpedienteItse.builder()
+                        .estado(pe.gob.munihuamanga.licencias.common.enums.EstadoItse.VALIDADO)
+                        .nivelOficial(NivelRiesgo.BAJO)
+                        .validadoPor("Evaluador de Licencias")
+                        .build()));
     }
 
     @Test
@@ -292,9 +301,9 @@ class ChecklistAdministrativoServiceTest {
     }
 
     @Test
-    @DisplayName("Riesgo ALTO sin planos ni documentos técnicos ITSE previa -> NO CUMPLE en CHK-08")
-    void generarChecklist_riesgoAltoSinPlanosItsePrevia_noCumpleChk08() {
-        expediente.setNivelRiesgo(NivelRiesgo.ALTO);
+    @DisplayName("ITSE no validado por la oficina de licencias -> NO CUMPLE en CHK-08")
+    void generarChecklist_itseNoValidado_noCumpleChk08() {
+        when(expedienteItseRepository.findByExpedienteId(expedienteId)).thenReturn(Optional.empty());
 
         when(expedienteRepository.findById(expedienteId)).thenReturn(Optional.of(expediente));
         when(establecimientoRepository.existsById(establecimientoId)).thenReturn(true);
@@ -315,6 +324,6 @@ class ChecklistAdministrativoServiceTest {
                 .filter(i -> i.getCodigo().equals("CHK-08-SUSTENTO_ITSE"))
                 .findFirst().orElseThrow();
         assertThat(itemItse.getEstado()).isEqualTo(EstadoChecklist.NO_CUMPLE);
-        assertThat(itemItse.getMotivo()).contains("ITSE Previa");
+        assertThat(itemItse.getMotivo()).contains("no ha sido validada");
     }
 }

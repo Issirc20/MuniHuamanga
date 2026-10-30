@@ -1,468 +1,44 @@
 package pe.gob.munihuamanga.licencias.expedientes.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pe.gob.munihuamanga.licencias.common.dto.Anexo4CondicionesDto;
-import pe.gob.munihuamanga.licencias.common.dto.CrearExpedienteDto;
-import pe.gob.munihuamanga.licencias.common.dto.VerificacionAmpliadaDto;
-import pe.gob.munihuamanga.licencias.common.dto.VerificacionLicenciaDto;
+import pe.gob.munihuamanga.licencias.common.dto.LiquidacionDto;
 import pe.gob.munihuamanga.licencias.common.dto.VoucherDto;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
-import pe.gob.munihuamanga.licencias.common.enums.FuncionEdificacion;
-import pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite;
-import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
-import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
-import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
+import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
 import pe.gob.munihuamanga.licencias.common.exception.RecursoNoEncontradoException;
-import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort;
-import pe.gob.munihuamanga.licencias.expedientes.model.Anexo4Condiciones;
+import pe.gob.munihuamanga.licencias.expedientes.itse.service.ItseService;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.CalculadoraPlazos;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.CodigoPlazo;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.plazos.ParametrosPlazoService;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.validator.EstadoExpedienteValidator;
+import pe.gob.munihuamanga.licencias.expedientes.security.ServicioRepresentacion;
 
-import java.math.BigDecimal;
-import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
- * Servicio central de gestión de expedientes según el Diagrama C4 y Diagrama de Clases.
+ * Consultas sobre expedientes. Las transiciones de estado se registran exclusivamente
+ * mediante el puerto {@code ComandosExpediente}.
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExpedienteService {
 
+    private static final int DIAS_ALERTA_VENCIMIENTO = 3;
+
     private final ExpedienteRepository expedienteRepository;
-    private final EstadoExpedienteValidator estadoExpedienteValidator;
-    private final CalculadoraDeTasa calculadoraDeTasa;
-    private final AuditoriaService auditoriaService;
-    private final MetricasExpedienteService metricasExpedienteService;
-    private final NotificacionEmailService notificacionEmailService;
-    private final FirmaDigitalPort firmaDigitalPort;
-
-    /**
-     * Registra un nuevo expediente en el sistema e inicia en estado FORMATOS_GENERADOS.
-     */
-    @Transactional
-    public Expediente crearExpediente(CrearExpedienteDto dto) {
-        UUID expedienteId = UUID.randomUUID();
-        String numeroTramite = generarNumeroTramite();
-        LocalDateTime fechaCreacion = LocalDateTime.now();
-        LocalDateTime fechaLimite = calcularFechaLimite15DiasHabiles(fechaCreacion.toLocalDate());
-
-        Anexo4Condiciones anexo4 = null;
-        if (dto.getAnexo4Condiciones() != null) {
-            Anexo4CondicionesDto a4 = dto.getAnexo4Condiciones();
-            anexo4 = Anexo4Condiciones.builder()
-                    .areaTerreno(a4.getAreaTerreno())
-                    .areaPiso1(a4.getAreaPiso1())
-                    .areaPiso2(a4.getAreaPiso2())
-                    .areaPiso3(a4.getAreaPiso3())
-                    .areaPiso4(a4.getAreaPiso4())
-                    .areaOtrosPisos(a4.getAreaOtrosPisos())
-                    .areaTechadaTotal(a4.getAreaTechadaTotal())
-                    .areaOcupadaTotal(a4.getAreaOcupadaTotal())
-                    .aforoPersonas(a4.getAforoPersonas())
-                    .antiguedadEdificacionAnios(a4.getAntiguedadEdificacionAnios())
-                    .antiguedadGiroAnios(a4.getAntiguedadGiroAnios())
-                    .noEnProcesoConstruccion(a4.getNoEnProcesoConstruccion())
-                    .cuentaServiciosBasicos(a4.getCuentaServiciosBasicos())
-                    .cuentaMobiliarioBasico(a4.getCuentaMobiliarioBasico())
-                    .tieneEquiposInstalados(a4.getTieneEquiposInstalados())
-                    .mediosEvacuacionLibres(a4.getMediosEvacuacionLibres())
-                    .senalizacionSeguridad(a4.getSenalizacionSeguridad())
-                    .lucesEmergenciaOperativas(a4.getLucesEmergenciaOperativas())
-                    .tableroElectricoProtegido(a4.getTableroElectricoProtegido())
-                    .interruptoresDiferenciales(a4.getInterruptoresDiferenciales())
-                    .pozoTierraVigente(a4.getPozoTierraVigente())
-                    .extintoresOperativos(a4.getExtintoresOperativos())
-                    .estructurasSinRiesgoColapso(a4.getEstructurasSinRiesgoColapso())
-                    .cablesProtegidosTubosPvc(a4.getCablesProtegidosTubosPvc())
-                    .build();
-        }
-
-        Expediente expediente = Expediente.builder()
-                .id(expedienteId)
-                .numeroTramite(numeroTramite)
-                .solicitanteId(dto.getSolicitanteId())
-                .cuentaId(dto.getCuentaId())
-                .establecimientoId(dto.getEstablecimientoId())
-                // Sección I: Modalidad
-                .modalidadTramite(dto.getModalidadTramite() != null ? dto.getModalidadTramite() : ModalidadTramite.LICENCIA_INDETERMINADA)
-                .plazoTemporalMeses(dto.getPlazoTemporalMeses())
-                .tipoAnuncio(dto.getTipoAnuncio())
-                .numeroLicenciaPrincipal(dto.getNumeroLicenciaPrincipal())
-                // Sección II: Solicitante
-                .tipoPersona(dto.getTipoPersona() != null ? dto.getTipoPersona() : TipoPersona.NATURAL)
-                .tipoDocumento(dto.getTipoDocumento() != null ? dto.getTipoDocumento() : TipoDocumento.DNI)
-                .nombreTitular(dto.getNombreTitular().trim())
-                .documentoIdentidad(dto.getDocumentoIdentidad().trim())
-                .razonSocial(dto.getRazonSocial() != null ? dto.getRazonSocial().trim() : null)
-                .correoElectronico(dto.getCorreoElectronico() != null ? dto.getCorreoElectronico().trim() : null)
-                .telefono(dto.getTelefono() != null ? dto.getTelefono().trim() : null)
-                .autorizaNotificacion(dto.getAutorizaNotificacion() != null ? dto.getAutorizaNotificacion() : true)
-                // Sección III: Representante Legal / SUNARP
-                .partidaSunarp(dto.getPartidaSunarp())
-                .asientoSunarp(dto.getAsientoSunarp())
-                .dniRepresentante(dto.getDniRepresentante())
-                .nombreRepresentante(dto.getNombreRepresentante())
-                .poderSunarp(dto.getPoderSunarp())
-                // Sección IV: Establecimiento
-                .nombreComercial(dto.getNombreComercial().trim())
-                .ciiuCodigo(dto.getCiiuCodigo())
-                .giroNegocio(dto.getGiroNegocio().trim())
-                .actividadDetallada(dto.getActividadDetallada())
-                .zonificacion(dto.getZonificacion())
-                .funcionEdificacion(dto.getFuncionEdificacion() != null ? dto.getFuncionEdificacion() : FuncionEdificacion.COMERCIO)
-                .direccionEstablecimiento(dto.getDireccionEstablecimiento().trim())
-                // Dirección desglosada
-                .tipoVia(dto.getTipoVia())
-                .nombreVia(dto.getNombreVia())
-                .numeroVivienda(dto.getNumeroVivienda())
-                .interior(dto.getInterior())
-                .manzana(dto.getManzana())
-                .lote(dto.getLote())
-                .urbanizacion(dto.getUrbanizacion())
-                .distrito(dto.getDistrito() != null ? dto.getDistrito() : "Ayacucho")
-                .provincia(dto.getProvincia() != null ? dto.getProvincia() : "Huamanga")
-                .departamento(dto.getDepartamento() != null ? dto.getDepartamento() : "Ayacucho")
-                .referenciaUbicacion(dto.getReferenciaUbicacion())
-                // Dimensionamiento y capacidad
-                .areaMetrosCuadrados(dto.getAreaMetrosCuadrados())
-                .areaTerreno(dto.getAreaTerreno())
-                .areaTechadaTotal(dto.getAreaTechadaTotal())
-                .areaOcupadaTotal(dto.getAreaOcupadaTotal())
-                .aforoPersonas(dto.getAforoPersonas())
-                .numeroPisos(dto.getNumeroPisos())
-                .antiguedadEdificacion(dto.getAntiguedadEdificacion())
-                .antiguedadGiro(dto.getAntiguedadGiro())
-                // Sectorial
-                .requiereAutorizacionSectorial(dto.getRequiereAutorizacionSectorial())
-                .sectorEntidad(dto.getSectorEntidad())
-                .sectorDenominacion(dto.getSectorDenominacion())
-                .sectorFecha(dto.getSectorFecha())
-                .sectorNumero(dto.getSectorNumero())
-                // Sección V: Observaciones
-                .motivoObservacion(dto.getMotivoObservacion() != null ? dto.getMotivoObservacion().trim() : null)
-                // Anexo 4 embebido
-                .anexo4Condiciones(anexo4)
-                // Flujo y fechas
-                .estado(EstadoExpediente.FORMATOS_GENERADOS)
-                .fechaCreacion(fechaCreacion)
-                .fechaLimite(fechaLimite)
-                .build();
-
-        Expediente guardado = expedienteRepository.save(expediente);
-
-        auditoriaService.registrarTransicion(
-                guardado.getId(),
-                null,
-                EstadoExpediente.FORMATOS_GENERADOS,
-                dto.getNombreTitular(),
-                "Ingreso digital de solicitud y formatos autogenerados (Mesa de Partes Virtual)"
-        );
-
-        log.info("Expediente creado exitosamente: ID={}, Número={}", guardado.getId(), guardado.getNumeroTramite());
-        metricasExpedienteService.registrarCreacion();
-
-        // Fase 04 Sprint 4-B: Notificación asíncrona de registro al ciudadano
-        notificacionEmailService.notificarRegistro(guardado);
-
-        return guardado;
-    }
-
-    /**
-     * Registra la clasificación de riesgo recibida de Defensa Civil (ITSE)
-     * y transiciona el expediente a DOCUMENTOS_VALIDADOS.
-     */
-    @Transactional
-    public void registrarClasificacionRiesgo(UUID id, NivelRiesgo nivel) {
-        registrarClasificacionRiesgo(id, nivel, null, null);
-    }
-
-    /**
-     * Sobrecarga completa para registrar clasificación ITSE con número de informe y observaciones.
-     */
-    @Transactional
-    public void registrarClasificacionRiesgo(UUID id, NivelRiesgo nivel, String informeItseNumero, String observaciones) {
-        Expediente expediente = obtenerPorId(id);
-
-        EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.DOCUMENTOS_VALIDADOS;
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
-
-        BigDecimal montoTasa = calculadoraDeTasa.calcularTasa(nivel);
-        expediente.setNivelRiesgo(nivel);
-        expediente.setMontoTasa(montoTasa);
-        if (informeItseNumero != null && !informeItseNumero.trim().isEmpty()) {
-            expediente.setNumeroInformeItse(informeItseNumero.trim());
-            expediente.setFechaInformeItse(LocalDateTime.now());
-        }
-        expediente.cambiarEstado(nuevo);
-
-        expedienteRepository.save(expediente);
-
-        String tipoItse = (nivel == NivelRiesgo.BAJO || nivel == NivelRiesgo.MEDIO) ? "ITSE POSTERIOR" : "ITSE PREVIA";
-        String detalleObs = (observaciones != null && !observaciones.isBlank()) ? " Obs: " + observaciones : "";
-
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                "DEFENSA_CIVIL",
-                String.format("Clasificación de riesgo: %s (%s). Tasa TUPA calculada: S/. %s.%s", nivel, tipoItse, montoTasa, detalleObs)
-        );
-
-        log.info("Clasificación de riesgo registrada para expediente {}: Nivel={}, Tasa={}", id, nivel, montoTasa);
-    }
-
-    /**
-     * Genera la orden de pago (Voucher SAT) para el pago de la tasa administrativa.
-     */
-    @Transactional
-    public VoucherDto generarVoucher(UUID id) {
-        Expediente expediente = obtenerPorId(id);
-
-        if (expediente.getMontoTasa() == null) {
-            BigDecimal monto = calculadoraDeTasa.calcularTasa(
-                    expediente.getNivelRiesgo() != null ? expediente.getNivelRiesgo() : NivelRiesgo.BAJO
-            );
-            expediente.setMontoTasa(monto);
-        }
-
-        String voucherId = "VCH-" + LocalDate.now().getYear() + "-" + String.format("%06d", ThreadLocalRandom.current().nextInt(100000, 999999));
-        expediente.setVoucherId(voucherId);
-        expedienteRepository.save(expediente);
-
-        return VoucherDto.builder()
-                .voucherId(voucherId)
-                .expedienteId(expediente.getId())
-                .numeroTramite(expediente.getNumeroTramite())
-                .titular(expediente.getNombreTitular())
-                .documentoIdentidad(expediente.getDocumentoIdentidad())
-                .monto(expediente.getMontoTasa())
-                .concepto("TASA LICENCIA FUNCIONAMIENTO - RIESGO " + (expediente.getNivelRiesgo() != null ? expediente.getNivelRiesgo() : "ESTÁNDAR"))
-                .fechaEmision(LocalDateTime.now())
-                .fechaVencimiento(LocalDateTime.now().plusDays(5))
-                .codigoBarrasSat("0107" + voucherId.replace("-", ""))
-                .build();
-    }
-
-    /**
-     * Registra el pago del voucher de tasa administrativa y transiciona a EN_EVALUACION_FINAL.
-     */
-    @Transactional
-    public void registrarPago(UUID id, String voucherId) {
-        registrarPago(id, voucherId, null);
-    }
-
-    /**
-     * Sobrecarga completa para registrar pago con número de operación SAT / bancaria.
-     */
-    @Transactional
-    public void registrarPago(UUID id, String voucherId, String numeroOperacionSat) {
-        Expediente expediente = obtenerPorId(id);
-
-        EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.EN_EVALUACION;
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
-
-        expediente.setVoucherId(voucherId);
-        if (numeroOperacionSat != null && !numeroOperacionSat.trim().isEmpty()) {
-            expediente.setNumeroOperacionSat(numeroOperacionSat.trim());
-        }
-        expediente.setFechaPagoSat(LocalDateTime.now());
-        expediente.cambiarEstado(nuevo);
-        expedienteRepository.save(expediente);
-
-        String motivoAuditoria = "Pago de tasa validado mediante voucher: " + voucherId;
-        if (numeroOperacionSat != null && !numeroOperacionSat.isBlank()) {
-            motivoAuditoria += " (Op. SAT: " + numeroOperacionSat + ")";
-        }
-
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                "SAT_CAJA",
-                motivoAuditoria
-        );
-
-        log.info("Pago registrado para expediente {}: Voucher={}, Estado={}", id, voucherId, nuevo);
-    }
-
-    /**
-     * Dictamen final favorable por parte de la Gerencia de Licencias: transiciona a APROBADO
-     * y genera el código QR único para la licencia digital.
-    /**
-     * Dictamen final favorable por parte de la Gerencia de Licencias: transiciona a APROBADO.
-     * En conformidad con la Corrección I02.1 / DAS DA-06:
-     * "Impide que una aprobación produzca una licencia oficialmente emitida o un QR activo sin firma digital válida.
-     * No simules firmas institucionales."
-     * Si no se dispone de firma digital válida, el expediente queda APROBADO administrativamente
-     * pero la emisión del documento oficial y el QR activo quedan bloqueados hasta la firma digital (I08).
-     */
-    @Transactional
-    public void aprobar(UUID id) {
-        Expediente expediente = obtenerPorId(id);
-
-        // Validación estricta de precondiciones legales (pago efectuado y riesgo clasificado)
-        estadoExpedienteValidator.validarAprobacion(expediente);
-
-        EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.APROBADO;
-
-        expediente.cambiarEstado(nuevo);
-        expediente.setFechaAprobacion(LocalDateTime.now());
-
-        if (firmaDigitalPort != null && firmaDigitalPort.estaDisponible()) {
-            String qrCodeUnico = "LIC-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            expediente.setLicenciaQrCode(qrCodeUnico);
-            expediente.setFirmaDigitalValida(true);
-
-            auditoriaService.registrarTransicion(
-                    id,
-                    actual,
-                    nuevo,
-                    "GERENCIA_LICENCIAS",
-                    "Expediente evaluado conforme y APROBADO. Licencia emitida con firma digital y QR activo: " + qrCodeUnico
-            );
-            log.info("Expediente {} APROBADO exitosamente con firma digital válida y QR: {}", id, qrCodeUnico);
-        } else {
-            expediente.setLicenciaQrCode(null);
-            expediente.setFirmaDigitalValida(false);
-
-            auditoriaService.registrarTransicion(
-                    id,
-                    actual,
-                    nuevo,
-                    "GERENCIA_LICENCIAS",
-                    "Expediente evaluado conforme y APROBADO administrativamente. Emisión oficial de licencia y QR suspendida: Requiere firma digital válida de la autoridad municipal (FirmaDigitalPort no integrado/no simulado)."
-            );
-            log.info("Expediente {} APROBADO administrativamente. Emisión oficial de licencia y QR suspendidos por falta de firma digital institucional.", id);
-        }
-
-        expedienteRepository.save(expediente);
-        metricasExpedienteService.registrarAprobacion();
-
-        // Fase 04 Sprint 4-B: Notificación asíncrona de aprobación al ciudadano
-        notificacionEmailService.notificarAprobacion(expediente);
-    }
-
-    /**
-     * Dictamen final de rechazo u observación insubsanable: transiciona a RECHAZADO.
-     */
-    @Transactional
-    public void rechazar(UUID id, String motivo) {
-        Expediente expediente = obtenerPorId(id);
-
-        EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.RECHAZADO;
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
-
-        expediente.cambiarEstado(nuevo);
-        expedienteRepository.save(expediente);
-
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                "GERENCIA_LICENCIAS",
-                "Expediente RECHAZADO. Motivo formal: " + (motivo != null ? motivo : "No especificado")
-        );
-
-        log.warn("Expediente {} RECHAZADO. Motivo: {}", id, motivo);
-        metricasExpedienteService.registrarRechazo();
-
-        // Fase 04 Sprint 4-B: Notificación asíncrona de rechazo al ciudadano
-        notificacionEmailService.notificarRechazo(expediente, motivo);
-    }
-
-    /**
-     * Dictamen formal de observación técnica o administrativa (Ley N° 27444 LPAG / Ley N° 28976).
-     * Transiciona el expediente a OBSERVADO y notifica al administrado para que proceda a la subsanación.
-     */
-    @Transactional
-    public void observar(UUID id, String motivo) {
-        Expediente expediente = obtenerPorId(id);
-
-        EstadoExpediente actual = expediente.getEstado();
-        EstadoExpediente nuevo = EstadoExpediente.OBSERVADO;
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
-
-        expediente.setMotivoObservacion(motivo);
-        expediente.setFechaObservacion(LocalDateTime.now());
-        expediente.cambiarEstado(nuevo);
-        expedienteRepository.save(expediente);
-
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                "GERENCIA_LICENCIAS",
-                "Expediente OBSERVADO (Ley N° 27444 LPAG). Motivo: " + (motivo != null ? motivo : "Sin detalle")
-        );
-
-        log.info("Expediente {} puesto en OBSERVADO. Motivo: {}", id, motivo);
-
-        // Notificación asíncrona de observación al administrado
-        notificacionEmailService.notificarObservacion(expediente, motivo);
-    }
-
-    /**
-     * Registro de subsanación de observaciones presentada por el administrado (Ley N° 27444 LPAG).
-     * Retorna el expediente al flujo correspondiente según el grado de avance previo del trámite.
-     */
-    @Transactional
-    public void subsanar(UUID id, String detalleSubsanacion, String usuario) {
-        Expediente expediente = obtenerPorId(id);
-
-        EstadoExpediente actual = expediente.getEstado();
-        if (actual != EstadoExpediente.OBSERVADO) {
-            throw new IllegalStateException("Solo se pueden subsanar expedientes en estado OBSERVADO. Estado actual: " + actual);
-        }
-
-        // Determinar estado objetivo según el avance previo
-        EstadoExpediente nuevo;
-        if (expediente.getFechaPagoSat() != null || (expediente.getVoucherId() != null && expediente.getNivelRiesgo() != null)) {
-            nuevo = EstadoExpediente.SUBSANADO;
-        } else if (expediente.getNivelRiesgo() != null) {
-            nuevo = EstadoExpediente.SUBSANADO;
-        } else {
-            nuevo = EstadoExpediente.SUBSANADO;
-        }
-
-        estadoExpedienteValidator.validarTransicion(actual, nuevo);
-
-        expediente.setDetalleSubsanacion(detalleSubsanacion);
-        expediente.setFechaSubsanacion(LocalDateTime.now());
-        expediente.cambiarEstado(nuevo);
-        expedienteRepository.save(expediente);
-
-        String responsable = (usuario != null && !usuario.isBlank()) ? usuario : expediente.getNombreTitular();
-        auditoriaService.registrarTransicion(
-                id,
-                actual,
-                nuevo,
-                responsable,
-                "Subsanación de observaciones presentada (LPAG Art. 136): " + (detalleSubsanacion != null ? detalleSubsanacion : "Documentación adjunta")
-        );
-
-        log.info("Expediente {} subsanado exitosamente. Nuevo estado: {}", id, nuevo);
-    }
-
+    private final ServicioRepresentacion servicioRepresentacion;
+    private final ItseService itseService;
+    private final CalculadoraPlazos calculadoraPlazos;
+    private final ParametrosPlazoService parametrosPlazo;
+    private final Clock reloj;
 
     @Transactional(readOnly = true)
     public Expediente obtenerPorId(UUID id) {
@@ -476,205 +52,74 @@ public class ExpedienteService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente", numeroTramite));
     }
 
+    /**
+     * Seguimiento público: el número de trámite debe acompañarse de los cuatro últimos dígitos
+     * del documento del titular, para impedir la consulta de expedientes ajenos por enumeración.
+     */
     @Transactional(readOnly = true)
-    public List<Expediente> listarTodos() {
-        return expedienteRepository.findAll();
+    public Expediente obtenerParaSeguimientoPublico(String numeroTramite, String digitosDocumento) {
+        Expediente expediente = expedienteRepository.findByNumeroTramite(numeroTramite.trim()).orElse(null);
+        boolean coincide = expediente != null
+                && digitosDocumento != null
+                && digitosDocumento.trim().length() == 4
+                && expediente.getDocumentoIdentidad() != null
+                && expediente.getDocumentoIdentidad().endsWith(digitosDocumento.trim());
+        if (!coincide) {
+            throw new RecursoNoEncontradoException("No se encontró un expediente con los datos proporcionados.");
+        }
+        return expediente;
     }
 
     @Transactional(readOnly = true)
     public List<Expediente> listarConFiltros(EstadoExpediente estado, Boolean conAlerta) {
-        List<Expediente> list = (estado != null)
+        List<Expediente> lista = (estado != null)
                 ? expedienteRepository.findByEstado(estado)
                 : expedienteRepository.findAll();
 
         if (Boolean.TRUE.equals(conAlerta)) {
-            LocalDate hoy = LocalDate.now();
-            list = list.stream().filter(e -> {
-                long dias = calcularDiasHabiles(hoy, e.getFechaLimite().toLocalDate());
-                return dias <= 3 && e.getEstado() != EstadoExpediente.APROBADO && e.getEstado() != EstadoExpediente.RECHAZADO;
-            }).collect(Collectors.toList());
+            LocalDate hoy = LocalDate.now(reloj);
+            lista = lista.stream()
+                    .filter(expediente -> expediente.getFechaLimite() != null)
+                    .filter(expediente -> calculadoraPlazos.contarDiasHabiles(hoy, expediente.getFechaLimite().toLocalDate())
+                            <= DIAS_ALERTA_VENCIMIENTO)
+                    .toList();
         }
-
-        return list;
+        return lista;
     }
 
+    /** Expedientes de las cuentas que la persona representa con facultad de consulta. */
     @Transactional(readOnly = true)
-    public List<Expediente> listarPorSolicitante(UUID solicitanteId) {
-        return expedienteRepository.findBySolicitanteId(solicitanteId);
-    }
-
-    private String generarNumeroTramite() {
-        int anio = LocalDate.now().getYear();
-        int correlativo = ThreadLocalRandom.current().nextInt(10000, 99999);
-        return String.format("EXP-%d-%05d", anio, correlativo);
-    }
-
-    private LocalDateTime calcularFechaLimite15DiasHabiles(LocalDate fechaInicio) {
-        LocalDate fecha = fechaInicio;
-        int diasHabilesContados = 0;
-        while (diasHabilesContados < 15) {
-            fecha = fecha.plusDays(1);
-            DayOfWeek dow = fecha.getDayOfWeek();
-            if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
-                diasHabilesContados++;
-            }
-        }
-        return LocalDateTime.of(fecha, LocalTime.of(18, 0));
-    }
-
-    private long calcularDiasHabiles(LocalDate inicio, LocalDate fin) {
-        if (inicio.isAfter(fin)) return 0;
-        long dias = 0;
-        LocalDate curr = inicio;
-        while (!curr.isAfter(fin)) {
-            DayOfWeek d = curr.getDayOfWeek();
-            if (d != DayOfWeek.SATURDAY && d != DayOfWeek.SUNDAY) {
-                dias++;
-            }
-            curr = curr.plusDays(1);
-        }
-        return dias;
+    public List<Expediente> listarDeCuentasRepresentadas(UUID usuarioId) {
+        Set<UUID> cuentas = servicioRepresentacion.cuentasConFacultad(usuarioId, PermisoOperador.CONSULTAR_EXPEDIENTE);
+        return cuentas.isEmpty() ? List.of() : expedienteRepository.findByCuentaIdInOrderByFechaCreacionDesc(cuentas);
     }
 
     /**
-     * US-11 / RNF-20 / RNF-SEG-007 / CA-09 / Corrección I02.1: Consulta pública de autenticidad y estado de licencia.
-     * En conformidad con la directriz de seguridad:
-     * - Elimina el DNI/RUC de la respuesta pública de verificación QR (Ley N° 29733 de Protección de Datos Personales).
-     * - Impide que una aprobación sin firma digital válida figure como licencia válidamente emitida o vigente.
+     * Orden de pago de la tasa liquidada. Es una consulta: no modifica el expediente.
      */
     @Transactional(readOnly = true)
-    public VerificacionLicenciaDto verificarLicencia(String codigoLicencia) {
-        metricasExpedienteService.registrarConsultaPublica();
-        if (codigoLicencia == null || codigoLicencia.trim().isEmpty()) {
-            return VerificacionLicenciaDto.builder()
-                    .valida(false)
-                    .estado("CÓDIGO INVÁLIDO")
-                    .mensajeVerificacion("Debe proporcionar un código de licencia válido.")
-                    .build();
-        }
+    public VoucherDto generarOrdenPago(UUID id) {
+        Expediente expediente = obtenerPorId(id);
+        LiquidacionDto liquidacion = itseService.liquidacionDefinitiva(id)
+                .orElseThrow(() -> new IllegalStateException(
+                        "La orden de pago se emite una vez validado el ITSE y liquidada la tasa del expediente "
+                                + expediente.getNumeroTramite() + "."));
 
-        return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
-                .map(exp -> {
-                    boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
-                    boolean tieneFirmaValida = Boolean.TRUE.equals(exp.getFirmaDigitalValida());
-                    boolean esValida = esAprobado && tieneFirmaValida;
+        LocalDate vencimiento = calculadoraPlazos.sumarDiasHabiles(
+                liquidacion.getFechaLiquidacion().toLocalDate(), parametrosPlazo.dias(CodigoPlazo.ABANDONO_PAGO));
+        String codigo = "OP-" + expediente.getNumeroTramite();
 
-                    String estadoTexto;
-                    String mensaje;
-
-                    if (!esAprobado) {
-                        estadoTexto = "NO VIGENTE (" + exp.getEstado() + ")";
-                        mensaje = "El trámite asociado a este código no se encuentra en estado APROBADO.";
-                    } else if (!tieneFirmaValida) {
-                        estadoTexto = "PENDIENTE DE FIRMA DIGITAL";
-                        mensaje = "El expediente cuenta con evaluación aprobatoria conforme, pero la licencia definitiva se encuentra pendiente de suscripción con firma digital institucional.";
-                    } else {
-                        estadoTexto = "VIGENTE / AUTORIZADA";
-                        mensaje = "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga (Vigencia Indeterminada - Art. 11 Ley N° 28976).";
-                    }
-
-                    return VerificacionLicenciaDto.builder()
-                            .numeroLicencia(exp.getLicenciaQrCode())
-                            .numeroTramite(exp.getNumeroTramite())
-                            .titular(exp.getNombreTitular())
-                            .razonSocial(exp.getRazonSocial())
-                            .nombreComercial(exp.getNombreComercial())
-                            .giro(exp.getGiroNegocio())
-                            .direccion(exp.getDireccionEstablecimiento())
-                            .nivelRiesgo(exp.getNivelRiesgo())
-                            .estado(estadoTexto)
-                            .fechaEmision(exp.getFechaCreacion())
-                            .valida(esValida)
-                            .mensajeVerificacion(mensaje)
-                            .build();
-                })
-                .orElseGet(() -> VerificacionLicenciaDto.builder()
-                        .numeroLicencia(codigoLicencia)
-                        .valida(false)
-                        .estado("NO ENCONTRADA")
-                        .mensajeVerificacion("El código de licencia consultado no se encuentra registrado en el padrón municipal de Huamanga.")
-                        .build());
-    }
-
-    /**
-     * RF-VER-007 / DAS DA-05 / CA-10: Consulta ampliada de licencia para inspectores municipales
-     * y evaluadores autorizados. Incluye geolocalización y documento de identidad exclusivo para funcionarios.
-     */
-    @Transactional(readOnly = true)
-    public VerificacionAmpliadaDto verificarLicenciaAmpliada(String codigoLicencia) {
-        metricasExpedienteService.registrarConsultaPublica();
-        if (codigoLicencia == null || codigoLicencia.trim().isEmpty()) {
-            return VerificacionAmpliadaDto.builder()
-                    .valida(false)
-                    .estado("CÓDIGO INVÁLIDO")
-                    .mensajeVerificacion("Debe proporcionar un código de licencia válido.")
-                    .build();
-        }
-
-        return expedienteRepository.findByLicenciaQrCode(codigoLicencia.trim())
-                .map(exp -> {
-                    boolean esAprobado = exp.getEstado() == EstadoExpediente.APROBADO;
-                    boolean tieneFirmaValida = Boolean.TRUE.equals(exp.getFirmaDigitalValida());
-                    boolean esValida = esAprobado && tieneFirmaValida;
-
-                    String horario = (exp.getHoraInicio() != null && exp.getHoraFin() != null)
-                            ? exp.getHoraInicio() + " - " + exp.getHoraFin()
-                            : "08:00 - 20:00 (Estándar)";
-
-                    String estadoTexto;
-                    String mensaje;
-                    if (!esAprobado) {
-                        estadoTexto = "NO VIGENTE (" + exp.getEstado() + ")";
-                        mensaje = "El trámite asociado a este código no se encuentra en estado APROBADO.";
-                    } else if (!tieneFirmaValida) {
-                        estadoTexto = "PENDIENTE DE FIRMA DIGITAL";
-                        mensaje = "Expediente con dictamen favorable. Pendiente de suscripción mediante servicio institucional de firma digital.";
-                    } else {
-                        estadoTexto = "VIGENTE / AUTORIZADA";
-                        mensaje = "Licencia de Funcionamiento oficial, auténtica y vigente expedida por la Municipalidad Provincial de Huamanga.";
-                    }
-
-                    return VerificacionAmpliadaDto.builder()
-                            .numeroLicencia(exp.getLicenciaQrCode())
-                            .numeroTramite(exp.getNumeroTramite())
-                            .titular(exp.getNombreTitular())
-                            .documentoIdentidad(exp.getDocumentoIdentidad())
-                            .razonSocial(exp.getRazonSocial())
-                            .nombreComercial(exp.getNombreComercial())
-                            .giro(exp.getGiroNegocio())
-                            .ciiuCodigo(exp.getCiiuCodigo())
-                            .direccion(exp.getDireccionEstablecimiento())
-                            .zonificacion(exp.getZonificacion())
-                            .distrito(exp.getDistrito())
-                            .provincia(exp.getProvincia())
-                            .departamento(exp.getDepartamento())
-                            .referenciaUbicacion(exp.getReferenciaUbicacion())
-                            .areaMetrosCuadrados(exp.getAreaMetrosCuadrados())
-                            .aforoPersonas(exp.getAforoPersonas())
-                            .nivelRiesgo(exp.getNivelRiesgo())
-                            .estado(estadoTexto)
-                            .fechaEmision(exp.getFechaCreacion())
-                            .fechaAprobacion(exp.getFechaAprobacion())
-                            .categoriaEstablecimiento(exp.getCategoriaEstablecimiento())
-                            .horarioFuncionamiento(horario)
-                            .valida(esValida)
-                            .mensajeVerificacion(mensaje)
-                            .latitud(-13.1631)
-                            .longitud(-74.2236)
-                            .build();
-                })
-                .orElseGet(() -> VerificacionAmpliadaDto.builder()
-                        .numeroLicencia(codigoLicencia)
-                        .valida(false)
-                        .estado("NO ENCONTRADA")
-                        .mensajeVerificacion("El código de licencia consultado no se encuentra registrado en el padrón municipal de Huamanga.")
-                        .build());
-    }
-
-    private String ofuscarDocumento(String doc) {
-        if (doc == null || doc.isBlank()) return null;
-        String limpio = doc.trim();
-        if (limpio.length() <= 4) return "****";
-        return limpio.substring(0, 2) + "****" + limpio.substring(limpio.length() - 2);
+        return VoucherDto.builder()
+                .voucherId(codigo)
+                .expedienteId(expediente.getId())
+                .numeroTramite(expediente.getNumeroTramite())
+                .titular(expediente.getNombreTitular())
+                .documentoIdentidad(expediente.getDocumentoIdentidad())
+                .monto(liquidacion.getMonto())
+                .concepto(liquidacion.getConcepto())
+                .fechaEmision(liquidacion.getFechaLiquidacion())
+                .fechaVencimiento(vencimiento.atTime(LocalTime.of(23, 59)))
+                .codigoBarrasSat("0107" + codigo.replace("-", ""))
+                .build();
     }
 }

@@ -32,7 +32,7 @@ public class SolicitudRectificacionController {
 
     @Operation(summary = "Registrar solicitud ciudadana de rectificación de coordenadas geográficas")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or @establecimientoSecurity.puedeModificarEstablecimientoPorId(authentication, #dto.establecimientoId)")
+    @PreAuthorize("hasRole('MESA_DE_PARTES') or @establecimientoSecurity.puedeModificarEstablecimientoPorId(authentication, #dto.establecimientoId)")
     public ResponseEntity<SolicitudRectificacionUbicacionDto> solicitarRectificacion(
             @Valid @RequestBody SolicitarRectificacionUbicacionDto dto,
             Authentication auth) {
@@ -41,7 +41,7 @@ public class SolicitudRectificacionController {
 
     @Operation(summary = "Evaluar solicitud de rectificación (aprobación, rechazo o detección de traslado físico)")
     @PostMapping("/{id}/evaluar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     public ResponseEntity<SolicitudRectificacionUbicacionDto> evaluarRectificacion(
             @PathVariable UUID id,
             @Valid @RequestBody EvaluarRectificacionUbicacionDto dto,
@@ -51,7 +51,7 @@ public class SolicitudRectificacionController {
 
     @Operation(summary = "Listar solicitudes de rectificación registradas para un establecimiento")
     @GetMapping("/establecimientos/{establecimientoId}")
-    @PreAuthorize("hasRole('ADMIN') or @establecimientoSecurity.puedeVerEstablecimientoPorId(authentication, #establecimientoId)")
+    @PreAuthorize("hasRole('MESA_DE_PARTES') or @establecimientoSecurity.puedeVerEstablecimientoPorId(authentication, #establecimientoId)")
     public ResponseEntity<List<SolicitudRectificacionUbicacionDto>> listarPorEstablecimiento(
             @PathVariable UUID establecimientoId) {
         return ResponseEntity.ok(rectificacionService.listarPorEstablecimiento(establecimientoId));
@@ -59,7 +59,7 @@ public class SolicitudRectificacionController {
 
     @Operation(summary = "Listar solicitudes de rectificación en estado PENDIENTE para inspección del evaluador")
     @GetMapping("/pendientes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     public ResponseEntity<List<SolicitudRectificacionUbicacionDto>> listarPendientes() {
         return ResponseEntity.ok(rectificacionService.listarPendientes());
     }

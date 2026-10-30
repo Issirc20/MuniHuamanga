@@ -86,9 +86,9 @@ class BorradorSecurityIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        tokenCiudadanoTitular = obtenerToken("42567891", "ciud123");
-        tokenCiudadanoTercero = obtenerToken("78999999", "ciud123");
-        tokenEvaluador = obtenerToken("evaluador", "eval123");
+        tokenCiudadanoTitular = obtenerToken("42567891", "Ciudadano.Huamanga26");
+        tokenCiudadanoTercero = obtenerToken("78999999", "Ciudadano.Huamanga26");
+        tokenEvaluador = obtenerToken("evaluador", "Licencias.Huamanga26");
 
         // Registrar cuenta para el titular si no existe en la tabla cuentas
         if (!cuentaRepository.existsByNumeroDocumento("42567891")) {

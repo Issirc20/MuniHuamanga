@@ -29,3 +29,5 @@ munihuamanga:
     enabled: false
     modo-dev-simulado: false
 
+  plazos:
+    vigilancia-programada: false

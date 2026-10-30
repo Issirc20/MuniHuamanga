@@ -53,7 +53,7 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Consultar bandeja unificada de evaluación con filtros y paginación")
     @GetMapping("/bandeja")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
     public ResponseEntity<Page<BandejaEvaluacionDto>> listarBandeja(
             @RequestParam(required = false) EstadoExpediente estadoExpediente,
             @RequestParam(required = false) EstadoValidacionPago estadoPago,
@@ -75,14 +75,14 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Ejecutar checklist administrativo integral de requisitos para un expediente")
     @GetMapping("/expedientes/{expedienteId}/checklist")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')")
     public ResponseEntity<ChecklistAdministrativoDto> obtenerChecklist(@PathVariable UUID expedienteId) {
         return ResponseEntity.ok(checklistAdministrativoService.generarChecklist(expedienteId));
     }
 
     @Operation(summary = "Elaborar informe administrativo técnico en estado BORRADOR")
     @PostMapping("/informes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     public ResponseEntity<InformeAdministrativoDto> elaborarInforme(
             @Valid @RequestBody CrearInformeAdministrativoDto dto,
             Authentication auth) {
@@ -91,7 +91,7 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Actualizar fundamentos y conclusión de informe en estado BORRADOR u OBSERVADO")
     @PutMapping("/informes/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     public ResponseEntity<InformeAdministrativoDto> actualizarInforme(
             @PathVariable UUID id,
             @Valid @RequestBody ActualizarInformeAdministrativoDto dto,
@@ -101,7 +101,7 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Enviar informe a revisión técnica interna")
     @PostMapping("/informes/{id}/enviar-revision")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('EVALUADOR')")
     public ResponseEntity<InformeAdministrativoDto> enviarARevision(
             @PathVariable UUID id,
             Authentication auth) {
@@ -110,7 +110,7 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Revisar informe (VISAR técnicamente o DEVOLVER con observaciones)")
     @PostMapping("/informes/{id}/revisar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasRole('SUPERVISOR_LICENCIAS')")
     public ResponseEntity<InformeAdministrativoDto> revisarInforme(
             @PathVariable UUID id,
             @Valid @RequestBody RevisarInformeDto dto,
@@ -120,7 +120,7 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Aprobar formalmente el informe administrativo (autoridad competente)")
     @PostMapping("/informes/{id}/aprobar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPERVISOR_LICENCIAS')")
     public ResponseEntity<InformeAdministrativoDto> aprobarInforme(
             @PathVariable UUID id,
             @Valid @RequestBody AprobarInformeDto dto,
@@ -130,28 +130,28 @@ public class EvaluacionAdministrativaController {
 
     @Operation(summary = "Consultar el informe administrativo actual de un expediente")
     @GetMapping("/expedientes/{expedienteId}/informe-actual")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')")
     public ResponseEntity<InformeAdministrativoDto> obtenerInformeActual(@PathVariable UUID expedienteId) {
         return ResponseEntity.ok(informeAdministrativoService.obtenerInformeActualPorExpediente(expedienteId));
     }
 
     @Operation(summary = "Consultar informe por su identificador UUID")
     @GetMapping("/informes/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')")
     public ResponseEntity<InformeAdministrativoDto> obtenerInformePorId(@PathVariable UUID id) {
         return ResponseEntity.ok(informeAdministrativoService.obtenerPorId(id));
     }
 
     @Operation(summary = "Consultar historial inmutable de decisiones del informe")
     @GetMapping("/informes/{id}/historial")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')")
     public ResponseEntity<List<HistorialDecisionInformeDto>> listarHistorial(@PathVariable UUID id) {
         return ResponseEntity.ok(informeAdministrativoService.listarHistorial(id));
     }
 
     @Operation(summary = "Descargar PDF preliminar del informe con marca de borrador")
     @GetMapping("/informes/{id}/pdf-preliminar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EVALUADOR')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')")
     public ResponseEntity<byte[]> descargarPdfPreliminar(@PathVariable UUID id) {
         byte[] pdfBytes = informeAdministrativoService.descargarPdfPreliminar(id);
         HttpHeaders headers = new HttpHeaders();

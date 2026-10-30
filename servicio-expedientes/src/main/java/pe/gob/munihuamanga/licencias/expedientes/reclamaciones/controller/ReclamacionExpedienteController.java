@@ -56,7 +56,7 @@ public class ReclamacionExpedienteController {
     }
 
     @GetMapping("/reclamaciones/pendientes")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
     @Operation(summary = "Bandeja municipal de reclamaciones pendientes de validación")
     public ResponseEntity<List<ReclamacionExpedienteDto>> listarPendientes() {
         List<ReclamacionExpedienteDto> lista = reclamacionService.listarPendientes();
@@ -64,7 +64,7 @@ public class ReclamacionExpedienteController {
     }
 
     @PutMapping("/reclamaciones/{reclamacionId}/resolver")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'ADMIN')")
+    @PreAuthorize("hasRole('SUPERVISOR_LICENCIAS')")
     @Operation(summary = "Resolver formalmente una reclamación de titularidad (Aprobar/Rechazar)")
     public ResponseEntity<ReclamacionExpedienteDto> resolverReclamacion(
             @PathVariable UUID reclamacionId,

@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS expedientes (
     a4_cables_protegidos_pvc BOOLEAN DEFAULT TRUE,
 
     fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fecha_limite TIMESTAMP NOT NULL
+    fecha_limite TIMESTAMP
 );
 
 -- Script de Migración idempotente para bases existentes
@@ -249,67 +249,8 @@ CREATE INDEX IF NOT EXISTS idx_historial_fecha ON historial_estados(fecha);
 CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
 CREATE INDEX IF NOT EXISTS idx_tarifas_tupa_nivel ON tarifas_tupa(nivel_riesgo);
 
--- Datos semilla iniciales para pruebas del entorno
-INSERT INTO expedientes (
-    id, numero_tramite, solicitante_id, modalidad_tramite, tipo_persona, tipo_documento,
-    nombre_titular, documento_identidad, razon_social, partida_sunarp, asiento_sunarp,
-    dni_representante, nombre_representante, poder_sunarp,
-    nombre_comercial, ciiu_codigo, giro_negocio, actividad_detallada, zonificacion, funcion_edificacion,
-    direccion_establecimiento, tipo_via, nombre_via, numero_vivienda, urbanizacion, distrito, provincia, departamento,
-    area_metros_cuadrados, area_terreno, aforo_personas, estado, nivel_riesgo, monto_tasa, voucher_id,
-    licencia_qr_code, fecha_creacion, fecha_limite
-) VALUES (
-    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    'EXP-2026-00001',
-    'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    'LICENCIA_INDETERMINADA',
-    'JURIDICA',
-    'RUC',
-    'María Quispe Huamán',
-    '20601234567',
-    'INVERSIONES LOS RETABLOS S.A.C.',
-    '11029384',
-    'A0001',
-    '42567891',
-    'María Quispe Huamán',
-    'Gerente General con facultades inscritas',
-    'Boutique Artesanal Huamanga',
-    '4773',
-    'Venta de artesanías, retablos y souvenirs',
-    'Comercio al por menor de artesanías y recuerdos turísticos',
-    'ZRE-CH (Zona de Reglamentación Especial Centro Histórico)',
-    'COMERCIO',
-    'Jr. 9 de Diciembre N° 142, Centro Histórico, Ayacucho',
-    'Jr.',
-    '9 de Diciembre',
-    '142',
-    'Centro Histórico',
-    'Ayacucho',
-    'Huamanga',
-    'Ayacucho',
-    35.50,
-    40.00,
-    15,
-    'FORMATOS_GENERADOS',
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP + INTERVAL '21 days'
-) ON CONFLICT (numero_tramite) DO NOTHING;
-
-INSERT INTO historial_estados (
-    id, expediente_id, estado_anterior, estado_nuevo, usuario, motivo, fecha
-) VALUES (
-    'b2c3d4e5-f6a7-8901-bcde-f12345678901',
-    'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    NULL,
-    'FORMATOS_GENERADOS',
-    'María Quispe Huamán',
-    'Ingreso virtual de solicitud y generación de anexos preliminares (Anexo 1 y Anexo 4)',
-    CURRENT_TIMESTAMP
-) ON CONFLICT (id) DO NOTHING;
+-- Los expedientes se crean exclusivamente mediante la presentación formal de solicitudes.
+-- Para datos de demostración utilice el perfil "demo" de la aplicación.
 
 -- Tasas Oficiales TUPA Huamanga (Ordenanza Municipal N° 018-2024-MPH)
 INSERT INTO tarifas_tupa (

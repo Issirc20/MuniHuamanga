@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,9 +15,8 @@ import pe.gob.munihuamanga.licencias.common.enums.EstadoBorrador;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoCuenta;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite;
-import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
 import pe.gob.munihuamanga.licencias.common.enums.PermisoOperador;
-import pe.gob.munihuamanga.licencias.common.enums.RolOperador;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumentoAdjunto;
 import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
@@ -27,16 +27,18 @@ import pe.gob.munihuamanga.licencias.expedientes.borradores.service.Presentacion
 import pe.gob.munihuamanga.licencias.expedientes.borradores.service.SecuenciaTramiteService;
 import pe.gob.munihuamanga.licencias.expedientes.borradores.service.SolicitudBorradorService;
 import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.OperadorCuenta;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.OperadorCuentaRepository;
+import pe.gob.munihuamanga.licencias.expedientes.documentos.service.DocumentoVersionadoService;
 import pe.gob.munihuamanga.licencias.expedientes.establecimientos.model.Establecimiento;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
+import pe.gob.munihuamanga.licencias.expedientes.security.ServicioRepresentacion;
 import pe.gob.munihuamanga.licencias.expedientes.service.AuditoriaService;
+import pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -48,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,343 +58,171 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PresentacionFormalServiceTest {
 
-    @Mock
-    private SolicitudBorradorRepository borradorRepository;
-
-    @Mock
-    private SolicitudBorradorService borradorService;
-
-    @Mock
-    private SecuenciaTramiteService secuenciaTramiteService;
-
-    @Mock
-    private ExpedienteRepository expedienteRepository;
-
-    @Mock
-    private OperadorCuentaRepository operadorCuentaRepository;
-
-    @Mock
-    private ExpedienteMapper expedienteMapper;
-
-    @Mock
-    private AuditoriaService auditoriaService;
+    @Mock private SolicitudBorradorRepository borradorRepository;
+    @Mock private SolicitudBorradorService borradorService;
+    @Mock private SecuenciaTramiteService secuenciaTramiteService;
+    @Mock private ExpedienteRepository expedienteRepository;
+    @Mock private ExpedienteMapper expedienteMapper;
+    @Mock private AuditoriaService auditoriaService;
+    @Mock private DocumentoVersionadoService documentoVersionadoService;
+    @Mock private ProveedorActor proveedorActor;
+    @Mock private ServicioRepresentacion servicioRepresentacion;
+    @Mock private NotificacionEmailService notificacionEmailService;
 
     private PresentacionFormalService service;
-
-    private Cuenta cuentaNatural;
-    private Cuenta cuentaJuridica;
-    private Establecimiento establecimientoTest;
-    private SolicitudBorrador borradorApto;
+    private Cuenta cuenta;
+    private Establecimiento establecimiento;
+    private SolicitudBorrador borrador;
+    private final UUID personaId = UUID.randomUUID();
+    private final PresentarBorradorDto confirmacion = PresentarBorradorDto.builder()
+            .declaracionJuradaAceptada(true).confirmacionPresentacion(true).build();
 
     @BeforeEach
     void setUp() {
-        service = new PresentacionFormalService(
-                borradorRepository,
-                borradorService,
-                secuenciaTramiteService,
-                expedienteRepository,
-                operadorCuentaRepository,
-                expedienteMapper,
-                auditoriaService
-        );
+        service = new PresentacionFormalService(borradorRepository, borradorService, secuenciaTramiteService,
+                expedienteRepository, expedienteMapper, auditoriaService, documentoVersionadoService,
+                proveedorActor, servicioRepresentacion, notificacionEmailService);
 
-        UUID cuentaNatId = UUID.randomUUID();
-        cuentaNatural = Cuenta.builder()
-                .id(cuentaNatId)
+        cuenta = Cuenta.builder()
+                .id(UUID.randomUUID())
                 .tipoPersona(TipoPersona.NATURAL)
                 .tipoDocumento(TipoDocumento.DNI)
                 .numeroDocumento("42567891")
                 .razonSocialONombre("María Quispe Huamán")
-                .email("maria.quispe@test.pe")
                 .estado(EstadoCuenta.ACTIVA)
                 .emailVerificado(true)
                 .build();
-
-        UUID cuentaJurId = UUID.randomUUID();
-        cuentaJuridica = Cuenta.builder()
-                .id(cuentaJurId)
-                .tipoPersona(TipoPersona.JURIDICA)
-                .tipoDocumento(TipoDocumento.RUC)
-                .numeroDocumento("20601234567")
-                .razonSocialONombre("INVERSIONES LOS RETABLOS S.A.C.")
-                .email("contacto@retablos.pe")
-                .estado(EstadoCuenta.ACTIVA)
-                .emailVerificado(true)
-                .build();
-
-        establecimientoTest = Establecimiento.builder()
+        establecimiento = Establecimiento.builder()
                 .id(UUID.randomUUID())
-                .cuenta(cuentaNatural)
-                .codigoEstablecimiento("EST-001")
+                .cuenta(cuenta)
                 .nombreComercial("Boutique Artesanal Huamanga")
                 .direccion("Jr. 9 de Diciembre 142")
-                .distrito("Ayacucho")
-                .provincia("Huamanga")
-                .departamento("Ayacucho")
-                .giroPrincipal("Venta de artesanías y retablos")
-                .areaMetrosCuadrados(new BigDecimal("35.50"))
+                .giroPrincipal("Venta de artesanías")
                 .build();
-
-        List<DocumentoBorrador> docs = new ArrayList<>();
-        docs.add(DocumentoBorrador.builder()
+        borrador = SolicitudBorrador.builder()
                 .id(UUID.randomUUID())
-                .tipoDocumento(TipoDocumentoAdjunto.EVIDENCIA_RIESGO_ITSE)
-                .nombreArchivo("evidencia_itse.pdf")
-                .hashSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                .fechaCarga(LocalDateTime.now())
-                .cargadoPor(cuentaNatId)
-                .build());
-
-        docs.add(DocumentoBorrador.builder()
-                .id(UUID.randomUUID())
-                .tipoDocumento(TipoDocumentoAdjunto.COMPROBANTE_PAGO_SAT)
-                .nombreArchivo("recibo_sat.pdf")
-                .hashSha256("d41d8cd98f00b204e9800998ecf8427e00000000000000000000000000000000")
-                .fechaCarga(LocalDateTime.now())
-                .cargadoPor(cuentaNatId)
-                .build());
-
-        borradorApto = SolicitudBorrador.builder()
-                .id(UUID.randomUUID())
-                .cuenta(cuentaNatural)
-                .establecimiento(establecimientoTest)
-                .creadorId(cuentaNatId)
-                .fechaCreacion(LocalDateTime.now())
-                .fechaActualizacion(LocalDateTime.now())
+                .cuenta(cuenta)
+                .establecimiento(establecimiento)
+                .creadorId(personaId)
                 .estado(EstadoBorrador.EN_EDICION)
-                .version(0L)
                 .modalidadTramite(ModalidadTramite.LICENCIA_INDETERMINADA)
                 .nombreComercialDeclarado("Boutique Artesanal Huamanga")
-                .giroNegocioDeclarado("Venta de artesanías y retablos")
-                .actividadDetallada("Venta minorista de retablos y artesanías tradicionales")
+                .giroNegocioDeclarado("Venta de artesanías")
                 .areaMetrosCuadrados(new BigDecimal("35.50"))
-                .aforoPersonas(15)
-                .numeroPisos(1)
-                .horarioInicio("08:00")
-                .horarioFin("20:00")
-                .telefonoContacto("966123456")
-                .correoNotificacion("maria.quispe@test.pe")
-                .autorizaNotificacion(true)
-                .nivelRiesgoDeclarado(NivelRiesgo.BAJO)
-                .numeroOperacionSat("OP-SAT-2026-1234")
-                .fechaPagoSat(LocalDate.now())
-                .montoTasa(new BigDecimal("154.50"))
-                .voucherId("VCH-2026-001")
-                .documentos(docs)
+                .documentos(new ArrayList<>())
                 .build();
+
+        lenient().when(proveedorActor.actual()).thenReturn(ciudadano());
+        lenient().when(servicioRepresentacion.tieneFacultad(eq(personaId), eq(cuenta.getId()), any(PermisoOperador[].class))).thenReturn(true);
     }
 
     @Test
-    @DisplayName("I04: Presentación formal exitosa genera número EXP-YYYY-XXXXX e instantánea")
-    void presentacionFormal_Exitosa() {
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .comentarios("Presentación formal de solicitud para galería artesanal")
-                .build();
+    @DisplayName("La presentación crea el expediente en PRESENTADO, sin pago ni nivel de riesgo, y sin fecha límite")
+    void presentacionExitosa() {
+        prepararPresentacionApta();
 
-        ValidacionRequisitosDto validacionExitosa = ValidacionRequisitosDto.builder()
-                .borradorId(borradorApto.getId())
-                .aptoParaPresentacion(true)
-                .camposFaltantes(List.of())
-                .documentosFaltantes(List.of())
-                .build();
+        service.presentarBorrador(borrador.getId(), confirmacion);
 
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-        when(borradorService.validarRequisitos(borradorApto.getId())).thenReturn(validacionExitosa);
-        when(secuenciaTramiteService.generarSiguienteNumeroExpediente()).thenReturn("EXP-2026-00101");
-        when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        ExpedienteResponseDto responseEsperado = ExpedienteResponseDto.builder()
-                .numeroTramite("EXP-2026-00101")
-                .estado(EstadoExpediente.PRESENTADO)
-                .build();
-        when(expedienteMapper.toDto(any(Expediente.class))).thenReturn(responseEsperado);
-
-        ExpedienteResponseDto resultado = service.presentarBorrador(
-                borradorApto.getId(),
-                dto,
-                cuentaNatural.getId(),
-                "42567891"
-        );
-
-        assertThat(resultado).isNotNull();
-        assertThat(resultado.getNumeroTramite()).isEqualTo("EXP-2026-00101");
-        assertThat(resultado.getEstado()).isEqualTo(EstadoExpediente.PRESENTADO);
-        assertThat(borradorApto.getEstado()).isEqualTo(EstadoBorrador.PRESENTADO);
-        verify(auditoriaService).registrarTransicion(any(), eq(null), eq(EstadoExpediente.PRESENTADO), eq("42567891"), any());
+        ArgumentCaptor<Expediente> creado = ArgumentCaptor.forClass(Expediente.class);
+        verify(expedienteRepository).save(creado.capture());
+        assertThat(creado.getValue().getEstado()).isEqualTo(EstadoExpediente.PRESENTADO);
+        assertThat(creado.getValue().getNivelRiesgo()).isNull();
+        assertThat(creado.getValue().getMontoTasa()).isNull();
+        assertThat(creado.getValue().getVoucherId()).isNull();
+        assertThat(creado.getValue().getFechaPagoSat()).isNull();
+        assertThat(creado.getValue().getFechaLimite()).isNull();
+        assertThat(borrador.getEstado()).isEqualTo(EstadoBorrador.PRESENTADO);
+        verify(auditoriaService).registrarTransicion(any(), eq(null), eq(EstadoExpediente.PRESENTADO), any(), any());
     }
 
     @Test
-    @DisplayName("I04: Idempotencia - Reintento de presentación retorna el mismo expediente sin duplicar")
-    void presentacionFormal_Idempotente() {
-        Expediente expPrevio = Expediente.builder()
-                .id(UUID.randomUUID())
-                .numeroTramite("EXP-2026-00050")
-                .estado(EstadoExpediente.PRESENTADO)
-                .build();
+    @DisplayName("La presentación es idempotente: un reintento devuelve el mismo expediente")
+    void presentacionIdempotente() {
+        Expediente previo = Expediente.builder().id(UUID.randomUUID()).numeroTramite("EXP-2026-00050").estado(EstadoExpediente.PRESENTADO).build();
+        borrador.setEstado(EstadoBorrador.PRESENTADO);
+        borrador.setExpediente(previo);
+        when(borradorRepository.findByIdWithLock(borrador.getId())).thenReturn(Optional.of(borrador));
+        when(expedienteMapper.toDto(previo)).thenReturn(ExpedienteResponseDto.builder().numeroTramite("EXP-2026-00050").build());
 
-        borradorApto.setEstado(EstadoBorrador.PRESENTADO);
-        borradorApto.setExpediente(expPrevio);
-
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-
-        ExpedienteResponseDto dtoPrevio = ExpedienteResponseDto.builder()
-                .id(expPrevio.getId())
-                .numeroTramite("EXP-2026-00050")
-                .estado(EstadoExpediente.PRESENTADO)
-                .build();
-        when(expedienteMapper.toDto(expPrevio)).thenReturn(dtoPrevio);
-
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .build();
-
-        ExpedienteResponseDto resultado = service.presentarBorrador(
-                borradorApto.getId(),
-                dto,
-                cuentaNatural.getId(),
-                "42567891"
-        );
-
-        assertThat(resultado.getNumeroTramite()).isEqualTo("EXP-2026-00050");
-        verify(secuenciaTramiteService, never()).generarSiguienteNumeroExpediente(); // NO generó nuevo correlativo
-        verify(expedienteRepository, never()).save(any()); // NO duplicó expediente
+        assertThat(service.presentarBorrador(borrador.getId(), confirmacion).getNumeroTramite()).isEqualTo("EXP-2026-00050");
+        verify(secuenciaTramiteService, never()).generarSiguienteNumeroExpediente();
+        verify(expedienteRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("I04: Rechazo si la cuenta no tiene correo verificado")
-    void presentacionFormal_RechazaCuentaSinVerificar() {
-        cuentaNatural.setEmailVerificado(false);
+    @DisplayName("La presentación virtual exige el correo verificado")
+    void rechazaCorreoNoVerificado() {
+        cuenta.setEmailVerificado(false);
+        when(borradorRepository.findByIdWithLock(borrador.getId())).thenReturn(Optional.of(borrador));
 
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .build();
-
-        assertThatThrownBy(() -> service.presentarBorrador(borradorApto.getId(), dto, cuentaNatural.getId(), "42567891"))
+        assertThatThrownBy(() -> service.presentarBorrador(borrador.getId(), confirmacion))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("El correo electrónico de la cuenta no ha sido verificado");
+                .hasMessageContaining("verificar su correo");
     }
 
     @Test
-    @DisplayName("I04: Rechazo si el operador de persona jurídica no tiene permiso PRESENTAR_EXPEDIENTE")
-    void presentacionFormal_RechazaOperadorSinPermiso() {
-        borradorApto.setCuenta(cuentaJuridica);
-        establecimientoTest.setCuenta(cuentaJuridica);
+    @DisplayName("Mesa de partes puede presentar en ventanilla aunque el correo del administrado no esté verificado")
+    void presentacionPresencial() {
+        cuenta.setEmailVerificado(false);
+        cuenta.setEstado(EstadoCuenta.PENDIENTE_VERIFICACION);
+        when(proveedorActor.actual()).thenReturn(new Actor(UUID.randomUUID(), "mesapartes", "Mesa de Partes", EnumSet.of(RolUsuario.ROLE_MESA_DE_PARTES)));
+        prepararPresentacionApta();
 
-        UUID operadorId = UUID.randomUUID();
-        OperadorCuenta opSinPermiso = OperadorCuenta.builder()
-                .id(UUID.randomUUID())
-                .cuenta(cuentaJuridica)
-                .dniOperador("41223344")
-                .rolOperador(RolOperador.TRAMITADOR)
-                .activo(true)
-                .permisos(EnumSet.of(PermisoOperador.CREAR_BORRADOR, PermisoOperador.CONSULTAR_EXPEDIENTE)) // NO tiene PRESENTAR_EXPEDIENTE
-                .build();
+        service.presentarBorrador(borrador.getId(), confirmacion);
 
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-        when(operadorCuentaRepository.findByCuentaIdAndUsuarioId(cuentaJuridica.getId(), operadorId))
-                .thenReturn(Optional.of(opSinPermiso));
-
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .build();
-
-        assertThatThrownBy(() -> service.presentarBorrador(borradorApto.getId(), dto, operadorId, "41223344"))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessageContaining("PRESENTAR_EXPEDIENTE");
+        verify(expedienteRepository).save(any(Expediente.class));
     }
 
     @Test
-    @DisplayName("I04.1: Rechazo de presentación para persona jurídica si no tiene representación legal acreditada (no basta RUC ni correo)")
-    void presentacionFormal_RechazaPersonaJuridicaSinAcreditacionRepresentacion() {
-        borradorApto.setCuenta(cuentaJuridica);
-        establecimientoTest.setCuenta(cuentaJuridica);
-        cuentaJuridica.setIdentidadValidadaOficialmente(false);
+    @DisplayName("Una persona sin la facultad de presentar no puede formalizar la solicitud")
+    void rechazaSinFacultad() {
+        when(borradorRepository.findByIdWithLock(borrador.getId())).thenReturn(Optional.of(borrador));
+        when(servicioRepresentacion.tieneFacultad(eq(personaId), eq(cuenta.getId()), any(PermisoOperador[].class))).thenReturn(false);
 
-        UUID operadorId = UUID.randomUUID();
-        OperadorCuenta opConPermiso = OperadorCuenta.builder()
-                .id(UUID.randomUUID())
-                .cuenta(cuentaJuridica)
-                .dniOperador("41223344")
-                .rolOperador(RolOperador.REPRESENTANTE_LEGAL)
-                .activo(true)
-                .permisos(EnumSet.of(PermisoOperador.PRESENTAR_EXPEDIENTE))
-                .build();
+        assertThatThrownBy(() -> service.presentarBorrador(borrador.getId(), confirmacion)).isInstanceOf(AccessDeniedException.class);
+    }
 
-        // Borrador no tiene Vigencia de poder
-        borradorApto.setDocumentos(new ArrayList<>());
+    @Test
+    @DisplayName("Una persona jurídica sin vigencia de poder ni identidad validada no puede presentar")
+    void rechazaJuridicaSinAcreditacion() {
+        cuenta.setTipoPersona(TipoPersona.JURIDICA);
+        cuenta.setIdentidadValidadaOficialmente(false);
+        when(borradorRepository.findByIdWithLock(borrador.getId())).thenReturn(Optional.of(borrador));
+        when(borradorService.listarDocumentos(borrador.getId())).thenReturn(List.of());
 
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-        when(operadorCuentaRepository.findByCuentaIdAndUsuarioId(cuentaJuridica.getId(), operadorId))
-                .thenReturn(Optional.of(opConPermiso));
-
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .build();
-
-        assertThatThrownBy(() -> service.presentarBorrador(borradorApto.getId(), dto, operadorId, "41223344"))
+        assertThatThrownBy(() -> service.presentarBorrador(borrador.getId(), confirmacion))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("representación legal mediante vigencia de poder registral");
+                .hasMessageContaining("vigencia de poder");
     }
 
     @Test
-    @DisplayName("I04.1: Acepta presentación para persona jurídica cuando adjunta Vigencia de Poder de SUNARP")
-    void presentacionFormal_AceptaPersonaJuridicaConVigenciaPoder() {
-        borradorApto.setCuenta(cuentaJuridica);
-        establecimientoTest.setCuenta(cuentaJuridica);
-        cuentaJuridica.setIdentidadValidadaOficialmente(false);
-
-        UUID operadorId = UUID.randomUUID();
-        OperadorCuenta opConPermiso = OperadorCuenta.builder()
-                .id(UUID.randomUUID())
-                .cuenta(cuentaJuridica)
-                .dniOperador("41223344")
-                .rolOperador(RolOperador.REPRESENTANTE_LEGAL)
-                .activo(true)
-                .permisos(EnumSet.of(PermisoOperador.PRESENTAR_EXPEDIENTE))
-                .build();
-
-        List<DocumentoBorrador> docs = new ArrayList<>();
-        docs.add(DocumentoBorrador.builder()
+    @DisplayName("Una persona jurídica con vigencia de poder adjunta puede presentar")
+    void aceptaJuridicaConVigenciaDePoder() {
+        cuenta.setTipoPersona(TipoPersona.JURIDICA);
+        borrador.getDocumentos().add(DocumentoBorrador.builder()
                 .id(UUID.randomUUID())
                 .tipoDocumento(TipoDocumentoAdjunto.VIGENCIA_PODER)
-                .nombreArchivo("vigencia_poder_sunarp.pdf")
-                .hashSha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+                .nombreArchivo("vigencia_poder.pdf")
                 .fechaCarga(LocalDateTime.now())
-                .cargadoPor(operadorId)
                 .build());
-        borradorApto.setDocumentos(docs);
+        prepararPresentacionApta();
 
-        when(borradorRepository.findByIdWithLock(borradorApto.getId())).thenReturn(Optional.of(borradorApto));
-        when(operadorCuentaRepository.findByCuentaIdAndUsuarioId(cuentaJuridica.getId(), operadorId))
-                .thenReturn(Optional.of(opConPermiso));
-        when(borradorService.validarRequisitos(borradorApto.getId())).thenReturn(ValidacionRequisitosDto.builder()
-                .borradorId(borradorApto.getId())
-                .aptoParaPresentacion(true)
-                .camposFaltantes(List.of())
-                .documentosFaltantes(List.of())
-                .build());
-        when(secuenciaTramiteService.generarSiguienteNumeroExpediente()).thenReturn("EXP-2026-00001");
+        service.presentarBorrador(borrador.getId(), confirmacion);
+
+        verify(expedienteRepository).save(any(Expediente.class));
+    }
+
+    private void prepararPresentacionApta() {
+        when(borradorRepository.findByIdWithLock(borrador.getId())).thenReturn(Optional.of(borrador));
+        when(borradorService.validarRequisitos(borrador.getId())).thenReturn(ValidacionRequisitosDto.builder()
+                .borradorId(borrador.getId()).aptoParaPresentacion(true)
+                .camposFaltantes(List.of()).documentosFaltantes(List.of()).build());
+        when(secuenciaTramiteService.generarSiguienteNumeroExpediente()).thenReturn("EXP-2026-00101");
         when(expedienteRepository.save(any(Expediente.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(expedienteMapper.toDto(any(Expediente.class))).thenReturn(ExpedienteResponseDto.builder()
-                .numeroTramite("EXP-2026-00001")
-                .estado(EstadoExpediente.PRESENTADO)
-                .build());
+        when(expedienteMapper.toDto(any(Expediente.class))).thenReturn(ExpedienteResponseDto.builder().numeroTramite("EXP-2026-00101").build());
+    }
 
-        PresentarBorradorDto dto = PresentarBorradorDto.builder()
-                .declaracionJuradaAceptada(true)
-                .confirmacionPresentacion(true)
-                .build();
-
-        ExpedienteResponseDto resp = service.presentarBorrador(borradorApto.getId(), dto, operadorId, "41223344");
-        assertThat(resp).isNotNull();
-        assertThat(resp.getNumeroTramite()).isEqualTo("EXP-2026-00001");
+    private Actor ciudadano() {
+        return new Actor(personaId, "42567891", "María Quispe Huamán", EnumSet.of(RolUsuario.ROLE_CIUDADANO));
     }
 }

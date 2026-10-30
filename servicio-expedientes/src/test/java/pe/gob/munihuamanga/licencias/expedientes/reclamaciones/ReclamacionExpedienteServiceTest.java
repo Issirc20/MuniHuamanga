@@ -69,7 +69,7 @@ class ReclamacionExpedienteServiceTest {
                 .numeroTramite("EXP-2024-001234")
                 .documentoIdentidad("42567891")
                 .nombreTitular("María Quispe Huamán")
-                .estado(EstadoExpediente.DOCUMENTOS_VALIDADOS)
+                .estado(EstadoExpediente.EN_EVALUACION)
                 .cuentaId(null) // Histórico sin cuentaId
                 .solicitanteId(null)
                 .build();
