@@ -395,7 +395,7 @@ class PagoZonificacionIntegrationTest {
                 .nombreComercial("Ferretería Central")
                 .giroNegocio("Ferretería en general")
                 .direccionEstablecimiento("Av. Mariscal Cáceres 780")
-                .estado(EstadoExpediente.EN_EVALUACION)
+                .estado(EstadoExpediente.PENDIENTE_PAGO)
                 .nivelRiesgo(NivelRiesgo.MEDIO)
                 .montoTasa(new BigDecimal("218.00"))
                 .fechaCreacion(LocalDateTime.now())

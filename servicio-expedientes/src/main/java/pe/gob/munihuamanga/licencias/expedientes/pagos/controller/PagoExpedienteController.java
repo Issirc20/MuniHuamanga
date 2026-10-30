@@ -38,7 +38,7 @@ public class PagoExpedienteController {
     private final ProveedorActor proveedorActor;
 
     @PostMapping("/api/expedientes/{id}/pagos/declarar")
-    @PreAuthorize("@expedienteSecurity.puedeActuarComoAdministrado(authentication, #id, 'PRESENTAR_EXPEDIENTE')")
+    @PreAuthorize("@expedienteSecurity.puedeDeclararPago(authentication, #id)")
     @Operation(summary = "Declarar el comprobante de pago de la tasa liquidada")
     public ResponseEntity<PagoExpedienteDto> declararPago(@PathVariable UUID id, @Valid @RequestBody DeclararPagoDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pagoService.declararPago(id, dto));

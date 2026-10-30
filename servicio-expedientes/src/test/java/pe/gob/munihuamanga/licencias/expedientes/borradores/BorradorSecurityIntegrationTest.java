@@ -16,42 +16,33 @@ import pe.gob.munihuamanga.licencias.common.dto.ActualizarBorradorDto;
 import pe.gob.munihuamanga.licencias.common.dto.AdjuntarDocumentoBorradorDto;
 import pe.gob.munihuamanga.licencias.common.dto.CrearBorradorDto;
 import pe.gob.munihuamanga.licencias.common.dto.CrearEstablecimientoDto;
-import pe.gob.munihuamanga.licencias.common.dto.CuentaResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.EstablecimientoDto;
 import pe.gob.munihuamanga.licencias.common.dto.ExpedienteResponseDto;
-import pe.gob.munihuamanga.licencias.common.dto.LoginRequestDto;
-import pe.gob.munihuamanga.licencias.common.dto.LoginResponseDto;
 import pe.gob.munihuamanga.licencias.common.dto.PresentarBorradorDto;
 import pe.gob.munihuamanga.licencias.common.dto.ReclamarExpedienteDto;
-import pe.gob.munihuamanga.licencias.common.dto.RegistroCuentaDto;
 import pe.gob.munihuamanga.licencias.common.dto.ResolverReclamacionDto;
 import pe.gob.munihuamanga.licencias.common.dto.SolicitudBorradorDto;
-import pe.gob.munihuamanga.licencias.common.enums.EstadoCuenta;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.ModalidadTramite;
 import pe.gob.munihuamanga.licencias.common.enums.NivelRiesgo;
-import pe.gob.munihuamanga.licencias.common.enums.TipoDocumento;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDocumentoAdjunto;
-import pe.gob.munihuamanga.licencias.common.enums.TipoPersona;
-import pe.gob.munihuamanga.licencias.expedientes.borradores.repository.SolicitudBorradorRepository;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta;
-import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
-import pe.gob.munihuamanga.licencias.expedientes.establecimientos.repository.EstablecimientoRepository;
+import pe.gob.munihuamanga.licencias.expedientes.config.UsuarioDataInitializer;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static pe.gob.munihuamanga.licencias.expedientes.soporte.DatosDePrueba.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -66,63 +57,24 @@ class BorradorSecurityIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private CuentaRepository cuentaRepository;
-
-    @Autowired
-    private EstablecimientoRepository establecimientoRepository;
-
-    @Autowired
-    private SolicitudBorradorRepository borradorRepository;
-
-    @Autowired
     private ExpedienteRepository expedienteRepository;
 
     private String tokenCiudadanoTitular;
     private String tokenCiudadanoTercero;
     private String tokenEvaluador;
+    private String tokenSupervisor;
 
-    private UUID cuentaTitularId;
+    private final UUID cuentaTitularId = UsuarioDataInitializer.CUENTA_MARIA_QUISPE;
     private UUID establecimientoId;
 
     @BeforeEach
     void setUp() throws Exception {
-        tokenCiudadanoTitular = obtenerToken("42567891", "Ciudadano.Huamanga26");
-        tokenCiudadanoTercero = obtenerToken("78999999", "Ciudadano.Huamanga26");
-        tokenEvaluador = obtenerToken("evaluador", "Licencias.Huamanga26");
+        tokenCiudadanoTitular = obtenerToken(mockMvc, objectMapper, CIUDADANA_TITULAR, CLAVE_CIUDADANO);
+        tokenCiudadanoTercero = obtenerToken(mockMvc, objectMapper, CIUDADANO_TERCERO, CLAVE_CIUDADANO);
+        tokenEvaluador = obtenerToken(mockMvc, objectMapper, EVALUADOR, CLAVE_EVALUADOR);
+        tokenSupervisor = obtenerToken(mockMvc, objectMapper, SUPERVISOR, CLAVE_SUPERVISOR);
 
-        // Registrar cuenta para el titular si no existe en la tabla cuentas
-        if (!cuentaRepository.existsByNumeroDocumento("42567891")) {
-            RegistroCuentaDto cuentaDto = RegistroCuentaDto.builder()
-                    .tipoPersona(TipoPersona.NATURAL)
-                    .tipoDocumento(TipoDocumento.DNI)
-                    .numeroDocumento("42567891")
-                    .razonSocialONombre("María Quispe Huamán")
-                    .email("maria.quispe@test.pe")
-                    .password("password123")
-                    .build();
-
-            MvcResult resCuenta = mockMvc.perform(post("/api/cuentas/registro")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(cuentaDto)))
-                    .andExpect(status().isCreated())
-                    .andReturn();
-
-            CuentaResponseDto cResp = objectMapper.readValue(resCuenta.getResponse().getContentAsString(), CuentaResponseDto.class);
-            cuentaTitularId = cResp.getId();
-
-            Cuenta cuentaDb = cuentaRepository.findById(cuentaTitularId).orElseThrow();
-            cuentaDb.setEmailVerificado(true);
-            cuentaDb.setEstado(EstadoCuenta.ACTIVA);
-            cuentaRepository.save(cuentaDb);
-        } else {
-            cuentaTitularId = cuentaRepository.findByNumeroDocumento("42567891").orElseThrow().getId();
-            Cuenta cuentaDb = cuentaRepository.findById(cuentaTitularId).orElseThrow();
-            cuentaDb.setEmailVerificado(true);
-            cuentaDb.setEstado(EstadoCuenta.ACTIVA);
-            cuentaRepository.save(cuentaDb);
-        }
-
-        // Registrar un establecimiento para el titular
+        // Registrar un establecimiento para el titular (la cuenta semilla ya está activa y verificada)
         CrearEstablecimientoDto estDto = CrearEstablecimientoDto.builder()
                 .nombreComercial("Boutique Artesanal Huamanga")
                 .direccion("Jr. 9 de Diciembre 142")
@@ -146,25 +98,6 @@ class BorradorSecurityIntegrationTest {
 
         EstablecimientoDto eResp = objectMapper.readValue(resEst.getResponse().getContentAsString(), EstablecimientoDto.class);
         establecimientoId = eResp.getId();
-    }
-
-    private String obtenerToken(String username, String password) throws Exception {
-        LoginRequestDto request = LoginRequestDto.builder()
-                .username(username)
-                .password(password)
-                .build();
-
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        LoginResponseDto loginResponse = objectMapper.readValue(
-                result.getResponse().getContentAsString(),
-                LoginResponseDto.class
-        );
-        return loginResponse.getToken();
     }
 
     @Test
@@ -296,8 +229,20 @@ class BorradorSecurityIntegrationTest {
     @Test
     @DisplayName("I04: Procedimiento de Reclamación y Validación de Titularidad de expediente histórico")
     void procedimientoReclamacionTitularidadHistorica() throws Exception {
-        // Expediente histórico EXP-2026-00001 existe en la base semilla
-        Expediente hist = expedienteRepository.findByNumeroTramite("EXP-2026-00001").orElseThrow();
+        // Expediente histórico sin cuenta vinculada (p. ej. recibido presencialmente antes de la migración);
+        // conserva la identidad original del solicitante, pero aún no está enlazado a una cuenta del portal.
+        Expediente hist = expedienteRepository.save(Expediente.builder()
+                .id(UUID.randomUUID())
+                .numeroTramite("EXP-HIST-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                .solicitanteId(UUID.randomUUID())
+                .nombreTitular("María Quispe Huamán")
+                .documentoIdentidad(CIUDADANA_TITULAR)
+                .nombreComercial("Boutique Artesanal Huamanga (histórico)")
+                .giroNegocio("Venta de artesanías y retablos")
+                .direccionEstablecimiento("Jr. 9 de Diciembre 142")
+                .estado(EstadoExpediente.PRESENTADO)
+                .fechaCreacion(LocalDateTime.now())
+                .build());
 
         // 1. Administrado solicita reclamación aportando evidencia
         ReclamarExpedienteDto reclamoDto = ReclamarExpedienteDto.builder()
@@ -329,7 +274,7 @@ class BorradorSecurityIntegrationTest {
                 .build();
 
         mockMvc.perform(put("/api/expedientes/reclamaciones/" + reclamacionId + "/resolver")
-                        .header("Authorization", "Bearer " + tokenEvaluador)
+                        .header("Authorization", "Bearer " + tokenSupervisor)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(resolverDto)))
                 .andExpect(status().isOk())

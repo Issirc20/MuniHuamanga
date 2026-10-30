@@ -88,7 +88,7 @@ public class PagoExpedienteService {
         Expediente exp = expedienteRepository.findById(expedienteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Expediente no encontrado con ID: " + expedienteId));
 
-        Actor actor = verificadorTitularidad.exigir(exp, RolesInstitucionales.ATENCION_PRESENCIAL, PermisoOperador.PRESENTAR_EXPEDIENTE);
+        Actor actor = verificadorTitularidad.exigir(exp, RolesInstitucionales.RECEPCION_PAGOS, PermisoOperador.PRESENTAR_EXPEDIENTE);
         UUID usuarioId = actor.usuarioId();
         String username = actor.nombreParaRegistro();
 

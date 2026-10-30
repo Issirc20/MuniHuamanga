@@ -22,6 +22,12 @@ public final class RolesInstitucionales {
             RolUsuario.ROLE_MESA_DE_PARTES
     };
 
+    /** Funcionarios que pueden registrar la declaración de un pago cuando el administrado paga presencialmente en caja. */
+    public static final RolUsuario[] RECEPCION_PAGOS = {
+            RolUsuario.ROLE_MESA_DE_PARTES,
+            RolUsuario.ROLE_CAJERO
+    };
+
     private RolesInstitucionales() {
     }
 }
