@@ -79,14 +79,14 @@ public class CuentaController {
     }
 
     @GetMapping("/documento/{numeroDocumento}")
-    @PreAuthorize("hasAnyRole('MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUDITOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Consultar una cuenta por número de documento (funcionarios)")
     public ResponseEntity<CuentaResponseDto> obtenerPorDocumento(@PathVariable String numeroDocumento) {
         return ResponseEntity.ok(cuentaService.obtenerPorDocumento(numeroDocumento));
     }
 
     @PostMapping("/{id}/validacion-identidad")
-    @PreAuthorize("hasRole('MESA_DE_PARTES')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Registrar la validación de la identidad declarada del administrado")
     public ResponseEntity<Void> validarIdentidad(@PathVariable UUID id, @Valid @RequestBody ValidarIdentidadDto dto) {
         validacionIdentidadService.validar(id, dto.getMedio(), dto.getReferencia());

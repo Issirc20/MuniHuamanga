@@ -108,7 +108,7 @@ class ObservacionSubsanacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("Evaluador formula observación y expediente transiciona a OBSERVADO")
     void formularObservaciones_evaluadorAutorizado_exito() throws Exception {
         CrearObservacionDto obsDto = CrearObservacionDto.builder()
@@ -217,7 +217,7 @@ class ObservacionSubsanacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I05.1: Formulación con TipoObservacion.RECEPCION_DOCUMENTAL asigna 2 días hábiles por defecto")
     void formularObservacion_tipoRecepcionDocumental_asignaDosDiasHabiles() throws Exception {
         CrearObservacionDto obsDto = CrearObservacionDto.builder()

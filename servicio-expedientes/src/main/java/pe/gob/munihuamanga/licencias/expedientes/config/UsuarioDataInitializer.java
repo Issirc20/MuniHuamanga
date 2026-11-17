@@ -50,13 +50,8 @@ public class UsuarioDataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         crearFuncionario("admin", "Sistemas.Huamanga26", "Administración del Sistema", "sistemas@munihuamanga.gob.pe", RolUsuario.ROLE_ADMIN);
-        crearFuncionario("mesapartes", "Ventanilla.Huamanga26", "Mesa de Partes de Licencias", "mesadepartes@munihuamanga.gob.pe", RolUsuario.ROLE_MESA_DE_PARTES);
-        crearFuncionario("evaluador", "Licencias.Huamanga26", "Evaluador de Licencias de Funcionamiento", "evaluacion.licencias@munihuamanga.gob.pe", RolUsuario.ROLE_EVALUADOR);
-        crearFuncionario("supervisor", "Revision.Huamanga26", "Subgerencia de Comercio y Licencias", "subgerencia.licencias@munihuamanga.gob.pe", RolUsuario.ROLE_SUPERVISOR_LICENCIAS);
-        crearFuncionario("autoridad", "Gerencia.Huamanga26", "Gerencia de Desarrollo Económico", "gerencia.desarrollo@munihuamanga.gob.pe", RolUsuario.ROLE_AUTORIDAD_RESOLUTIVA);
-        crearFuncionario("cajero", "Caja.Huamanga2026", "Caja del SAT Huamanga", "caja@sat-huamanga.gob.pe", RolUsuario.ROLE_CAJERO);
+        crearFuncionario("funcionario", "Licencias.Huamanga26", "Subgerencia de Comercio y Licencias", "licencias@munihuamanga.gob.pe", RolUsuario.ROLE_FUNCIONARIO_LICENCIAS);
         crearFuncionario("inspector", "Campo.Huamanga26", "Inspección Municipal", "inspeccion@munihuamanga.gob.pe", RolUsuario.ROLE_INSPECTOR);
-        crearFuncionario("auditor", "Control.Huamanga26", "Órgano de Control Institucional", "control@munihuamanga.gob.pe", RolUsuario.ROLE_AUDITOR);
 
         crearAdministrado(CUENTA_MARIA_QUISPE, "42567891", "María Quispe Huamán", "maria.quispe@correo.pe",
                 "966123456", "Jr. 9 de Diciembre N° 142, Ayacucho");

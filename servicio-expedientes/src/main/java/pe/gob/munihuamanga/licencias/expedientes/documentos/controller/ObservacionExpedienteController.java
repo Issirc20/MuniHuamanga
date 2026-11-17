@@ -31,7 +31,7 @@ public class ObservacionExpedienteController {
     private final ObservacionExpedienteService observacionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('MESA_DE_PARTES', 'EVALUADOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Formular observaciones en la etapa de admisibilidad o durante la evaluación")
     public ResponseEntity<List<ObservacionExpedienteDto>> formularObservaciones(
             @PathVariable UUID id, @Valid @RequestBody List<@Valid CrearObservacionDto> dtos) {
@@ -54,7 +54,7 @@ public class ObservacionExpedienteController {
     }
 
     @PostMapping("/reanudar-revision")
-    @PreAuthorize("hasAnyRole('MESA_DE_PARTES', 'EVALUADOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Verificar la subsanación y retornar el expediente a la etapa en que fue observado")
     public ResponseEntity<Void> reanudarRevision(@PathVariable UUID id, @Valid @RequestBody SustentoDto dto) {
         observacionService.reanudarRevision(id, dto.getSustento());

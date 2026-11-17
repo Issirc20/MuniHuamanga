@@ -32,10 +32,10 @@ class AuthControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @DisplayName("Debe autenticar al evaluador exitosamente y devolver token JWT")
+    @DisplayName("Debe autenticar al funcionario de licencias exitosamente y devolver token JWT")
     void testLoginExitoso() throws Exception {
         LoginRequestDto request = LoginRequestDto.builder()
-                .username("evaluador")
+                .username("funcionario")
                 .password("Licencias.Huamanga26")
                 .build();
 
@@ -45,15 +45,15 @@ class AuthControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.tipo").value("Bearer"))
-                .andExpect(jsonPath("$.username").value("evaluador"))
-                .andExpect(jsonPath("$.rol").value("ROLE_EVALUADOR"));
+                .andExpect(jsonPath("$.username").value("funcionario"))
+                .andExpect(jsonPath("$.rol").value("ROLE_FUNCIONARIO_LICENCIAS"));
     }
 
     @Test
     @DisplayName("Debe rechazar credenciales incorrectas con 401/Unauthorized o BadCredentials")
     void testLoginInvalido() throws Exception {
         LoginRequestDto request = LoginRequestDto.builder()
-                .username("evaluador")
+                .username("funcionario")
                 .password("incorrecta")
                 .build();
 
@@ -76,7 +76,7 @@ class AuthControllerIntegrationTest {
     void testBandejaConToken_Retorna200() throws Exception {
         // 1. Iniciar sesión para obtener token
         LoginRequestDto request = LoginRequestDto.builder()
-                .username("evaluador")
+                .username("funcionario")
                 .password("Licencias.Huamanga26")
                 .build();
 

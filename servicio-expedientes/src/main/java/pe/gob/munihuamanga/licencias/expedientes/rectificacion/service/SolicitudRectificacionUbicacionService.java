@@ -92,7 +92,7 @@ public class SolicitudRectificacionUbicacionService {
 
     @Transactional
     public SolicitudRectificacionUbicacionDto evaluarRectificacion(UUID solicitudId, EvaluarRectificacionUbicacionDto dto, Authentication auth) {
-        String evaluador = (auth != null) ? auth.getName() : "EVALUADOR";
+        String evaluador = (auth != null) ? auth.getName() : "FUNCIONARIO_LICENCIAS";
         log.info("[RECTIFICACION] Evaluando solicitud {} por {}", solicitudId, evaluador);
 
         SolicitudRectificacionUbicacion sol = solicitudRepository.findById(solicitudId)

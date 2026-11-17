@@ -66,7 +66,7 @@ public class PagoExpedienteController {
     }
 
     @GetMapping("/api/pagos/bandeja")
-    @PreAuthorize("hasAnyRole('CAJERO', 'AUDITOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Bandeja de comprobantes de pago con filtros")
     public ResponseEntity<List<PagoExpedienteDto>> bandejaPagos(
             @RequestParam(required = false) EstadoValidacionPago estado,
@@ -77,7 +77,7 @@ public class PagoExpedienteController {
     }
 
     @PostMapping("/api/pagos/{id}/iniciar-revision")
-    @PreAuthorize("hasRole('CAJERO')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Tomar un comprobante en revisión")
     public ResponseEntity<PagoExpedienteDto> iniciarRevision(@PathVariable UUID id) {
         Actor cajero = proveedorActor.actual();
@@ -85,7 +85,7 @@ public class PagoExpedienteController {
     }
 
     @PostMapping("/api/pagos/{id}/validar")
-    @PreAuthorize("hasRole('CAJERO')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Validar el comprobante de pago frente a la tasa liquidada")
     public ResponseEntity<PagoExpedienteDto> validarPagoManual(@PathVariable UUID id, @Valid @RequestBody ValidarPagoManualDto dto) {
         Actor cajero = proveedorActor.actual();
@@ -93,7 +93,7 @@ public class PagoExpedienteController {
     }
 
     @PostMapping("/api/pagos/{id}/observar")
-    @PreAuthorize("hasRole('CAJERO')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Observar un comprobante de pago")
     public ResponseEntity<PagoExpedienteDto> observarPago(@PathVariable UUID id, @Valid @RequestBody ObservarPagoDto dto) {
         Actor cajero = proveedorActor.actual();
@@ -101,7 +101,7 @@ public class PagoExpedienteController {
     }
 
     @PostMapping("/api/pagos/{id}/rechazar")
-    @PreAuthorize("hasRole('CAJERO')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Rechazar un comprobante de pago")
     public ResponseEntity<PagoExpedienteDto> rechazarPago(@PathVariable UUID id, @Valid @RequestBody RechazarPagoDto dto) {
         Actor cajero = proveedorActor.actual();

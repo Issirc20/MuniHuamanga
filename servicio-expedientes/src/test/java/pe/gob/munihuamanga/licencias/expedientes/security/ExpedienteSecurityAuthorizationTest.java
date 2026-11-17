@@ -150,19 +150,25 @@ class ExpedienteSecurityAuthorizationTest {
     @Test
     @DisplayName("El cajero no puede validar el ITSE ni el evaluador aprobar resoluciones")
     void segregacionDeFunciones() throws Exception {
-        String tokenCajero = obtenerToken(mockMvc, objectMapper, CAJERO, CLAVE_CAJERO);
-        mockMvc.perform(post("/api/expedientes/" + expediente.getId() + "/itse/validacion")
-                        .header("Authorization", "Bearer " + tokenCajero)
+        // El actor "Funcionario de Licencias" consolida admisibilidad, ITSE, evaluación,
+        // informes y resoluciones en un único rol (ver plan de reestructuración a 4 actores).
+        // El control de acceso por rol ya no segrega estas etapas; lo que puede impedir la
+        // operación ahora es el estado del expediente (409/404), nunca la falta de permiso (403).
+        String tokenFuncionario = obtenerToken(mockMvc, objectMapper, FUNCIONARIO, CLAVE_FUNCIONARIO);
+
+        MvcResult itse = mockMvc.perform(post("/api/expedientes/" + expediente.getId() + "/itse/validacion")
+                        .header("Authorization", "Bearer " + tokenFuncionario)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(ValidarItseDto.builder().nivelOficial(NivelRiesgo.BAJO).build())))
-                .andExpect(status().isForbidden());
+                .andReturn();
+        assertThat(itse.getResponse().getStatus()).isNotEqualTo(403);
 
-        String tokenEvaluador = obtenerToken(mockMvc, objectMapper, EVALUADOR, CLAVE_EVALUADOR);
-        mockMvc.perform(post("/api/resoluciones/" + UUID.randomUUID() + "/aprobar")
-                        .header("Authorization", "Bearer " + tokenEvaluador)
+        MvcResult resolucion = mockMvc.perform(post("/api/resoluciones/" + UUID.randomUUID() + "/aprobar")
+                        .header("Authorization", "Bearer " + tokenFuncionario)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isForbidden());
+                .andReturn();
+        assertThat(resolucion.getResponse().getStatus()).isNotEqualTo(403);
     }
 
     @Test

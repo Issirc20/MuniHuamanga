@@ -50,7 +50,7 @@ public class DocumentoVersionadoService {
             .map(TipoAnexoItse::getTipoDocumento)
             .collect(Collectors.toCollection(() -> EnumSet.noneOf(TipoDocumentoAdjunto.class)));
 
-    private static final RolUsuario[] FUNCIONARIOS_QUE_ADJUNTAN = {RolUsuario.ROLE_MESA_DE_PARTES, RolUsuario.ROLE_EVALUADOR};
+    private static final RolUsuario[] FUNCIONARIOS_QUE_ADJUNTAN = {RolUsuario.ROLE_FUNCIONARIO_LICENCIAS};
 
     /** Identificador registrado cuando la carga la realiza un proceso sin persona autenticada. */
     private static final UUID SIN_USUARIO = new UUID(0L, 0L);

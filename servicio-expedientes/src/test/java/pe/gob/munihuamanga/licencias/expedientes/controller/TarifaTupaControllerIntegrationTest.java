@@ -81,7 +81,7 @@ class TarifaTupaControllerIntegrationTest {
     @Test
     @DisplayName("Debe rechazar (HTTP 403 Forbidden) cuando un EVALUADOR intenta modificar el tarifario")
     void testActualizarTarifa_ComoEvaluador_Retorna403() throws Exception {
-        String tokenEvaluador = loginYObtenerToken("evaluador", "Licencias.Huamanga26");
+        String tokenEvaluador = loginYObtenerToken("funcionario", "Licencias.Huamanga26");
         TarifaTupa tarifaMedio = tarifaRepository.findByNivelRiesgo(NivelRiesgo.MEDIO).orElseThrow();
 
         ActualizarTarifaDto updateDto = ActualizarTarifaDto.builder()

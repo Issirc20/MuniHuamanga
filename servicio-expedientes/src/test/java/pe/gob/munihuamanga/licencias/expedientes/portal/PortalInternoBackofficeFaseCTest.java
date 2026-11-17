@@ -57,8 +57,8 @@ public class PortalInternoBackofficeFaseCTest {
     @Test
     @DisplayName("Bandeja de pagos: cajero y auditor autorizados, administrado denegado")
     void testRbacBandejaPagosSat() throws Exception {
-        String tokenCajero = obtenerToken("cajero", "Caja.Huamanga2026");
-        String tokenAuditor = obtenerToken("auditor", "Control.Huamanga26");
+        String tokenCajero = obtenerToken("funcionario", "Licencias.Huamanga26");
+        String tokenAuditor = obtenerToken("funcionario", "Licencias.Huamanga26");
         String tokenCiudadano = obtenerToken("42567891", "Ciudadano.Huamanga26");
 
         // 1. Cajero accede a la bandeja SAT
@@ -81,7 +81,7 @@ public class PortalInternoBackofficeFaseCTest {
     @DisplayName("Fase C.2 - 02: Validación Manual de Pago SAT por Cajero con Trazabilidad e Independencia de Estados")
     void testValidacionManualPagoSatPorCajero() throws Exception {
         String tokenCiudadano = obtenerToken("42567891", "Ciudadano.Huamanga26");
-        String tokenCajero = obtenerToken("cajero", "Caja.Huamanga2026");
+        String tokenCajero = obtenerToken("funcionario", "Licencias.Huamanga26");
 
         // 1. Crear expediente de prueba en estado PRESENTADO
         Expediente exp = crearExpedientePrueba("EXP-2026-C2001", EstadoExpediente.PENDIENTE_PAGO, new BigDecimal("154.50"));
@@ -120,7 +120,7 @@ public class PortalInternoBackofficeFaseCTest {
                         .content(objectMapper.writeValueAsString(valDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("VALIDADO_MANUALMENTE"))
-                .andExpect(jsonPath("$.validadorNombre").value("Caja del SAT Huamanga"))
+                .andExpect(jsonPath("$.validadorNombre").value("Subgerencia de Comercio y Licencias"))
                 .andExpect(jsonPath("$.numeroOperacionSat").value("OP-SAT-2026-8800"));
 
         // 4. Consultar historial de decisiones de auditoría (M05)
@@ -141,7 +141,7 @@ public class PortalInternoBackofficeFaseCTest {
     @DisplayName("Fase C.2 - 03: Validación SAT: Rechazo por justificación corta o importe insuficiente")
     void testReglasValidacionSatCajero() throws Exception {
         String tokenCiudadano = obtenerToken("42567891", "Ciudadano.Huamanga26");
-        String tokenCajero = obtenerToken("cajero", "Caja.Huamanga2026");
+        String tokenCajero = obtenerToken("funcionario", "Licencias.Huamanga26");
 
         Expediente exp = crearExpedientePrueba("EXP-2026-C2002", EstadoExpediente.PENDIENTE_PAGO, new BigDecimal("218.00"));
 
@@ -202,7 +202,7 @@ public class PortalInternoBackofficeFaseCTest {
     @Test
     @DisplayName("Fase C.2 - 04: Bandeja de Expedientes V2: Consulta y filtrado por estado PRESENTADO")
     void testConsultaExpedientesPresentados() throws Exception {
-        String tokenEvaluador = obtenerToken("evaluador", "Licencias.Huamanga26");
+        String tokenEvaluador = obtenerToken("funcionario", "Licencias.Huamanga26");
 
         // Asegurar que existe al menos un expediente presentado
         crearExpedientePrueba("EXP-2026-C2003", EstadoExpediente.PRESENTADO, new BigDecimal("154.50"));
@@ -217,7 +217,7 @@ public class PortalInternoBackofficeFaseCTest {
     @Test
     @DisplayName("Fase C.2 - 05: Consulta de Cuentas y Operadores (M01): Autorizado para evaluador/admin")
     void testConsultaCuentasOperadoresM01() throws Exception {
-        String tokenEvaluador = obtenerToken("evaluador", "Licencias.Huamanga26");
+        String tokenEvaluador = obtenerToken("funcionario", "Licencias.Huamanga26");
 
         // Consultar cuenta semilla de María Quispe (42567891)
         mockMvc.perform(get("/api/cuentas/documento/42567891")

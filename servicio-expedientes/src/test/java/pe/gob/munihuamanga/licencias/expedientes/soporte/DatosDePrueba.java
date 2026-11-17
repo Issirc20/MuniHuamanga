@@ -31,20 +31,30 @@ public final class DatosDePrueba {
 
     public static final String ADMIN = "admin";
     public static final String CLAVE_ADMIN = "Sistemas.Huamanga26";
-    public static final String MESA_DE_PARTES = "mesapartes";
-    public static final String CLAVE_MESA_DE_PARTES = "Ventanilla.Huamanga26";
-    public static final String EVALUADOR = "evaluador";
-    public static final String CLAVE_EVALUADOR = "Licencias.Huamanga26";
-    public static final String SUPERVISOR = "supervisor";
-    public static final String CLAVE_SUPERVISOR = "Revision.Huamanga26";
-    public static final String AUTORIDAD = "autoridad";
-    public static final String CLAVE_AUTORIDAD = "Gerencia.Huamanga26";
-    public static final String CAJERO = "cajero";
-    public static final String CLAVE_CAJERO = "Caja.Huamanga2026";
+
+    /**
+     * Las antiguas cuentas de Mesa de Partes, Evaluador, Supervisor, Autoridad Resolutiva,
+     * Cajero y Auditor se consolidaron en un único actor "Funcionario de Licencias"
+     * (ROLE_FUNCIONARIO_LICENCIAS). Los nombres de constante se conservan para no alterar
+     * cada caso de prueba que las referenciaba; todas apuntan a la misma cuenta semilla.
+     */
+    public static final String FUNCIONARIO = "funcionario";
+    public static final String CLAVE_FUNCIONARIO = "Licencias.Huamanga26";
+    public static final String MESA_DE_PARTES = FUNCIONARIO;
+    public static final String CLAVE_MESA_DE_PARTES = CLAVE_FUNCIONARIO;
+    public static final String EVALUADOR = FUNCIONARIO;
+    public static final String CLAVE_EVALUADOR = CLAVE_FUNCIONARIO;
+    public static final String SUPERVISOR = FUNCIONARIO;
+    public static final String CLAVE_SUPERVISOR = CLAVE_FUNCIONARIO;
+    public static final String AUTORIDAD = FUNCIONARIO;
+    public static final String CLAVE_AUTORIDAD = CLAVE_FUNCIONARIO;
+    public static final String CAJERO = FUNCIONARIO;
+    public static final String CLAVE_CAJERO = CLAVE_FUNCIONARIO;
+    public static final String AUDITOR = FUNCIONARIO;
+    public static final String CLAVE_AUDITOR = CLAVE_FUNCIONARIO;
+
     public static final String INSPECTOR = "inspector";
     public static final String CLAVE_INSPECTOR = "Campo.Huamanga26";
-    public static final String AUDITOR = "auditor";
-    public static final String CLAVE_AUDITOR = "Control.Huamanga26";
     public static final String CIUDADANA_TITULAR = "42567891";
     public static final String CIUDADANO_TERCERO = "78999999";
     public static final String CLAVE_CIUDADANO = "Ciudadano.Huamanga26";
