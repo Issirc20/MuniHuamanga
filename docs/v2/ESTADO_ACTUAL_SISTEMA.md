@@ -85,7 +85,7 @@ graph TD
 
 ### 3.2. Portal Interno (Backoffice) y Módulo SAT (Fase C.2)
 1. **Adaptación de Permisos y Segregación por Rol (RBAC):**
-   - El portal interno adapta dinámicamente sus botones y pestañas según el rol autenticado: `ROLE_CAJERO`, `ROLE_EVALUADOR`, `ROLE_ADMIN`, `ROLE_INSPECTOR`.
+   - El portal interno adapta dinámicamente sus botones y pestañas según el rol autenticado: `ROLE_FUNCIONARIO_LICENCIAS`, `ROLE_ADMIN`, `ROLE_INSPECTOR`.
    - El rol Cajero tiene acceso exclusivo a la bandeja de pagos SAT (`/api/pagos/bandeja`), denegando accesos no autorizados a resoluciones o emisión de licencias.
 2. **Bandeja de Pagos SAT y Trazabilidad Inmutable (M05):**
    - Incorporación de modal `#modalHistorialPago` para auditar la secuencia histórica de decisiones (`PENDIENTE_VALIDACION`, `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO`, `RECHAZADO`).

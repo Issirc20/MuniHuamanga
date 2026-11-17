@@ -80,10 +80,10 @@ stateDiagram-v2
 ```
 
 ### RF-04: Validación Manual de Pagos SAT (M04)
-* **Descripción:** Los pagos por derechos TUPA se abonan en ventanillas SAT Huamanga (ADR-06). El administrado registra el número de comprobante y monto; el cajero municipal (`ROLE_CAJERO`) califica el pago con los estados: `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO` o `RECHAZADO`.
+* **Descripción:** Los pagos por derechos TUPA se abonan en ventanillas SAT Huamanga (ADR-06). El administrado registra el número de comprobante y monto; el funcionario de licencias (`ROLE_FUNCIONARIO_LICENCIAS`) califica el pago con los estados: `EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO` o `RECHAZADO`.
 
 ### RF-05: Calificación de Nivel de Riesgo ITSE y Zonificación PDU (M06, M07)
-* **Descripción:** Determinación objetiva del riesgo ITSE (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`) según función de edificación, área y aforo (D.S. N° 002-2018-PCM). Evaluación técnica manual de compatibilidad de zonificación según Plano de Desarrollo Urbano (PDU) de Huamanga realizada por el evaluador (`ROLE_EVALUADOR`).
+* **Descripción:** Determinación objetiva del riesgo ITSE (`BAJO`, `MEDIO`, `ALTO`, `MUY_ALTO`) según función de edificación, área y aforo (D.S. N° 002-2018-PCM). Evaluación técnica manual de compatibilidad de zonificación según Plano de Desarrollo Urbano (PDU) de Huamanga realizada por el funcionario de licencias (`ROLE_FUNCIONARIO_LICENCIAS`).
 
 ### RF-06: Rectificación de Ubicación Georreferenciada (M06)
 * **Descripción:** Permitir al titular solicitar la rectificación de coordenadas geográficas o dirección física de un establecimiento, con revisión y resolución fundamentada del evaluador técnico.

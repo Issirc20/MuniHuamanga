@@ -113,13 +113,13 @@ graph TD
 ### M04: Pagos SAT y Liquidación Tributaria
 * **Objetivo:** Controlar la recaudación de los derechos de trámite municipal e inspección técnica según el TUPA.
 * **Requisitos:** RF-04, RF-17.
-* **Responsabilidades:** Emisión de órdenes de pago con código de barras (`VCH-YYYY-XXXXXX`); registro de comprobantes de pago por administrados; validación manual por cajeros municipales con estados diferenciados (`EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO`, `RECHAZADO`).
+* **Responsabilidades:** Emisión de órdenes de pago con código de barras (`VCH-YYYY-XXXXXX`); registro de comprobantes de pago por administrados; validación manual por el funcionario de licencias con estados diferenciados (`EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO`, `RECHAZADO`).
 * **Clases Principales:** `PagoExpediente`, `PagoService`, `PagoController`, `PagoExpedienteRepository`.
 * **Endpoints:**
   - `POST /api/expedientes/{id}/pago` (Registro de comprobante de pago).
-  - `PUT /api/pagos/{id}/validar-manual` (Protegido `ROLE_CAJERO`: Validación de abono).
-  - `PUT /api/pagos/{id}/observar` (Protegido `ROLE_CAJERO`: Observación de pago).
-  - `PUT /api/pagos/{id}/rechazar` (Protegido `ROLE_CAJERO`: Rechazo de comprobante).
+  - `PUT /api/pagos/{id}/validar-manual` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Validación de abono).
+  - `PUT /api/pagos/{id}/observar` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Observación de pago).
+  - `PUT /api/pagos/{id}/rechazar` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Rechazo de comprobante).
 * **DTOs Clave:** `PagoExpedienteDto`, `ValidarPagoManualDto`, `ObservarPagoDto`, `RechazarPagoDto`.
 * **Persistencia:** Tabla `pagos_expedientes`.
 * **Frontend:** Pestaña "Pagos" en `portal-interno.html` con badges de estado y modales de validación.
@@ -151,9 +151,9 @@ graph TD
 * **Responsabilidades:** Registro de dictamen de compatibilidad de uso PDU por el evaluador municipal; flujo de solicitudes de rectificación de dirección o coordenadas por el titular comercial; resolución técnica de rectificaciones.
 * **Clases Principales:** `EvaluacionZonificacion`, `SolicitudRectificacionUbicacion`, `ZonificacionService`, `RectificacionUbicacionService`, `ZonificacionController`, `RectificacionController`.
 * **Endpoints:**
-  - `POST /api/expedientes/{id}/zonificacion` (Protegido `ROLE_EVALUADOR`: Evaluación PDU).
+  - `POST /api/expedientes/{id}/zonificacion` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Evaluación PDU).
   - `POST /api/establecimientos/{id}/rectificacion-ubicacion` (Protegido: Solicitud de cambio).
-  - `PUT /api/rectificaciones-ubicacion/{id}/resolver` (Protegido `ROLE_EVALUADOR`: Dictamen).
+  - `PUT /api/rectificaciones-ubicacion/{id}/resolver` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Dictamen).
 * **DTOs Clave:** `RegistrarEvaluacionZonificacionDto`, `SolicitudRectificacionUbicacionDto`.
 * **Persistencia:** Tablas `evaluaciones_zonificacion`, `solicitudes_rectificacion_ubicacion`.
 * **Frontend:** Pestaña "Zonificación" y "Rectificaciones" en `portal-interno.html`.
@@ -168,7 +168,7 @@ graph TD
 * **Responsabilidades:** Verificación de admisibilidad documental; elaboración de **Informe Administrativo Técnico** (acto preparatorio de instrucción interna, ADR-07); gestión de observaciones técnicas; despacho asíncrono de notificaciones por correo electrónico.
 * **Clases Principales:** `InformeAdministrativo`, `EvaluacionService`, `NotificacionEmailService`, `EvaluacionController`, `InformeAdministrativoRepository`.
 * **Endpoints:**
-  - `POST /api/expedientes/{id}/informe-tecnico` (Protegido `ROLE_EVALUADOR`: Emisión informe).
+  - `POST /api/expedientes/{id}/informe-tecnico` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Emisión informe).
   - `GET /api/expedientes/{id}/informes` (Consulta de informes técnicos).
 * **DTOs Clave:** `InformeAdministrativoDto`, `ValidacionRequisitosDto`.
 * **Persistencia:** Tabla `informes_administrativos`.
@@ -237,7 +237,7 @@ graph TD
 * **Clases Principales:** `ReclamacionExpediente`, `ReclamacionService`, `ReclamacionController`, `ReclamacionExpedienteRepository`.
 * **Endpoints:**
   - `POST /api/expedientes/{id}/reclamaciones` (Protegido: Registro de reclamación).
-  - `PUT /api/reclamaciones/{id}/resolver` (Protegido `ROLE_EVALUADOR` / `ROLE_ADMIN`: Resolución).
+  - `PUT /api/reclamaciones/{id}/resolver` (Protegido `ROLE_FUNCIONARIO_LICENCIAS`: Resolución).
 * **DTOs Clave:** `ReclamacionExpedienteDto`, `ResolverReclamacionDto`.
 * **Persistencia:** Tabla `reclamaciones_expedientes`.
 * **Frontend:** Interfaz backend completa; pantalla ciudadana específica pendiente de integrar en el menú del portal web.
@@ -249,7 +249,7 @@ graph TD
 ### M12: Seguridad Integral y Auditoría Inmutable
 * **Objetivo:** Proteger el acceso a recursos del sistema y registrar de forma inmutable cada acto administrativo.
 * **Requisitos:** RF-15, RNF-04, RNF-05, RNF-08.
-* **Responsabilidades:** Autenticación sin estado mediante JWT HMAC-SHA256; autorización basada en roles (`ROLE_ADMIN`, `ROLE_EVALUADOR`, `ROLE_CAJERO`, `ROLE_INSPECTOR`, `ROLE_CIUDADANO`); mitigación IDOR/BOLA con anotaciones `@PreAuthorize`; bitácora de auditoría inmutable (*append-only*).
+* **Responsabilidades:** Autenticación sin estado mediante JWT HMAC-SHA256; autorización basada en roles (`ROLE_ADMIN`, `ROLE_FUNCIONARIO_LICENCIAS`, `ROLE_INSPECTOR`, `ROLE_CIUDADANO`); mitigación IDOR/BOLA con anotaciones `@PreAuthorize`; bitácora de auditoría inmutable (*append-only*).
 * **Clases Principales:** `SecurityConfig`, `JwtAuthenticationFilter`, `JwtTokenProvider`, `AuditoriaExpediente`, `AuditoriaService`, `ExpedienteSecurity`, `CuentaSecurity`, `EstablecimientoSecurity`.
 * **Endpoints:**
   - `POST /api/auth/login` (Autenticación y entrega de token Bearer).

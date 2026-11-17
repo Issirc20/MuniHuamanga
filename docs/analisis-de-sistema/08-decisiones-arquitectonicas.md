@@ -67,7 +67,7 @@ Durante la fase inicial de concepción del proyecto (Fase V1) se adoptaron decis
 ### Histórico V1 — ADR-05: Seguridad Stateless con Spring Security 6 y JJWT (RBAC)
 * **Fecha:** Septiembre 2026.
 * **Contexto:** Autenticación por roles para funcionarios sin sesiones en servidor (`HttpSession`).
-* **Decisión:** Tokens JWT HMAC-SHA256 y roles `ROLE_ADMIN`, `ROLE_EVALUADOR`, `ROLE_CAJERO`.
+* **Decisión:** Tokens JWT HMAC-SHA256 y roles `ROLE_ADMIN`, `ROLE_FUNCIONARIO_LICENCIAS`, `ROLE_INSPECTOR`, `ROLE_CIUDADANO`.
 * **Evolución a V2:** Evolucionado en **ADR-02 (V2)** hacia autorización a nivel de método (`@PreAuthorize`) y protección IDOR/BOLA, incorporando `ROLE_INSPECTOR` y `ROLE_CIUDADANO`.
 
 ### Histórico V1 — ADR-06: Tarifario TUPA Dinámico con Persistencia Relacional
