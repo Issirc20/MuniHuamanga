@@ -46,10 +46,8 @@ public class DocumentoSecurityValidator {
             );
         }
 
-        // 1. Sanitizar nombre contra Path Traversal
         String nombreLimpio = sanitizarNombreArchivo(nombreArchivoOriginal);
 
-        // 2. Validar extensión permitida
         String extension = extraerExtension(nombreLimpio).toLowerCase();
         if (!EXTENSIONES_PERMITIDAS.contains(extension)) {
             log.warn("[SEGURIDAD-DOC] Extensión no permitida rechazada: '{}'", extension);
@@ -58,10 +56,7 @@ public class DocumentoSecurityValidator {
             );
         }
 
-        // 3. Validar MIME real mediante inspección de Magic Numbers
         validarNumeroMagico(extension, contenido);
-
-        // 4. Mecanismo de análisis antimalware (registro de estado real, sin simulación engañosa)
         registrarAuditoriaAntimalware(nombreLimpio, contenido.length);
 
         return nombreLimpio;

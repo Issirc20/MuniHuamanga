@@ -26,22 +26,20 @@ import pe.gob.munihuamanga.licencias.expedientes.cuentas.model.Cuenta;
 import pe.gob.munihuamanga.licencias.expedientes.establecimientos.model.Establecimiento;
 import pe.gob.munihuamanga.licencias.expedientes.cuentas.repository.CuentaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.establecimientos.repository.EstablecimientoRepository;
-
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
 import pe.gob.munihuamanga.licencias.expedientes.borradores.security.DocumentoSecurityValidator;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SolicitudBorradorService {
 
     public static final String AVISO_LEGAL = "Solicitud preliminar en estado de borrador. No constituye inicio de procedimiento administrativo formal ni genera derecho adquirido.";
@@ -54,20 +52,7 @@ public class SolicitudBorradorService {
     private final CuentaRepository cuentaRepository;
     private final EstablecimientoRepository establecimientoRepository;
     private final DocumentoSecurityValidator documentoSecurityValidator;
-
-    public SolicitudBorradorService(
-            SolicitudBorradorRepository borradorRepository,
-            DocumentoBorradorRepository documentoRepository,
-            CuentaRepository cuentaRepository,
-            EstablecimientoRepository establecimientoRepository,
-            DocumentoSecurityValidator documentoSecurityValidator
-    ) {
-        this.borradorRepository = borradorRepository;
-        this.documentoRepository = documentoRepository;
-        this.cuentaRepository = cuentaRepository;
-        this.establecimientoRepository = establecimientoRepository;
-        this.documentoSecurityValidator = documentoSecurityValidator;
-    }
+    private final ProveedorActor proveedorActor;
 
     @Transactional
     public SolicitudBorradorDto crearBorrador(CrearBorradorDto dto, UUID creadorId) {
@@ -139,7 +124,6 @@ public class SolicitudBorradorService {
         if (dto.getAutorizaNotificacion() != null) borrador.setAutorizaNotificacion(dto.getAutorizaNotificacion());
         if (dto.getNivelRiesgoDeclarado() != null) borrador.setNivelRiesgoDeclarado(dto.getNivelRiesgoDeclarado());
 
-        // Comprobante SAT
         if (dto.getNumeroOperacionSat() != null) borrador.setNumeroOperacionSat(dto.getNumeroOperacionSat().trim());
         if (dto.getFechaPagoSat() != null) borrador.setFechaPagoSat(dto.getFechaPagoSat());
         if (dto.getMontoTasa() != null) borrador.setMontoTasa(dto.getMontoTasa());
@@ -175,9 +159,8 @@ public class SolicitudBorradorService {
         }
 
         byte[] contenido = Base64.getDecoder().decode(dto.getContenidoBase64());
-        // Validación de seguridad OWASP A08: extensión, magic number, tamaño máximo y sanitización path traversal
         String nombreSanitizado = documentoSecurityValidator.validarYSanitizar(dto.getNombreArchivo(), dto.getTipoContenido(), contenido);
-        String hashSha256 = calcularSha256(contenido);
+        String hashSha256 = documentoSecurityValidator.calcularSha256(contenido);
 
         DocumentoBorrador documento = DocumentoBorrador.builder()
                 .id(UUID.randomUUID())
@@ -214,24 +197,7 @@ public class SolicitudBorradorService {
     }
 
     @Transactional(readOnly = true)
-    public DocumentoBorradorDto descargarDocumento(UUID borradorId, UUID documentoId, UUID usuarioId, String rolUsuario) {
-        SolicitudBorrador borrador = obtenerEntidadBorrador(borradorId);
-
-        // Control de autorización: creador, operador de la cuenta titular o funcionario municipal
-        boolean esFuncionario = rolUsuario != null && (rolUsuario.contains("MESA_DE_PARTES") || rolUsuario.contains("EVALUADOR") || rolUsuario.contains("SUPERVISOR_LICENCIAS") || rolUsuario.contains("AUDITOR"));
-        if (!esFuncionario && usuarioId != null && !usuarioId.equals(borrador.getCreadorId())) {
-            boolean esOperador = borrador.getCuenta() != null && borrador.getCuenta().getOperadores() != null &&
-                    borrador.getCuenta().getOperadores().stream()
-                            .anyMatch(op -> op.getUsuario() != null && usuarioId.equals(op.getUsuario().getId()) && Boolean.TRUE.equals(op.getActivo()));
-            if (!esOperador) {
-                log.warn("[SEGURIDAD-DOC] Intento no autorizado de acceso al documento {} del borrador {} por usuario {}",
-                        documentoId, borradorId, usuarioId);
-                throw new org.springframework.security.access.AccessDeniedException(
-                        "No cuenta con autorización para acceder a los documentos de este borrador."
-                );
-            }
-        }
-
+    public DocumentoBorradorDto descargarDocumento(UUID borradorId, UUID documentoId) {
         DocumentoBorrador doc = documentoRepository.findById(documentoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Documento no encontrado con ID: " + documentoId));
 
@@ -239,8 +205,9 @@ public class SolicitudBorradorService {
             throw new IllegalArgumentException("El documento no corresponde al borrador especificado.");
         }
 
-        log.info("[SEGURIDAD-DOC] Descarga y consulta autorizada de documento ID: {} (SHA-256: {}) en borrador: {} por usuario: {}",
-                documentoId, doc.getHashSha256(), borradorId, usuarioId);
+        Actor actor = proveedorActor.actual();
+        log.info("[SEGURIDAD-DOC] Consulta autorizada de documento ID: {} (SHA-256: {}) en borrador: {} por actor: {}",
+                documentoId, doc.getHashSha256(), borradorId, actor.nombreParaRegistro());
 
         return mapearDocDto(doc);
     }
@@ -323,16 +290,6 @@ public class SolicitudBorradorService {
     private SolicitudBorrador obtenerEntidadBorrador(UUID borradorId) {
         return borradorRepository.findById(borradorId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Borrador no encontrado con ID: " + borradorId));
-    }
-
-    private String calcularSha256(byte[] contenido) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(contenido);
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Algoritmo criptográfico SHA-256 no disponible en la plataforma.", e);
-        }
     }
 
     private SolicitudBorradorDto mapearADto(SolicitudBorrador b) {

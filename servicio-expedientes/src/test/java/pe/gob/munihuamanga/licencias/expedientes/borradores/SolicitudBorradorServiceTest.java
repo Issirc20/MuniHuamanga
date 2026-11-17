@@ -59,6 +59,9 @@ class SolicitudBorradorServiceTest {
     @Mock
     private EstablecimientoRepository establecimientoRepository;
 
+    @Mock
+    private pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor proveedorActor;
+
     private SolicitudBorradorService service;
 
     private Cuenta cuentaTest;
@@ -72,7 +75,8 @@ class SolicitudBorradorServiceTest {
                 documentoRepository,
                 cuentaRepository,
                 establecimientoRepository,
-                new DocumentoSecurityValidator()
+                new DocumentoSecurityValidator(),
+                proveedorActor
         );
 
         UUID cuentaId = UUID.randomUUID();

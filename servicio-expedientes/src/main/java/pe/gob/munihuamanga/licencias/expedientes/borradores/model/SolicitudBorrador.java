@@ -123,7 +123,6 @@ public class SolicitudBorrador {
     @Column(name = "voucher_id", length = 50)
     private String voucherId;
 
-    // Relación con el expediente una vez formalizado (M06)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "expediente_id")
     private Expediente expediente;

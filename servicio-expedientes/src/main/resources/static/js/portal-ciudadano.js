@@ -37,6 +37,52 @@ let state = {
 const PROGRESO_PASOS = { 1: 25, 2: 50, 3: 75, 4: 100 };
 
 // =============================================================================
+// SISTEMA DE NOTIFICACIONES INSTITUCIONAL (reemplaza al alert() nativo)
+// =============================================================================
+const PALETA_TOAST = {
+  success: { fondo: '#ecfdf5', borde: 'var(--success, #059669)', texto: '#065f46' },
+  error:   { fondo: '#fef2f2', borde: 'var(--danger, #dc2626)', texto: '#7f1d1d' },
+  warning: { fondo: '#fffbeb', borde: 'var(--warning, #d97706)', texto: '#92400e' },
+  info:    { fondo: '#eff6ff', borde: 'var(--primary, #003366)', texto: '#1e3a8a' },
+};
+
+function obtenerContenedorToast() {
+  let contenedor = document.getElementById('toastContainer');
+  if (!contenedor) {
+    contenedor = document.createElement('div');
+    contenedor.id = 'toastContainer';
+    contenedor.setAttribute('aria-live', 'polite');
+    Object.assign(contenedor.style, {
+      position: 'fixed', top: '1rem', right: '1rem', zIndex: '9999',
+      display: 'flex', flexDirection: 'column', gap: '0.5rem', maxWidth: '380px',
+    });
+    document.body.appendChild(contenedor);
+  }
+  return contenedor;
+}
+
+function toast(mensaje, tipo = 'info') {
+  const contenedor = obtenerContenedorToast();
+  const paleta = PALETA_TOAST[tipo] || PALETA_TOAST.info;
+
+  const nota = document.createElement('div');
+  nota.setAttribute('role', tipo === 'error' ? 'alert' : 'status');
+  Object.assign(nota.style, {
+    background: paleta.fondo, borderLeft: `4px solid ${paleta.borde}`, color: paleta.texto,
+    padding: '0.75rem 1rem', borderRadius: '6px',
+    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.12)', fontSize: '0.9rem', lineHeight: '1.4',
+  });
+  nota.textContent = mensaje;
+  contenedor.appendChild(nota);
+
+  setTimeout(() => {
+    nota.style.transition = 'opacity 0.3s';
+    nota.style.opacity = '0';
+    setTimeout(() => nota.remove(), 300);
+  }, 4500);
+}
+
+// =============================================================================
 // INICIALIZACIÓN AL CARGAR LA PÁGINA
 // =============================================================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -148,7 +194,7 @@ async function ejecutarLoginCiudadano() {
   const password = document.getElementById('loginPassword').value.trim();
 
   if (!username || !password) {
-    return alert('⚠️ Ingrese su documento de identidad y contraseña.');
+    return toast('Ingrese su documento de identidad y contraseña.', 'warning');
   }
 
   try {
@@ -180,9 +226,9 @@ async function ejecutarLoginCiudadano() {
     actualizarUiSesion(true);
     await recuperarCuentaDeUsuario(username);
 
-    alert(`👋 ¡Bienvenido/a, ${state.usuario.nombreCompleto || state.usuario.username}! Sesión iniciada con éxito.`);
+    toast(`Bienvenido/a, ${state.usuario.nombreCompleto || state.usuario.username}. Sesión iniciada con éxito.`, 'success');
   } catch (err) {
-    alert('❌ Error al iniciar sesión: ' + err.message);
+    toast('Error al iniciar sesión: ' + err.message, 'error');
   }
 }
 
@@ -217,15 +263,15 @@ async function ejecutarRegistroCuenta() {
   const passwordConfirm = document.getElementById('regPasswordConfirm').value;
 
   if (!numeroDocumento || !razonSocialONombre || !email || !password) {
-    return alert('⚠️ Por favor complete todos los campos obligatorios (*).');
+    return toast('Por favor complete todos los campos obligatorios (*).', 'warning');
   }
 
   if (password.length < 6) {
-    return alert('⚠️ La contraseña debe tener al menos 6 caracteres.');
+    return toast('La contraseña debe tener al menos 6 caracteres.', 'warning');
   }
 
   if (password !== passwordConfirm) {
-    return alert('⚠️ Las contraseñas ingresadas no coinciden.');
+    return toast('Las contraseñas ingresadas no coinciden.', 'warning');
   }
 
   const payload = {
@@ -253,7 +299,7 @@ async function ejecutarRegistroCuenta() {
 
     const cuentaCreada = await res.json();
     cerrarModalRegistroCuenta();
-    alert(`🎉 ¡Cuenta creada con éxito para ${cuentaCreada.razonSocialONombre}! Ahora inicie sesión.`);
+    toast(`Cuenta creada con éxito para ${cuentaCreada.razonSocialONombre}. Ahora inicie sesión.`, 'success');
 
     // Autocompletar en el login
     document.getElementById('loginDocIdentidad').value = numeroDocumento;
@@ -261,7 +307,7 @@ async function ejecutarRegistroCuenta() {
     abrirModalLoginCiudadano();
 
   } catch (err) {
-    alert('❌ Error al registrar cuenta: ' + err.message);
+    toast('Error al registrar cuenta: ' + err.message, 'error');
   }
 }
 
@@ -379,7 +425,7 @@ function actualizarStepper(pasoNuevo) {
 async function validarYAvanzarPaso(paso) {
   if (paso === 1) {
     if (!state.token || !state.cuenta) {
-      alert('⚠️ Para registrar una solicitud formal debe iniciar sesión en el portal.');
+      toast('Para registrar una solicitud formal debe iniciar sesión en el portal.', 'warning');
       abrirModalLoginCiudadano();
       return false;
     }
@@ -423,7 +469,7 @@ async function validarYAvanzarPaso(paso) {
     } catch (err) {
       btnSig2.disabled = false;
       btnSig2.innerHTML = 'Siguiente: Documentación y Requisitos →';
-      alert('❌ Error al registrar borrador: ' + err.message);
+      toast('Error al registrar borrador: ' + err.message, 'error');
       return false;
     }
   }
@@ -481,14 +527,14 @@ function actualizarCoordenadasEnPantalla(lat, lng) {
 }
 
 function solicitarGeolocalizacionDispositivo() {
-  const consent = confirm('🧭 CONSENTIMIENTO DE GEOLOCALIZACIÓN:\n\n' +
+  const consent = confirm('CONSENTIMIENTO DE GEOLOCALIZACIÓN:\n\n' +
     'Se solicitará acceso al sensor GPS de su dispositivo para fijar la ubicación declarada del local comercial.\n\n' +
     '¿Autoriza capturar sus coordenadas actuales?');
 
   if (!consent) return;
 
   if (!navigator.geolocation) {
-    return alert('⚠️ Su navegador no soporta geolocalización HTML5.');
+    return toast('Su navegador no soporta geolocalización HTML5.', 'warning');
   }
 
   navigator.geolocation.getCurrentPosition(
@@ -501,10 +547,10 @@ function solicitarGeolocalizacionDispositivo() {
         state.mapaLeaflet.setView([lat, lng], 17);
         state.marcadorLeaflet.setLatLng([lat, lng]);
       }
-      alert('📍 Coordenadas capturadas con éxito desde su dispositivo.');
+      toast('Coordenadas capturadas con éxito desde su dispositivo.', 'success');
     },
     (err) => {
-      alert('⚠️ No se pudo obtener la ubicación GPS: ' + err.message);
+      toast('No se pudo obtener la ubicación GPS: ' + err.message, 'warning');
     },
     { enableHighAccuracy: true, timeout: 10000 }
   );
@@ -514,11 +560,11 @@ function alCambiarArea() {
   const area = parseFloat(document.getElementById('areaMetrosCuadrados').value) || 0;
   const hint = document.getElementById('hintNivelRiesgoEstimado');
   if (area >= 500) {
-    hint.textContent = '🔴 Riesgo Alto / Muy Alto estimado (Requiere ITSE Previa antes de abrir)';
+    hint.textContent = 'Riesgo Alto / Muy Alto estimado (Requiere ITSE Previa antes de abrir)';
     hint.style.color = '#dc2626';
     document.getElementById('selModalidadTramite').value = 'SA_ITSE_PREVIA';
   } else {
-    hint.textContent = '🟡 Riesgo Bajo / Medio estimado (Inspección ITSE Posterior)';
+    hint.textContent = 'Riesgo Bajo / Medio estimado (Inspección ITSE Posterior)';
     hint.style.color = '#d97706';
     document.getElementById('selModalidadTramite').value = 'SA_ITSE_POSTERIOR';
   }
@@ -541,12 +587,12 @@ async function cargarEstablecimientosDeCuenta() {
 
 function poblarSelectEstablecimientos() {
   const sel = document.getElementById('selEstablecimientoExistente');
-  sel.innerHTML = '<option value="NUEVO">➕ Registrar un nuevo establecimiento comercial</option>';
+  sel.innerHTML = '<option value="NUEVO">Registrar un nuevo establecimiento comercial</option>';
 
   state.establecimientosPrevios.forEach(est => {
     const opt = document.createElement('option');
     opt.value = est.id;
-    opt.textContent = `📍 ${est.nombreComercial} — ${est.direccion} (${est.areaMetrosCuadrados} m²)`;
+    opt.textContent = `${est.nombreComercial} — ${est.direccion} (${est.areaMetrosCuadrados} m²)`;
     sel.appendChild(opt);
   });
 }
@@ -698,7 +744,7 @@ async function guardarAvanceBorrador(mostrarNotificacion = true) {
     });
 
     if (res.ok && mostrarNotificacion) {
-      alert('💾 Avance de solicitud guardado exitosamente.');
+      toast('Avance de solicitud guardado exitosamente.', 'success');
     }
   } catch (e) {
     console.warn('Error al guardar avance:', e);
@@ -743,19 +789,19 @@ function procesarArchivoSeleccionado(input) {
 
 async function procesarArchivo(file) {
   if (!state.borradorId) {
-    return alert('⚠️ No hay borrador activo para adjuntar documentos. Vuelva al paso anterior.');
+    return toast('No hay borrador activo para adjuntar documentos. Vuelva al paso anterior.', 'warning');
   }
 
   // Validaciones cliente
   const extensionesPermitidas = ['.pdf', '.png', '.jpg', '.jpeg'];
   const ext = '.' + file.name.split('.').pop().toLowerCase();
   if (!extensionesPermitidas.includes(ext)) {
-    return alert('❌ Tipo de archivo no permitido. Solo se admite PDF, PNG y JPG.');
+    return toast('Tipo de archivo no permitido. Solo se admite PDF, PNG y JPG.', 'error');
   }
 
   const maxBytes = 10 * 1024 * 1024; // 10 MB
   if (file.size > maxBytes) {
-    return alert('❌ El archivo supera el tamaño máximo permitido de 10 MB.');
+    return toast('El archivo supera el tamaño máximo permitido de 10 MB.', 'error');
   }
 
   const tipoDocumento = document.getElementById('selTipoDocumentoUpload').value;
@@ -814,7 +860,7 @@ async function procesarArchivo(file) {
 
     setTimeout(() => { progresoBox.style.display = 'none'; }, 1000);
 
-    alert(`✅ Documento "${file.name}" cargado exitosamente.\nHash SHA-256 verificado: ${sha256Hex.substring(0, 16)}...`);
+    toast(`Documento "${file.name}" cargado exitosamente. Hash SHA-256 verificado: ${sha256Hex.substring(0, 16)}...`, 'success');
 
     // Refrescar lista de documentos y checklist
     cargarDocumentosBorrador();
@@ -822,7 +868,7 @@ async function procesarArchivo(file) {
 
   } catch (err) {
     progresoBox.style.display = 'none';
-    alert('❌ Error al procesar documento: ' + err.message);
+    toast('Error al procesar documento: ' + err.message, 'error');
   }
 }
 
@@ -851,12 +897,12 @@ async function cargarDocumentosBorrador() {
           <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">(${Math.round(d.tamanioBytes / 1024)} KB)</span>
           <div style="margin-top: 0.25rem;">
             <span class="doc-hash-pill" title="Hash SHA-256 inmutable">SHA-256: ${d.hashSha256 ? d.hashSha256.substring(0, 24) + '...' : '-'}</span>
-            <span class="badge" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; margin-left: 0.35rem;">🛡️ Antivirus: Escaneo en curso</span>
+            <span class="badge" style="font-size: 0.7rem; background: #fef3c7; color: #92400e; margin-left: 0.35rem;">Antivirus: Escaneo en curso</span>
           </div>
         </div>
         <div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="eliminarDocumentoBorrador('${d.id}')" style="color: #dc2626; border-color: #fca5a5; font-size: 0.78rem;">
-            🗑️ Eliminar
+            Eliminar
           </button>
         </div>
       </div>
@@ -879,7 +925,7 @@ async function eliminarDocumentoBorrador(docId) {
       validarRequisitosBorrador();
     }
   } catch (e) {
-    alert('Error al eliminar documento: ' + e.message);
+    toast('Error al eliminar documento: ' + e.message, 'error');
   }
 }
 
@@ -898,12 +944,12 @@ async function validarRequisitosBorrador() {
     const apto = val.aptoParaPresentacion !== undefined ? val.aptoParaPresentacion : val.aptoParaPresentar;
     if (apto) {
       lista.innerHTML = `
-        <li style="color: #15803d; font-weight: 700;">✅ ¡Todos los requisitos obligatorios han sido cumplidos! Su trámite está APTO para presentación formal.</li>
+        <li style="color: #15803d; font-weight: 700;">Todos los requisitos obligatorios han sido cumplidos. Su trámite está apto para presentación formal.</li>
       `;
     } else {
       const faltantes = [...(val.camposFaltantes || []), ...(val.documentosFaltantes || [])];
       lista.innerHTML = faltantes.map(r => `
-        <li style="color: #b91c1c;">⚠️ Pendiente: <strong>${r}</strong></li>
+        <li style="color: #b91c1c;">Pendiente: <strong>${r}</strong></li>
       `).join('') || '<li style="color: #b45309;">Requisitos en validación...</li>';
     }
   } catch (e) {
@@ -916,7 +962,7 @@ async function validarRequisitosBorrador() {
 // =============================================================================
 function abrirAnexo1ConBorrador() {
   if (!state.borradorId) {
-    return alert('⚠️ Primero complete los datos del establecimiento para generar el borrador.');
+    return toast('Primero complete los datos del establecimiento para generar el borrador.', 'warning');
   }
   const url = `formato-anexo1.html?borradorId=${state.borradorId}&cuentaId=${state.cuenta ? state.cuenta.id : ''}`;
   window.open(url, '_blank');
@@ -924,7 +970,7 @@ function abrirAnexo1ConBorrador() {
 
 async function descargarAnexoBorrador(tipo) {
   if (!state.borradorId) {
-    return alert('⚠️ Guarde su borrador antes de descargar los formatos oficiales.');
+    return toast('Guarde su borrador antes de descargar los formatos oficiales.', 'warning');
   }
   const url = `${API_BORRADORES}/${state.borradorId}/formularios/${tipo}/pdf`;
   window.open(url, '_blank');
@@ -961,12 +1007,12 @@ function construirResumenFinal() {
 
 async function presentarSolicitudFormal() {
   if (!state.borradorId) {
-    return alert('⚠️ No hay borrador de solicitud activo para presentar.');
+    return toast('No hay borrador de solicitud activo para presentar.', 'warning');
   }
 
   const chk = document.getElementById('chkVeracidad');
   if (!chk.checked) {
-    return alert('⚠️ Debe aceptar expresamente la Declaración Jurada de Veracidad (Art. 42° Ley N° 27444).');
+    return toast('Debe aceptar expresamente la Declaración Jurada de Veracidad (Art. 42° Ley N° 27444).', 'warning');
   }
 
   const btn = document.getElementById('btnEnviar');
@@ -1003,9 +1049,9 @@ async function presentarSolicitudFormal() {
     mostrarBannerExitoPresentacion(exp);
 
   } catch (err) {
-    alert('❌ No se pudo completar la presentación formal:\n' + err.message);
+    toast('No se pudo completar la presentación formal: ' + err.message, 'error');
     btn.disabled = false;
-    btn.innerHTML = '🚀 Formalizar y Presentar Solicitud a Mesa de Partes';
+    btn.innerHTML = 'Formalizar y Presentar Solicitud a Mesa de Partes';
   }
 }
 
@@ -1041,7 +1087,7 @@ function iniciarNuevoTramite() {
 
   const btn = document.getElementById('btnEnviar');
   btn.disabled = false;
-  btn.innerHTML = '🚀 Formalizar y Presentar Solicitud a Mesa de Partes';
+  btn.innerHTML = 'Formalizar y Presentar Solicitud a Mesa de Partes';
 
   document.getElementById('badgeBorradorEstado').textContent = 'Sin borrador activo';
   document.getElementById('badgeBorradorEstado').style.background = '#e2e8f0';
@@ -1078,7 +1124,7 @@ async function cargarMisBorradores() {
         <td><span class="badge" style="background: #e0f2fe; color: #0369a1;">${b.estado}</span></td>
         <td>
           <button type="button" class="btn btn-primary btn-sm" onclick="retomarBorrador('${b.id}')" style="font-size: 0.8rem; padding: 0.3rem 0.6rem;">
-            ✏️ Continuar
+            Continuar
           </button>
         </td>
       </tr>
@@ -1118,9 +1164,9 @@ async function retomarBorrador(borradorId) {
 
     mostrarPestana('registro');
     irPaso(2);
-    alert(`📂 Borrador recuperado con éxito: ${b.nombreComercialDeclarado || b.id}`);
+    toast(`Borrador recuperado con éxito: ${b.nombreComercialDeclarado || b.id}`, 'success');
   } catch (err) {
-    alert('❌ Error al retomar borrador: ' + err.message);
+    toast('Error al retomar borrador: ' + err.message, 'error');
   }
 }
 
@@ -1161,7 +1207,7 @@ async function cargarMisEstablecimientosTabla() {
 // =============================================================================
 async function consultarTramite(tramiteManual) {
   const tramite = tramiteManual || valor('inputBuscarTramite') || 'EXP-2026-00101';
-  if (!tramite) return alert('Por favor ingrese un número de expediente.');
+  if (!tramite) return toast('Por favor ingrese un número de expediente.', 'warning');
 
   try {
     const res = await fetch(`${API_EXPEDIENTES}/tramite/${tramite}`);
@@ -1172,7 +1218,7 @@ async function consultarTramite(tramiteManual) {
     const exp = await res.json();
     mostrarResultadoSeguimiento(exp);
   } catch (err) {
-    alert('⚠️ ' + err.message);
+    toast(err.message, 'warning');
   }
 }
 
@@ -1288,7 +1334,7 @@ function valor(id) {
 }
 
 function mostrarError(msg) {
-  alert('⚠️ ' + msg);
+  toast(msg, 'warning');
   return false;
 }
 
@@ -1314,7 +1360,7 @@ function llenarDatosDemo() {
   }
 
   alCambiarArea();
-  alert('🪄 Datos de prueba cargados con éxito.');
+  toast('Datos de prueba cargados con éxito.', 'info');
 }
 
 function abrirMesaAyuda(tipo) {
@@ -1354,7 +1400,7 @@ function cerrarModalSubsanarCiudadano() {
 
 async function enviarSubsanacionCiudadana() {
   const detalle = document.getElementById('txtSubsanacionCiudadana').value.trim();
-  if (!detalle) return alert('Por favor detalle los documentos subsanados.');
+  if (!detalle) return toast('Por favor detalle los documentos subsanados.', 'warning');
 
   const tramite = valor('inputBuscarTramite');
   try {
@@ -1371,10 +1417,10 @@ async function enviarSubsanacionCiudadana() {
     if (!res.ok) throw new Error('Error al registrar subsanación');
 
     cerrarModalSubsanarCiudadano();
-    alert('✅ Subsanación ingresada con éxito a la Mesa de Partes Virtual.');
+    toast('Subsanación ingresada con éxito a la Mesa de Partes Virtual.', 'success');
     consultarTramite(tramite);
   } catch (err) {
-    alert('❌ Error al subsanar: ' + err.message);
+    toast('Error al subsanar: ' + err.message, 'error');
   }
 }
 
@@ -1446,7 +1492,7 @@ function marcarCardCompletada(badgeId) {
   const el = document.getElementById(badgeId);
   if (el) {
     el.className = 'badge-estado-doc completado';
-    el.innerHTML = '✅ Completado';
+    el.innerHTML = 'Completado';
   }
 }
 
@@ -1560,9 +1606,9 @@ async function guardarFormularioItse1(descargar = false) {
     }
 
     cerrarModalItse('modalItseAnexo1');
-    alert('✅ Anexo 1 ITSE guardado correctamente y vinculado a su trámite.');
+    toast('Anexo 1 ITSE guardado correctamente y vinculado a su trámite.', 'success');
   } catch (err) {
-    alert('⚠️ Formulario guardado en memoria local. (Detalle PDF: ' + err.message + ')');
+    toast('Formulario guardado en memoria local. (Detalle PDF: ' + err.message + ')', 'warning');
     cerrarModalItse('modalItseAnexo1');
   }
 }
@@ -1695,9 +1741,9 @@ async function guardarFormularioItse2(descargar = false) {
     }
 
     cerrarModalItse('modalItseAnexo2');
-    alert('✅ Anexo 2 ITSE guardado correctamente.');
+    toast('Anexo 2 ITSE guardado correctamente.', 'success');
   } catch (err) {
-    alert('⚠️ Matriz guardada en memoria local. (Detalle PDF: ' + err.message + ')');
+    toast('Matriz guardada en memoria local. (Detalle PDF: ' + err.message + ')', 'warning');
     cerrarModalItse('modalItseAnexo2');
   }
 }
@@ -1801,9 +1847,9 @@ async function guardarFormularioItse4(descargar = false) {
     }
 
     cerrarModalItse('modalItseAnexo4');
-    alert('✅ Anexo 4 ITSE guardado correctamente y vinculado a su trámite.');
+    toast('Anexo 4 ITSE guardado correctamente y vinculado a su trámite.', 'success');
   } catch (err) {
-    alert('⚠️ Declaración guardada en memoria local. (Detalle PDF: ' + err.message + ')');
+    toast('Declaración guardada en memoria local. (Detalle PDF: ' + err.message + ')', 'warning');
     cerrarModalItse('modalItseAnexo4');
   }
 }
@@ -1840,7 +1886,7 @@ async function previsualizarDocumento(codigo) {
   const lblTit = document.getElementById('lblPreviewTitulo');
   const btnDesc = document.getElementById('btnDescargarPreviewActual');
 
-  lblTit.textContent = `👁️ Vista Previa: ${codigo.replace(/_/g, ' ')}`;
+  lblTit.textContent = `Vista Previa: ${codigo.replace(/_/g, ' ')}`;
   iframe.src = 'about:blank';
   modal.style.display = 'flex';
 
@@ -1855,7 +1901,7 @@ async function previsualizarDocumento(codigo) {
     btnDesc.href = url;
     btnDesc.download = `${codigo.toLowerCase()}.pdf`;
   } catch (err) {
-    alert('❌ Error al generar la vista previa: ' + err.message);
+    toast('Error al generar la vista previa: ' + err.message, 'error');
     cerrarModalPreviewPdf();
   }
 }
@@ -1865,7 +1911,7 @@ async function descargarDocumentoGenerado(codigo) {
     const blob = await generarBlobPorCodigo(codigo);
     descargarBlob(blob, `${codigo.toLowerCase()}-oficial.pdf`);
   } catch (err) {
-    alert('❌ Error al descargar documento: ' + err.message);
+    toast('Error al descargar documento: ' + err.message, 'error');
   }
 }
 
@@ -1896,7 +1942,7 @@ async function imprimirDocumentoDirecto(codigo) {
       }, 500);
     };
   } catch (err) {
-    alert('❌ Error al preparar la impresión: ' + err.message);
+    toast('Error al preparar la impresión: ' + err.message, 'error');
   }
 }
 
