@@ -19,6 +19,11 @@
     .role-cajero { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .role-evaluador { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
     .role-inspector { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+    .paso-sugerido { animation: pasoSugerido 1s ease-in-out 2; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.45); }
+    @keyframes pasoSugerido {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
   </style>
 </head>
 <body>
@@ -912,10 +917,9 @@
       <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed #cbd5e1; font-size: 0.8rem;">
         <span style="color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 0.5rem;">Credenciales de prueba rápida:</span>
         <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'admin123')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">👑 Admin</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('evaluador', 'eval123')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">⚖️ Evaluador</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('cajero', 'caja123')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">💳 Cajero</button>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('inspector', 'insp123')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">🔍 Inspector</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('admin', 'Sistemas.Huamanga26')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Administrador</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('funcionario', 'Licencias.Huamanga26')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Funcionario de Licencias</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="setCredencialesRapidas('inspector', 'Campo.Huamanga26')" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">Inspector</button>
         </div>
       </div>
     </div>

@@ -30,10 +30,9 @@ function verificarSesion() {
   if (token && usuario) {
     let badgeClass = 'role-badge';
     let rolDesc = 'USUARIO';
-    if (rol === 'ROLE_ADMIN') { badgeClass += ' role-admin'; rolDesc = 'ADMINISTRADOR'; }
-    else if (rol === 'ROLE_CAJERO') { badgeClass += ' role-cajero'; rolDesc = 'CAJERO SAT'; }
-    else if (rol === 'ROLE_EVALUADOR') { badgeClass += ' role-evaluador'; rolDesc = 'EVALUADOR TÉCNICO'; }
-    else if (rol === 'ROLE_INSPECTOR') { badgeClass += ' role-inspector'; rolDesc = 'INSPECTOR ITSE'; }
+    if (rol === 'ROLE_ADMIN') { badgeClass += ' role-admin'; rolDesc = 'ADMINISTRADOR DEL SISTEMA'; }
+    else if (rol === 'ROLE_FUNCIONARIO_LICENCIAS') { badgeClass += ' role-evaluador'; rolDesc = 'FUNCIONARIO DE LICENCIAS'; }
+    else if (rol === 'ROLE_INSPECTOR') { badgeClass += ' role-inspector'; rolDesc = 'INSPECTOR MUNICIPAL'; }
 
     if (label) {
       label.innerHTML = `👤 <strong>${usuario}</strong> <span class="${badgeClass}">${rolDesc}</span>`;
@@ -70,24 +69,38 @@ function aplicarPermisosVisuales(rol) {
     return;
   }
 
+  // Modelo de 4 actores: el Funcionario de Licencias concentra pagos, zonificación,
+  // evaluación y resoluciones; el Administrador del Sistema queda solo para TUPA y operadores.
   const esAdmin = rol === 'ROLE_ADMIN';
-  const esCajero = rol === 'ROLE_CAJERO';
-  const esEvaluador = rol === 'ROLE_EVALUADOR';
+  const esFuncionario = rol === 'ROLE_FUNCIONARIO_LICENCIAS';
 
   if (btnPagos) {
-    btnPagos.style.display = (esAdmin || esCajero) ? 'inline-block' : 'none';
-    if (esCajero) {
+    btnPagos.style.display = esFuncionario ? 'inline-block' : 'none';
+    if (esFuncionario) {
       btnPagos.className = 'btn btn-primary btn-sm';
       btnPagos.style.background = '#d97706';
       btnPagos.style.borderColor = '#b45309';
     }
   }
 
-  if (btnZoni) btnZoni.style.display = (esAdmin || esEvaluador) ? 'inline-block' : 'none';
-  if (btnEval) btnEval.style.display = (esAdmin || esEvaluador) ? 'inline-block' : 'none';
-  if (btnRes) btnRes.style.display = (esAdmin) ? 'inline-block' : 'none';
-  if (btnTupa) btnTupa.style.display = 'inline-block';
-  if (btnOps) btnOps.style.display = (esAdmin) ? 'inline-block' : 'none';
+  if (btnZoni) btnZoni.style.display = esFuncionario ? 'inline-block' : 'none';
+  if (btnEval) btnEval.style.display = esFuncionario ? 'inline-block' : 'none';
+  if (btnRes) btnRes.style.display = esFuncionario ? 'inline-block' : 'none';
+  if (btnTupa) btnTupa.style.display = esAdmin ? 'inline-block' : 'none';
+  if (btnOps) btnOps.style.display = esAdmin ? 'inline-block' : 'none';
+}
+
+/**
+ * Navegación guiada secuencial: tras completar una acción clave, resalta y desplaza
+ * la vista hacia la siguiente pestaña lógica del flujo de licenciamiento, en vez de
+ * dejar al funcionario con 6 pestañas sueltas sin orden sugerido.
+ */
+function sugerirSiguientePaso(idBotonPestana) {
+  const btn = document.getElementById(idBotonPestana);
+  if (!btn) return;
+  btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  btn.classList.add('paso-sugerido');
+  setTimeout(() => btn.classList.remove('paso-sugerido'), 3000);
 }
 
 function abrirModalLogin() {
@@ -892,6 +905,7 @@ async function confirmarValidarPagoManual() {
     cerrarModal('modalValidarPagoAction');
     cargarBandejaPagos();
     cargarExpedientes();
+    sugerirSiguientePaso('btnAccionEvaluacion');
   } catch (err) {
     alert('❌ ' + err.message);
   }
@@ -1827,6 +1841,7 @@ async function aprobarResolucionGerencial() {
     alert('✅ Resolución APROBADA formalmente. Ha pasado al estado APROBADA_PENDIENTE_FIRMA.');
     verGestionResolucion(currentGestionResolucionId, currentGestionResolucionExpedienteId);
     cargarBandejaResoluciones();
+    sugerirSiguientePaso('btnAccionResoluciones');
   } catch (err) {
     alert(`❌ No se pudo aprobar la resolución:\n${err.message}`);
   }

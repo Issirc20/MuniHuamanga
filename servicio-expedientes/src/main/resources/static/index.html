@@ -113,7 +113,7 @@
 <body>
 
   <!-- Encabezado Institucional -->
-  <header class="app-header">
+  <header class="app-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
     <div class="header-brand">
       <div class="shield-icon"><img src="img/escudo-huamanga.png" alt="Escudo de Huamanga"></div>
       <div>
@@ -121,6 +121,9 @@
         <p>Gerencia de Desarrollo Económico y Licencias de Funcionamiento</p>
       </div>
     </div>
+    <a href="portal-interno.html" style="font-size: 0.85rem; font-weight: 600; color: #ffffff; opacity: 0.85; text-decoration: none; white-space: nowrap;">
+      Acceso institucional →
+    </a>
   </header>
 
   <main class="container">
@@ -140,10 +143,8 @@
       </p>
     </div>
 
-    <!-- Cuadrícula de 3 Accesos Principales -->
-    <div class="portal-cards-grid">
-
-      <!-- Tarjeta 1: Portal Ciudadano -->
+    <!-- Acceso principal: Portal del Administrado -->
+    <div class="portal-cards-grid" style="grid-template-columns: minmax(320px, 680px); justify-content: center;">
       <div class="portal-access-card">
         <div>
           <div class="card-icon-wrapper">
@@ -168,62 +169,13 @@
           Ingresar al Portal Ciudadano →
         </a>
       </div>
+    </div>
 
-      <!-- Tarjeta 2: Backoffice Interno -->
-      <div class="portal-access-card">
-        <div>
-          <div class="card-icon-wrapper">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="3" y1="9" x2="21" y2="9"></line>
-              <line x1="9" y1="21" x2="9" y2="9"></line>
-            </svg>
-          </div>
-          <h3 class="card-title-lg">Gestión Interna Municipal</h3>
-          <p class="card-desc-text">
-            Consola administrativa institucional con control de acceso estricto por roles (RBAC).
-            Dedicada a funcionarios de Mesa de Partes, Caja SAT, Evaluadores Técnicos y Autoridad Competente.
-          </p>
-          <ul class="card-features-list">
-            <li>Bandeja de verificación manual de comprobantes SAT</li>
-            <li>Evaluación técnica motivada de zonificación PDU</li>
-            <li>Elaboración de informes y resoluciones administrativas</li>
-            <li>Emisión oficial y firma digital fail-closed</li>
-          </ul>
-        </div>
-        <a href="portal-interno.html" class="btn btn-primary" style="width: 100%; background: var(--primary-dark);">
-          Acceso para Funcionarios →
-        </a>
-      </div>
-
-      <!-- Tarjeta 3: Verificación Pública QR -->
-      <div class="portal-access-card">
-        <div>
-          <div class="card-icon-wrapper" style="background: var(--success-light); color: var(--success);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-          </div>
-          <h3 class="card-title-lg">Verificación Pública QR</h3>
-          <p class="card-desc-text">
-            Servicio oficial de consulta ciudadana y fiscalización en campo. Permite comprobar la autenticidad,
-            vigencia legal y datos públicos autorizados de cualquier licencia emitida escaneando su código QR.
-          </p>
-          <ul class="card-features-list">
-            <li>Consulta en tiempo real con minimización (Ley N° 29733)</li>
-            <li>Acreditación de validez oficial y firma electrónica</li>
-            <li>Vista especializada con mapa georreferenciado para inspectores</li>
-            <li>Canal abierto para la ciudadanía en general</li>
-          </ul>
-        </div>
-        <a href="verificar-licencia.html" class="btn btn-success" style="width: 100%;">
-          Verificar Licencia Pública →
-        </a>
-      </div>
-
+    <!-- Enlace secundario: verificación pública de licencias (no requiere cuenta) -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <a href="verificar-licencia.html" style="font-size: 0.9rem; font-weight: 600; color: var(--primary); text-decoration: none;">
+        ¿Necesita verificar si una licencia es válida? Consulte aquí →
+      </a>
     </div>
 
     <!-- Bloque Informativo Institucional -->

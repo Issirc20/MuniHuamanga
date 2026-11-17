@@ -184,11 +184,6 @@ function cerrarModalLoginCiudadano() {
   document.getElementById('modalLoginCiudadano').style.display = 'none';
 }
 
-function usarCredencialDemo(doc, pass) {
-  document.getElementById('loginDocIdentidad').value = doc;
-  document.getElementById('loginPassword').value = pass;
-}
-
 async function ejecutarLoginCiudadano() {
   const username = document.getElementById('loginDocIdentidad').value.trim();
   const password = document.getElementById('loginPassword').value.trim();
@@ -958,16 +953,8 @@ async function validarRequisitosBorrador() {
 }
 
 // =============================================================================
-// FASE 5: INTEGRACIÓN NATIVA CON FORMATO ANEXO 1
+// FASE 5: DESCARGA DE FORMATOS OFICIALES GENERADOS DESDE EL BORRADOR
 // =============================================================================
-function abrirAnexo1ConBorrador() {
-  if (!state.borradorId) {
-    return toast('Primero complete los datos del establecimiento para generar el borrador.', 'warning');
-  }
-  const url = `formato-anexo1.html?borradorId=${state.borradorId}&cuentaId=${state.cuenta ? state.cuenta.id : ''}`;
-  window.open(url, '_blank');
-}
-
 async function descargarAnexoBorrador(tipo) {
   if (!state.borradorId) {
     return toast('Guarde su borrador antes de descargar los formatos oficiales.', 'warning');
@@ -1336,31 +1323,6 @@ function valor(id) {
 function mostrarError(msg) {
   toast(msg, 'warning');
   return false;
-}
-
-function llenarDatosDemo() {
-  document.getElementById('nombreTitular').value = 'María Quispe Huamán';
-  document.getElementById('documentoIdentidad').value = '42567891';
-  document.getElementById('razonSocial').value = 'FARMACIA SAN JUAN BAUTISTA S.A.C.';
-  document.getElementById('telefono').value = '966123456';
-  document.getElementById('correoElectronico').value = 'maria.quispe@gmail.com';
-
-  document.getElementById('nombreComercial').value = 'Farmacia San Juan Bautista V2';
-  document.getElementById('ciiuCodigo').value = 'G4772';
-  document.getElementById('giroNegocio').value = 'Venta minorista de productos farmacéuticos y artículos de tocador';
-  document.getElementById('direccionEstablecimiento').value = 'Jr. 28 de Julio N° 450, Centro Histórico';
-  document.getElementById('referenciaEstablecimiento').value = 'A media cuadra del Templo de San Juan de Dios';
-  document.getElementById('areaMetrosCuadrados').value = '85.50';
-  document.getElementById('selNumPisos').value = '1';
-
-  actualizarCoordenadasEnPantalla(-13.16315, -74.22389);
-  if (state.mapaLeaflet && state.marcadorLeaflet) {
-    state.mapaLeaflet.setView([-13.16315, -74.22389], 16);
-    state.marcadorLeaflet.setLatLng([-13.16315, -74.22389]);
-  }
-
-  alCambiarArea();
-  toast('Datos de prueba cargados con éxito.', 'info');
 }
 
 function abrirMesaAyuda(tipo) {
@@ -1851,24 +1813,6 @@ async function guardarFormularioItse4(descargar = false) {
   } catch (err) {
     toast('Declaración guardada en memoria local. (Detalle PDF: ' + err.message + ')', 'warning');
     cerrarModalItse('modalItseAnexo4');
-  }
-}
-
-// -----------------------------------------------------------------------------
-// ANEXO N.º 1 LICENCIA: CONEXIÓN INTERACTIVA CON FORMATO-ANEXO1.HTML
-// -----------------------------------------------------------------------------
-async function abrirAnexo1ConBorrador() {
-  // Asegurar guardado previo del borrador para que tenga UUID
-  if (!state.borradorId) {
-    await guardarAvanceBorrador(false);
-  }
-
-  const bId = state.borradorId;
-  if (bId) {
-    sessionStorage.setItem('borrador_id_activo', bId);
-    window.location.href = `formato-anexo1.html?borradorId=${bId}`;
-  } else {
-    window.location.href = 'formato-anexo1.html';
   }
 }
 
