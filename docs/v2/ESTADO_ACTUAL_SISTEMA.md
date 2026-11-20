@@ -39,41 +39,34 @@ El desarrollo de MuniHuamanga V2 ha avanzado a través de una serie de increment
 ```mermaid
 graph TD
     classDef complete fill:#10B981,stroke:#059669,color:#ffffff;
-    classDef partial fill:#F59E0B,stroke:#D97706,color:#ffffff;
 
     M01["M01: Cuentas y Operadores"]:::complete
     M02["M02: Solicitudes Borrador"]:::complete
     M03["M03: Expedientes y Documentos"]:::complete
     M04["M04: Pagos SAT"]:::complete
     M05["M05: Tarifario TUPA"]:::complete
-    M06["M06: Zonificación y Rectificación"]:::complete
-    M07["M07: Evaluación e Informes"]:::complete
+    M06["M06: Zonificacion y Rectificacion"]:::complete
+    M07["M07: Evaluacion e Informes"]:::complete
     M08["M08: Resoluciones y Firma"]:::complete
     M09["M09: Licencias Oficiales"]:::complete
-    M10["M10: Verificación QR y Mapa"]:::complete
-    M11["M11: Reclamaciones"]:::partial
-    M12["M12: Auditoría y Seguridad"]:::partial
+    M10["M10: Verificacion QR y Mapa"]:::complete
+    M11["M11: Reclamaciones"]:::complete
+    M12["M12: Auditoria y Seguridad"]:::complete
 ```
 
-### 2.1. Módulos Completos (Backend + Lógica + Cobertura de Pruebas)
+### 2.1. Módulos Completos (Backend + Frontend + Lógica + Cobertura de Pruebas)
 1. **M01 (Cuentas y Establecimientos):** Registro de titulares, operadores institucionales, perfiles RBAC, desacoplamiento de locales comerciales.
 2. **M02 (Solicitudes Borrador):** Ciclo de vida de borradores (`BORRADOR`, `PRESENTADO`, `DESCARTADO`), autoguardado y checklist de requisitos.
-3. **M03 (Expedientes y Documentos):** Máquina de 10 estados, generación en memoria de Anexos 1, 3 y 4 en OpenPDF, versionado de documentos con SHA-256.
+3. **M03 (Expedientes y Documentos):** Máquina de 10 estados, generación en memoria de Anexos 1 a 4 con clase base `AbstractPdfMunicipalGenerator`, versionado de documentos con SHA-256.
 4. **M04 (Pagos SAT):** Liquidación TUPA, voucher con código de barras, estados de validación manual (`EN_REVISION`, `VALIDADO_MANUALMENTE`, `OBSERVADO`, `RECHAZADO`).
 5. **M05 (Tarifario TUPA Dinámico):** Mantenimiento en caliente por API REST (`PUT /api/tupa/tarifas/{id}`) con fallback resiliente a `application.yml`.
 6. **M06 (Zonificación PDU y Rectificación):** Registro de dictamen de compatibilidad de uso PDU y flujo de solicitudes de rectificación de ubicación de locales.
 7. **M07 (Evaluación e Informes Técnicos):** Evaluación de admisibilidad, elaboración de informes técnicos desglosados (actos de instrucción interna) y notificaciones asíncronas.
-8. **M08 (Resoluciones Administrativas y Firma Digital):** Numeración atómica pesimista anual (`RES-YYYY-XXXXX`), integración con `FirmaDigitalPort` y política *fail-closed*.
+8. **M08 (Resoluciones Administrativas y Firma Digital):** Numeración atómica pesimista anual (`RES-YYYY-XXXXX`), integración con `FirmaDigitalPort`, desacoplamiento vía `ProveedorActor` y política *fail-closed*.
 9. **M09 (Licencias Oficiales):** Generación de licencia oficial (`LIC-YYYY-XXXXX`), marcas vectoriales de agua, doble marco ornamental y notas del Art. 3° Ley 28976.
 10. **M10 (Verificación QR y Consulta Móvil):** Token QR aleatorio dinámico, vista pública minimizada (Ley 29733) y vista autenticada para inspectores con mapa interactivo Leaflet.
-
-### 2.2. Módulos Parciales
-1. **M11 (Reclamaciones Administrativas):**
-   - *Backend:* Implementado al 100% (entidad `ReclamacionExpediente`, DTOs `ReclamacionExpedienteDto`, `ResolverReclamacionDto`, servicio `ReclamacionService`, repositorio y pruebas unitarias).
-   - *Frontend:* Pendiente de incorporar formulario dedicado en `portal-ciudadano.html` para la presentación directa de reclamaciones por el administrado.
-2. **M12 (Auditoría Inmutable y Seguridad Integral):**
-   - *Backend:* Implementado al 100% (entidad `AuditoriaExpediente` inmutable *append-only*, `AuditoriaService`, `SecurityConfig` de producción, filtros JWT y control IDOR/BOLA mediante `@PreAuthorize`).
-   - *Frontend:* Pendiente de crear una consola gráfica especializada en `portal-interno.html` para la consulta visual de trazas de auditoría por funcionarios de TI.
+11. **M11 (Libro de Reclamaciones - D.S. N° 042-2011-PCM):** Formulario ciudadano integrado en Portal Ciudadano (Pestaña 4), tabla histórica de quejas ciudadanas y modal de revisión y resolución formal en el Portal Interno.
+12. **M12 (Auditoría TI y Seguridad Integral):** Entidad unificada `AuditoriaOperacion` (*append-only*), supresión de entidades redundantes, mitigación anti-IDOR mediante `@PreAuthorize` y consola visual de auditoría para administradores TI en el Portal Interno.
 
 ---
 
