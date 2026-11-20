@@ -161,11 +161,11 @@ class PresentacionFormalServiceTest {
     }
 
     @Test
-    @DisplayName("Mesa de partes puede presentar en ventanilla aunque el correo del administrado no esté verificado")
+    @DisplayName("El funcionario de licencias puede presentar en ventanilla aunque el correo del administrado no esté verificado")
     void presentacionPresencial() {
         cuenta.setEmailVerificado(false);
         cuenta.setEstado(EstadoCuenta.PENDIENTE_VERIFICACION);
-        when(proveedorActor.actual()).thenReturn(new Actor(UUID.randomUUID(), "mesapartes", "Mesa de Partes", EnumSet.of(RolUsuario.ROLE_MESA_DE_PARTES)));
+        when(proveedorActor.actual()).thenReturn(new Actor(UUID.randomUUID(), "funcionario", "Funcionario de Licencias", EnumSet.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)));
         prepararPresentacionApta();
 
         service.presentarBorrador(borrador.getId(), confirmacion);

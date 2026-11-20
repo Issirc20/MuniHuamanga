@@ -132,7 +132,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
+    @WithMockUser(username = "cajero_pedro", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("El cajero valida el comprobante y el expediente pasa a evaluación, iniciando el plazo legal")
     void validarPagoManual_cajero_retorna200() throws Exception {
         PagoExpediente pago = PagoExpediente.builder()
@@ -171,7 +171,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
+    @WithMockUser(username = "cajero_pedro", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I06.1 Concurrencia: Revalidación de pago ya validado es bloqueada con HTTP 400")
     void validarPagoManual_dobleValidacion_bloqueada() throws Exception {
         PagoExpediente pago = PagoExpediente.builder()
@@ -202,7 +202,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
+    @WithMockUser(username = "cajero_pedro", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I06.1 Integridad: Validación de pago RECHAZADO es bloqueada con HTTP 400")
     void validarPagoManual_pagoRechazado_bloqueado() throws Exception {
         PagoExpediente pago = PagoExpediente.builder()
@@ -299,7 +299,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
+    @WithMockUser(username = "cajero_pedro", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I06: Observación y rechazo de pago registran trazabilidad")
     void observarYRechazarPago_cajero_exito() throws Exception {
         PagoExpediente pago = PagoExpediente.builder()
@@ -337,7 +337,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I06: Evaluador municipal registra compatibilidad de zonificación PDU (201 Created)")
     void registrarZonificacion_evaluador_retorna201() throws Exception {
         RegistrarEvaluacionZonificacionDto dto = RegistrarEvaluacionZonificacionDto.builder()
@@ -382,7 +382,7 @@ class PagoZonificacionIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "cajero_pedro", roles = {"CAJERO"})
+    @WithMockUser(username = "cajero_pedro", roles = {"FUNCIONARIO_LICENCIAS"})
     @DisplayName("I06: Compatibilidad con expedientes V1 sin romper datos históricos")
     void pagoExpedienteV1_compatibilidadHistorica() throws Exception {
         Expediente expV1 = Expediente.builder()

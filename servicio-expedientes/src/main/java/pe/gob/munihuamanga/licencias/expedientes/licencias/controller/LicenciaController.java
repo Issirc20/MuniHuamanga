@@ -35,7 +35,7 @@ public class LicenciaController {
     private final pe.gob.munihuamanga.licencias.expedientes.licencias.service.RateLimiterService rateLimiterService;
 
     @PostMapping("/emitir")
-    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<LicenciaEmitidaDto> emitirLicencia(
             @Valid @RequestBody EmitirLicenciaDto dto,
             Authentication auth) {
@@ -45,7 +45,7 @@ public class LicenciaController {
     }
 
     @PostMapping("/{id}/notificacion")
-    @PreAuthorize("hasRole('MESA_DE_PARTES')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<LicenciaEmitidaDto> registrarNotificacion(
             @PathVariable UUID id,
             @Valid @RequestBody pe.gob.munihuamanga.licencias.common.dto.RegistrarNotificacionLicenciaDto dto) {

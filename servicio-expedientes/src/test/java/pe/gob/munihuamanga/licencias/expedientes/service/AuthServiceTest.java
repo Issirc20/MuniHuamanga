@@ -61,7 +61,7 @@ class AuthServiceTest {
                 .password("$2a$10$hash")
                 .nombreCompleto("Evaluador de Licencias")
                 .email("evaluador@munihuamanga.gob.pe")
-                .roles(new HashSet<>(Set.of(RolUsuario.ROLE_EVALUADOR)))
+                .roles(new HashSet<>(Set.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)))
                 .activo(true)
                 .fechaCreacion(LocalDateTime.now())
                 .build();
@@ -81,7 +81,7 @@ class AuthServiceTest {
         AuthService.SesionIniciada resultado = authService.autenticar(solicitud("Licencias.Huamanga26"), "127.0.0.1", "navegador");
 
         assertThat(resultado.respuesta().getToken()).isEqualTo("token.acceso");
-        assertThat(resultado.respuesta().getRoles()).containsExactly("ROLE_EVALUADOR");
+        assertThat(resultado.respuesta().getRoles()).containsExactly("ROLE_FUNCIONARIO_LICENCIAS");
         assertThat(resultado.tokenRenovacion()).isEqualTo("token-renovacion");
         verify(proteccionIntentos).registrarExito("evaluador");
     }
@@ -129,7 +129,7 @@ class AuthServiceTest {
 
         UsuarioDto perfil = authService.obtenerPerfilActual("evaluador");
 
-        assertThat(perfil.getRoles()).containsExactly(RolUsuario.ROLE_EVALUADOR);
+        assertThat(perfil.getRoles()).containsExactly(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS);
         assertThat(perfil.getRepresentaciones()).isEmpty();
     }
 

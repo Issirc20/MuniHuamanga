@@ -19,15 +19,16 @@ import pe.gob.munihuamanga.licencias.common.enums.EstadoExpediente;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoInforme;
 import pe.gob.munihuamanga.licencias.common.enums.EstadoResolucion;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDecisionResolucion;
+import pe.gob.munihuamanga.licencias.common.enums.RolUsuario;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.model.InformeAdministrativo;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.repository.InformeAdministrativoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.service.ChecklistAdministrativoService;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.ResultadoFirmaDigital;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
-import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.ResolucionAdministrativa;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.HistorialResolucionRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.ResolucionAdministrativaRepository;
@@ -72,7 +73,7 @@ class ResolucionAdministrativaServiceTest {
     @Mock
     private pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService notificacionEmailService;
     @Mock
-    private UsuarioRepository usuarioRepository;
+    private ProveedorActor proveedorActor;
     @Mock
     private pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.OperacionFirmaRepository operacionFirmaRepository;
     @Mock
@@ -195,8 +196,7 @@ class ResolucionAdministrativaServiceTest {
                 .build();
 
         when(auth.getName()).thenReturn("evaluador_juan");
-        when(usuarioRepository.findByUsername("evaluador_juan")).thenReturn(
-                Optional.of(Usuario.builder().id(evaluadorId).username("evaluador_juan").build()));
+        when(proveedorActor.actual()).thenReturn(new Actor(evaluadorId, "evaluador_juan", "Juan Evaluador", java.util.Set.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)));
         when(resolucionRepository.findByIdWithLock(res.getId())).thenReturn(Optional.of(res));
 
         AprobarResolucionDto dto = AprobarResolucionDto.builder()
@@ -228,8 +228,7 @@ class ResolucionAdministrativaServiceTest {
                 .build();
 
         when(auth.getName()).thenReturn("gerente_carlos");
-        when(usuarioRepository.findByUsername("gerente_carlos")).thenReturn(
-                Optional.of(Usuario.builder().id(gerenteId).username("gerente_carlos").build()));
+        when(proveedorActor.actual()).thenReturn(new Actor(gerenteId, "gerente_carlos", "Carlos Gerente", java.util.Set.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)));
         when(resolucionRepository.findByIdWithLock(res.getId())).thenReturn(Optional.of(res));
         when(checklistAdministrativoService.generarChecklist(expedienteId)).thenReturn(
                 ChecklistAdministrativoDto.builder().aptoParaInformeFavorable(true).build());

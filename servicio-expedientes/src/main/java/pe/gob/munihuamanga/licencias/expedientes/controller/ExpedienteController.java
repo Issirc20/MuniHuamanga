@@ -43,8 +43,7 @@ import java.util.UUID;
 @Tag(name = "Expedientes", description = "Consulta de expedientes, trazabilidad y documentos")
 public class ExpedienteController {
 
-    private static final String ROLES_CONSULTA =
-            "hasAnyRole('MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'CAJERO', 'AUDITOR')";
+    private static final String ROLES_CONSULTA = "hasRole('FUNCIONARIO_LICENCIAS')";
 
     private final ExpedienteService expedienteService;
     private final ExpedienteMapper expedienteMapper;

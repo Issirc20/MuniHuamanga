@@ -28,12 +28,12 @@ class JwtTokenProviderTest {
     @DisplayName("El token de acceso contiene usuario, sesión y roles")
     void generarYValidarToken() {
         UUID sesion = UUID.randomUUID();
-        String token = tokenProvider.generarTokenAcceso(persona(Set.of(RolUsuario.ROLE_EVALUADOR, RolUsuario.ROLE_SUPERVISOR_LICENCIAS)), sesion);
+        String token = tokenProvider.generarTokenAcceso(persona(Set.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)), sesion);
 
         assertThat(tokenProvider.validarToken(token)).isTrue();
         assertThat(tokenProvider.obtenerUsernameDelToken(token)).isEqualTo("evaluador");
         assertThat(tokenProvider.obtenerSesionId(token)).contains(sesion);
-        assertThat(tokenProvider.obtenerRolesDelToken(token)).containsExactlyInAnyOrder("ROLE_EVALUADOR", "ROLE_SUPERVISOR_LICENCIAS");
+        assertThat(tokenProvider.obtenerRolesDelToken(token)).containsExactlyInAnyOrder("ROLE_FUNCIONARIO_LICENCIAS");
     }
 
     @Test
@@ -53,7 +53,7 @@ class JwtTokenProviderTest {
     @DisplayName("Se rechaza un token expirado")
     void tokenExpirado() {
         JwtTokenProvider expirado = new JwtTokenProvider(SECRETO, -1000);
-        String token = expirado.generarTokenAcceso(persona(Set.of(RolUsuario.ROLE_CAJERO)), UUID.randomUUID());
+        String token = expirado.generarTokenAcceso(persona(Set.of(RolUsuario.ROLE_FUNCIONARIO_LICENCIAS)), UUID.randomUUID());
         assertThat(expirado.validarToken(token)).isFalse();
     }
 

@@ -65,3 +65,10 @@ docker-compose.override.yml
 scratch/
 database/backups/
 
+# Upgrade artifacts and temporary tools
+.m2-upgrade/
+.maven-settings-upgrade.xml
+direct-dependencies.txt
+common-domain/direct-dependencies.txt
+Claude outputs/
+

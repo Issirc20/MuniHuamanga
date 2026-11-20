@@ -25,12 +25,13 @@ import pe.gob.munihuamanga.licencias.expedientes.establecimientos.repository.Est
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.model.InformeAdministrativo;
 import pe.gob.munihuamanga.licencias.expedientes.evaluacion.repository.InformeAdministrativoRepository;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.model.LicenciaEmitida;
-import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.AuditoriaConsultaInspeccionRepository;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.LicenciaEmitidaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.service.RateLimiterService;
+import pe.gob.munihuamanga.licencias.expedientes.model.AuditoriaOperacion;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.rectificacion.model.SolicitudRectificacionUbicacion;
 import pe.gob.munihuamanga.licencias.expedientes.rectificacion.repository.SolicitudRectificacionUbicacionRepository;
+import pe.gob.munihuamanga.licencias.expedientes.repository.AuditoriaOperacionRepository;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.ResolucionAdministrativa;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.ResolucionAdministrativaRepository;
@@ -80,7 +81,7 @@ class VerificacionQrI09Test {
     private SolicitudRectificacionUbicacionRepository rectificacionRepository;
 
     @Autowired
-    private AuditoriaConsultaInspeccionRepository auditoriaInspeccionRepository;
+    private AuditoriaOperacionRepository auditoriaOperacionRepository;
 
     @Autowired
     private InformeAdministrativoRepository informeAdministrativoRepository;
@@ -317,10 +318,10 @@ class VerificacionQrI09Test {
                 .andExpect(jsonPath("$.aforoPersonas").value(45))
                 .andExpect(jsonPath("$.areaMetrosCuadrados").value(120.50));
 
-        // Verificar que se haya registrado la consulta en auditoria_consultas_inspeccion
-        var auditorias = auditoriaInspeccionRepository.findByLicenciaIdOrderByFechaConsultaDesc(lic.getId());
+        // Verificar que se haya registrado la consulta en auditoria_operaciones
+        var auditorias = auditoriaOperacionRepository.findByModuloAndEntidadIdOrderByFechaHoraDesc("ITSE_INSPECCION", lic.getId());
         assertFalse(auditorias.isEmpty());
-        assertEquals("inspector_juan", auditorias.get(0).getInspectorUsername());
+        assertEquals("inspector_juan", auditorias.get(0).getUsuario());
         assertEquals("CONSULTA_EXITOSA", auditorias.get(0).getResultado());
     }
 

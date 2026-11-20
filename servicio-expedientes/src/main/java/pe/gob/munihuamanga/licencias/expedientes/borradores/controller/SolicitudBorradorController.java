@@ -28,7 +28,7 @@ import pe.gob.munihuamanga.licencias.common.dto.SolicitudBorradorDto;
 import pe.gob.munihuamanga.licencias.common.dto.ValidacionRequisitosDto;
 import pe.gob.munihuamanga.licencias.expedientes.borradores.service.PresentacionFormalService;
 import pe.gob.munihuamanga.licencias.expedientes.borradores.service.SolicitudBorradorService;
-import pe.gob.munihuamanga.licencias.expedientes.security.CustomUserDetails;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
 import pe.gob.munihuamanga.licencias.expedientes.service.DocumentoPdfService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -38,7 +38,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping({"/api/borradores", "/api/solicitudes/borrador"})
+@RequestMapping("/api/borradores")
 @RequiredArgsConstructor
 @Tag(name = "Borradores de Licencia", description = "Gestión de borradores preliminares, guardado parcial y presentación formal (M03 y M06)")
 public class SolicitudBorradorController {
@@ -46,16 +46,15 @@ public class SolicitudBorradorController {
     private final SolicitudBorradorService borradorService;
     private final PresentacionFormalService presentacionFormalService;
     private final DocumentoPdfService documentoPdfService;
-    private final pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository usuarioRepository;
+    private final ProveedorActor proveedorActor;
 
     @PostMapping
     @PreAuthorize("@borradorSecurity.puedeCrearBorradorEnCuenta(authentication, #dto.cuentaId)")
     @Operation(summary = "Crear nuevo borrador de solicitud (No genera número EXP-*)")
     public ResponseEntity<SolicitudBorradorDto> crearBorrador(
-            @Valid @RequestBody CrearBorradorDto dto,
-            Authentication authentication
+            @Valid @RequestBody CrearBorradorDto dto
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
+        UUID usuarioId = proveedorActor.actual().usuarioId();
         SolicitudBorradorDto creado = borradorService.crearBorrador(dto, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
@@ -65,10 +64,9 @@ public class SolicitudBorradorController {
     @Operation(summary = "Guardar avances parciales del borrador")
     public ResponseEntity<SolicitudBorradorDto> guardarAvance(
             @PathVariable UUID id,
-            @RequestBody ActualizarBorradorDto dto,
-            Authentication authentication
+            @RequestBody ActualizarBorradorDto dto
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
+        UUID usuarioId = proveedorActor.actual().usuarioId();
         SolicitudBorradorDto actualizado = borradorService.guardarAvance(id, dto, usuarioId);
         return ResponseEntity.ok(actualizado);
     }
@@ -102,10 +100,9 @@ public class SolicitudBorradorController {
     @Operation(summary = "Adjuntar documento probatorio al borrador con cálculo SHA-256")
     public ResponseEntity<DocumentoBorradorDto> adjuntarDocumento(
             @PathVariable UUID id,
-            @Valid @RequestBody AdjuntarDocumentoBorradorDto dto,
-            Authentication authentication
+            @Valid @RequestBody AdjuntarDocumentoBorradorDto dto
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
+        UUID usuarioId = proveedorActor.actual().usuarioId();
         DocumentoBorradorDto doc = borradorService.adjuntarDocumento(id, dto, usuarioId);
         return ResponseEntity.status(HttpStatus.CREATED).body(doc);
     }
@@ -123,12 +120,9 @@ public class SolicitudBorradorController {
     @Operation(summary = "Consultar documento adjunto y verificar integridad y trazabilidad de acceso")
     public ResponseEntity<DocumentoBorradorDto> obtenerDocumento(
             @PathVariable UUID id,
-            @PathVariable UUID docId,
-            Authentication authentication
+            @PathVariable UUID docId
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
-        String rol = authentication.getAuthorities().stream().findFirst().map(Object::toString).orElse("");
-        DocumentoBorradorDto doc = borradorService.descargarDocumento(id, docId, usuarioId, rol);
+        DocumentoBorradorDto doc = borradorService.descargarDocumento(id, docId);
         return ResponseEntity.ok(doc);
     }
 
@@ -137,10 +131,9 @@ public class SolicitudBorradorController {
     @Operation(summary = "Eliminar documento del borrador")
     public ResponseEntity<Void> eliminarDocumento(
             @PathVariable UUID id,
-            @PathVariable UUID docId,
-            Authentication authentication
+            @PathVariable UUID docId
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
+        UUID usuarioId = proveedorActor.actual().usuarioId();
         borradorService.eliminarDocumento(id, docId, usuarioId);
         return ResponseEntity.noContent().build();
     }
@@ -150,10 +143,9 @@ public class SolicitudBorradorController {
     @Operation(summary = "Descartar borrador conservando trazabilidad de auditoría")
     public ResponseEntity<Void> descartarBorrador(
             @PathVariable UUID id,
-            @RequestParam(required = false) String motivo,
-            Authentication authentication
+            @RequestParam(required = false) String motivo
     ) {
-        UUID usuarioId = obtenerUsuarioId(authentication);
+        UUID usuarioId = proveedorActor.actual().usuarioId();
         borradorService.descartarBorrador(id, motivo, usuarioId);
         return ResponseEntity.noContent().build();
     }
@@ -228,17 +220,5 @@ public class SolicitudBorradorController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Anexo4-CondicionesSeguridad-" + dto.getNumeroTramite() + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
-    }
-
-    private UUID obtenerUsuarioId(Authentication authentication) {
-        if (authentication == null) {
-            return null;
-        }
-        if (authentication.getPrincipal() instanceof CustomUserDetails cud) {
-            return cud.getId();
-        }
-        return usuarioRepository.findByUsername(authentication.getName())
-                .map(pe.gob.munihuamanga.licencias.expedientes.model.Usuario::getId)
-                .orElse(null);
     }
 }

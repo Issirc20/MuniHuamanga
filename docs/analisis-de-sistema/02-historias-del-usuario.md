@@ -96,7 +96,7 @@ Las historias de usuario capturan las necesidades funcionales desde la perspecti
 
 ### US-19: Validación Manual de Pagos SAT con Estados Diferenciados (M04)
 * **Narrativa:**
-  > **Como** cajero municipal con `ROLE_CAJERO`,
+  > **Como** funcionario de licencias con `ROLE_FUNCIONARIO_LICENCIAS`,
   > **quiero** registrar y calificar los comprobantes de pago de los administrados con estados controlados,
   > **para** evitar fraudes de recaudación y asegurar que solo expedientes con abonos reales pasen a evaluación.
 * **Criterios de Aceptación:**
@@ -114,7 +114,7 @@ Las historias de usuario capturan las necesidades funcionales desde la perspecti
   - *Dado* un establecimiento con coordenadas declaradas,
   - *Cuando* el titular envía `POST /api/establecimientos/{id}/rectificacion-ubicacion`,
   - *Entonces* se genera una solicitud en estado `PENDIENTE`.
-  - *Cuando* el evaluador técnico (`ROLE_EVALUADOR`) revisa y resuelve la rectificación (`PUT /api/rectificaciones-ubicacion/{id}/resolver`), las coordenadas maestras del establecimiento se actualizan atómicamente si el dictamen es favorable.
+  - *Cuando* el funcionario de licencias (`ROLE_FUNCIONARIO_LICENCIAS`) revisa y resuelve la rectificación (`PUT /api/rectificaciones-ubicacion/{id}/resolver`), las coordenadas maestras del establecimiento se actualizan atómicamente si el dictamen es favorable.
 
 ### US-21: Resolución Administrativa y Firma Digital Fail-Closed (M08)
 * **Narrativa:**

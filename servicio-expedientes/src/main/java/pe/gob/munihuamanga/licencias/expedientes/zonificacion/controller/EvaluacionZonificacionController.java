@@ -33,15 +33,15 @@ public class EvaluacionZonificacionController {
     private final EvaluacionZonificacionService zonificacionService;
 
     @PostMapping("/api/expedientes/{id}/zonificacion/evaluar")
-    @PreAuthorize("hasRole('EVALUADOR')")
-    @Operation(summary = "Registrar evaluación técnica de zonificación y compatibilidad (EVALUADOR / ADMIN)")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
+    @Operation(summary = "Registrar evaluación técnica de zonificación y compatibilidad")
     public ResponseEntity<EvaluacionZonificacionDto> registrarEvaluacion(
             @PathVariable UUID id,
             @Valid @RequestBody RegistrarEvaluacionZonificacionDto dto,
             Authentication authentication
     ) {
         UUID evaluadorId = extraerUsuarioId(authentication);
-        String evaluadorNombre = authentication != null ? authentication.getName() : "EVALUADOR";
+        String evaluadorNombre = authentication != null ? authentication.getName() : "FUNCIONARIO_LICENCIAS";
 
         EvaluacionZonificacionDto evaluacion = zonificacionService.registrarEvaluacion(id, dto, evaluadorId, evaluadorNombre);
         return ResponseEntity.status(HttpStatus.CREATED).body(evaluacion);
@@ -76,8 +76,8 @@ public class EvaluacionZonificacionController {
     }
 
     @GetMapping("/api/zonificacion/bandeja")
-    @PreAuthorize("hasRole('EVALUADOR')")
-    @Operation(summary = "Bandeja de evaluaciones de zonificación por resultado (EVALUADOR / ADMIN)")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
+    @Operation(summary = "Bandeja de evaluaciones de zonificación por resultado")
     public ResponseEntity<List<EvaluacionZonificacionDto>> bandejaZonificacion(
             @RequestParam(required = false, defaultValue = "PENDIENTE_EVALUACION") ResultadoZonificacion resultado
     ) {

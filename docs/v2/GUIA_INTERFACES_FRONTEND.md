@@ -1,4 +1,4 @@
-# Guía de Interfaces de Usuario (Frontend) — MuniHuamanga V2
+﻿# Guía de Interfaces de Usuario (Frontend) — MuniHuamanga V2
 ## Manual de Diseño Visual, Componentes Web e Integración con APIs
 
 **Proyecto:** Sistema de Gestión de Licencias de Funcionamiento
@@ -19,17 +19,17 @@ Inspirada en los símbolos heráldicos de la Municipalidad Provincial de Huamang
 
 | Token CSS | Código Hex | Muestra | Significado / Uso |
 |---|:---:|:---:|---|
-| `--primary` | `#003366` | 🟦 | Azul Marino Institucional (Cabeceras y botones principales) |
-| `--primary-dark` | `#001f3f` | 🟦 | Azul Huamanga Profundo (Gradientes de fondo y contraste) |
-| `--huamanga-red` | `#991b1b` | 🟥 | Rojo Carmesí Oficial de Huamanga (Acentos institucionales) |
-| `--huamanga-gold` | `#d97706` | 🟨 | Dorado Heráldico (Líneas divisorias y estados de advertencia) |
-| `--success` | `#059669` | 🟩 | Verde Esmeralda (Aprobado, pagado, validado con éxito) |
-| `--danger` | `#dc2626` | 🟥 | Rojo Alerta (Rechazado, error de firma, anulado) |
-| `--warning` | `#eab308` | 🟨 | Amarillo Ámbar (Pendiente de pago, observado) |
+| `--primary` | `#003366` |  | Azul Marino Institucional (Cabeceras y botones principales) |
+| `--primary-dark` | `#001f3f` |  | Azul Huamanga Profundo (Gradientes de fondo y contraste) |
+| `--huamanga-red` | `#991b1b` |  | Rojo Carmesí Oficial de Huamanga (Acentos institucionales) |
+| `--huamanga-gold` | `#d97706` |  | Dorado Heráldico (Líneas divisorias y estados de advertencia) |
+| `--success` | `#059669` |  | Verde Esmeralda (Aprobado, pagado, validado con éxito) |
+| `--danger` | `#dc2626` |  | Rojo Alerta (Rechazado, error de firma, anulado) |
+| `--warning` | `#eab308` |  | Amarillo Ámbar (Pendiente de pago, observado) |
 | `--bg-main` | `#f8fafc` | ⬜ | Gris Claro Pizarra (Fondo general de la aplicación) |
 | `--surface` | `#ffffff` | ⬜ | Blanco Puro (Tarjetas, modales y tablas) |
 | `--text-main` | `#0f172a` | ⬛ | Gris Oscuro Casi Negro (Tipografía principal de alto contraste) |
-| `--text-muted` | `#64748b` | ◻️ | Gris Neutro (Metadatos, subtítulos y fechas) |
+| `--text-muted` | `#64748b` | ◻ | Gris Neutro (Metadatos, subtítulos y fechas) |
 
 ### 1.2. Tipografía y Estilo Base
 - **Familia Tipográfica:** `'Segoe UI', system-ui, -apple-system, sans-serif`.
@@ -66,7 +66,7 @@ graph TD
 ### 2.2. Formulario Asistido Anexo 1 (`formato-anexo1.html` / `formato-anexo1.js`) — Actualizado Fase C.1
 * **Propósito:** Formulario interactivo por pasos para la captura de los 45 campos normativos del Anexo 1 (D.S. N° 163-2020-PCM) con integración bidireccional hacia el borrador ciudadano activo.
 * **Componentes Principales (Fase C.1):**
-  - **Sincronización con Borrador Activo:** Botón toolbar `[📎 Adjuntar a mi Borrador]` que detecta `?borradorId=...` o `sessionStorage.getItem('borrador_id_activo')`.
+  - **Sincronización con Borrador Activo:** Botón toolbar `[ Adjuntar a mi Borrador]` que detecta `?borradorId=...` o `sessionStorage.getItem('borrador_id_activo')`.
   - **Precarga Inteligente:** Descarga los datos del borrador (`GET /api/borradores/{id}`) y pre-llena automáticamente datos del titular, establecimiento, giro y área.
   - **Generación Vectorial y Envío:** Genera el PDF oficial en memoria y lo adjunta directamente al borrador activo bajo el tipo `DECLARACION_JURADA_ANEXO1` sin intermediación de descargas manuales.
   - Barra de progreso por pasos (Paso 1: Solicitante, Paso 2: Establecimiento y Zonificación, Paso 3: Anexo 4 y Declaración Jurada).

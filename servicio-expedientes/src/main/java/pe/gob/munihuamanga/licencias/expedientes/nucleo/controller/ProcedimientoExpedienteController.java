@@ -45,8 +45,7 @@ import java.util.UUID;
 @Tag(name = "Procedimiento", description = "Admisibilidad, archivo, plazos y calendario institucional")
 public class ProcedimientoExpedienteController {
 
-    private static final String ROLES_GESTION =
-            "hasAnyRole('MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA', 'AUDITOR')";
+    private static final String ROLES_GESTION = "hasRole('FUNCIONARIO_LICENCIAS')";
 
     private final AdmisionExpedienteService admisionService;
     private final ArchivoExpedienteService archivoService;
@@ -59,14 +58,14 @@ public class ProcedimientoExpedienteController {
     private final Clock reloj;
 
     @PostMapping("/api/expedientes/{id}/admision")
-    @PreAuthorize("hasRole('MESA_DE_PARTES')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Admitir la solicitud presentada y habilitar la etapa ITSE")
     public ResponseEntity<ResultadoTransicionDto> admitir(@PathVariable UUID id, @Valid @RequestBody AdmitirSolicitudDto dto) {
         return ResponseEntity.ok(aDto(admisionService.admitir(id, dto)));
     }
 
     @PostMapping("/api/expedientes/{id}/archivo")
-    @PreAuthorize("hasAnyRole('SUPERVISOR_LICENCIAS', 'AUTORIDAD_RESOLUTIVA')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Declarar el archivo del procedimiento por abandono, desistimiento o solicitud no presentada")
     public ResponseEntity<ResultadoTransicionDto> archivar(@PathVariable UUID id, @Valid @RequestBody DeclararArchivoDto dto) {
         return ResponseEntity.ok(aDto(archivoService.declarar(id, dto)));

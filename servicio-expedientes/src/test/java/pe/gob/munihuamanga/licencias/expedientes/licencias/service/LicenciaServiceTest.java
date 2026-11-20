@@ -81,7 +81,7 @@ class LicenciaServiceTest {
     @Mock
     private pe.gob.munihuamanga.licencias.expedientes.rectificacion.repository.SolicitudRectificacionUbicacionRepository solicitudRectificacionUbicacionRepository;
     @Mock
-    private pe.gob.munihuamanga.licencias.expedientes.licencias.repository.AuditoriaConsultaInspeccionRepository auditoriaConsultaInspeccionRepository;
+    private pe.gob.munihuamanga.licencias.expedientes.repository.AuditoriaOperacionRepository auditoriaOperacionRepository;
     @Mock
     private Authentication auth;
 

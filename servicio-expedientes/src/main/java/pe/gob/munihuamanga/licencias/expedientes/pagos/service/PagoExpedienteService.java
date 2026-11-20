@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * Servicio para la recepción, revisión y validación manual de pagos SAT (M05 - I06).
  * Reglas mandatorias:
  * 1. La carga de voucher registra el estado PENDIENTE_VALIDACION (nunca pago confirmado ni automático).
- * 2. Solo CAJERO o ADMIN pueden realizar la validación manual.
+ * 2. Solo FUNCIONARIO_LICENCIAS o ADMIN pueden realizar la validación manual.
  * 3. Se registra justificación y evidencia en el historial de decisiones.
  * 4. Un comprobante no puede asociarse a múltiples expedientes.
  * 5. Importes contrastados contra la tasa TUPA oficial (Ordenanza N° 018-2024-MPH).

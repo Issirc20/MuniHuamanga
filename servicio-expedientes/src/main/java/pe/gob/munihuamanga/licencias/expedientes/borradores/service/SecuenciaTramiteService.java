@@ -38,14 +38,10 @@ public class SecuenciaTramiteService {
     public synchronized String generarSiguienteNumeroExpediente() {
         int anioActual = LocalDate.now().getYear();
 
-        // 1. Asegurar la existencia de la fila anual mediante transacción aislada (REQUIRES_NEW).
-        // Protege contra el cambio de año, reinicios limpios o bases creadas en runtime
-        // sin depender exclusivamente de @PostConstruct.
         if (!secuenciaRepository.existsById(anioActual)) {
             inicializadorHelper.asegurarSecuenciaParaAnio(anioActual);
         }
 
-        // 2. Bloqueo pesimista FOR UPDATE garantizado sobre la fila del año
         SecuenciaExpediente secuencia = secuenciaRepository.findByAnioWithLock(anioActual)
                 .orElseThrow(() -> new IllegalStateException("No se pudo obtener el bloqueo de secuencia para el año " + anioActual));
 

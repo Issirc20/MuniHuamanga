@@ -73,14 +73,14 @@ public class PlantillaDocumentalController {
 
     @Operation(summary = "Consultar historial de versiones de una plantilla")
     @GetMapping("/{codigo}/versiones")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'INSPECTOR', 'AUDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FUNCIONARIO_LICENCIAS', 'INSPECTOR')")
     public ResponseEntity<List<VersionPlantillaDto>> listarHistorial(@PathVariable String codigo) {
         return ResponseEntity.ok(plantillaService.listarHistorialVersiones(codigo));
     }
 
     @Operation(summary = "Descargar una versión histórica específica de la plantilla")
     @GetMapping("/{codigo}/versiones/{version}/descargar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MESA_DE_PARTES', 'EVALUADOR', 'SUPERVISOR_LICENCIAS', 'INSPECTOR', 'AUDITOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FUNCIONARIO_LICENCIAS', 'INSPECTOR')")
     public ResponseEntity<byte[]> descargarVersionHistorica(@PathVariable String codigo, @PathVariable Integer version) {
         byte[] pdf = plantillaService.obtenerContenidoVersion(codigo, version);
 

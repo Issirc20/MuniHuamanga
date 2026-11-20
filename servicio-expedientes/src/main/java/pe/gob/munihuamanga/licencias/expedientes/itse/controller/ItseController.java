@@ -42,21 +42,21 @@ public class ItseController {
     }
 
     @PostMapping("/api/expedientes/{id}/itse/observaciones")
-    @PreAuthorize("hasRole('EVALUADOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Observar los anexos ITSE cargados")
     public ResponseEntity<ExpedienteItseDto> observar(@PathVariable UUID id, @Valid @RequestBody ObservarItseDto dto) {
         return ResponseEntity.ok(itseService.observar(id, dto));
     }
 
     @PostMapping("/api/expedientes/{id}/itse/validacion")
-    @PreAuthorize("hasRole('EVALUADOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Validar los anexos ITSE, fijar el nivel de riesgo oficial y emitir la liquidación definitiva")
     public ResponseEntity<ExpedienteItseDto> validar(@PathVariable UUID id, @Valid @RequestBody ValidarItseDto dto) {
         return ResponseEntity.ok(itseService.validar(id, dto));
     }
 
     @GetMapping("/api/itse/bandeja")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS', 'AUDITOR')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     @Operation(summary = "Bandeja de anexos ITSE pendientes de revisión")
     public ResponseEntity<List<ExpedienteItseDto>> bandeja() {
         return ResponseEntity.ok(itseService.bandejaRevision());

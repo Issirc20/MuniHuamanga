@@ -41,7 +41,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] PAGINAS_PUBLICAS = {
-            "/", "/index.html", "/portal-ciudadano.html", "/formato-anexo1.html", "/portal-interno.html",
+            "/", "/index.html", "/portal-ciudadano.html", "/portal-interno.html",
             "/verificar-licencia.html", "/verificar-correo.html", "/activar-acceso.html",
             "/favicon.ico", "/css/**", "/js/**", "/img/**"
     };

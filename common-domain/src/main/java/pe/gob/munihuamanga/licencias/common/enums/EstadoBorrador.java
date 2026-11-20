@@ -5,7 +5,6 @@ package pe.gob.munihuamanga.licencias.common.enums;
  */
 public enum EstadoBorrador {
     EN_EDICION,
-    COMPLETO,
     PRESENTADO,
     DESCARTADO
 }

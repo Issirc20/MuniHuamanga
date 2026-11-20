@@ -173,7 +173,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("GET /bandeja -> 200 OK para EVALUADOR")
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void listarBandeja_evaluador_retorna200() throws Exception {
         mockMvc.perform(get("/api/evaluaciones-administrativas/bandeja")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -192,7 +192,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("GET /expedientes/{id}/checklist -> 200 OK con items evaluados")
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void obtenerChecklist_evaluador_retorna200() throws Exception {
         mockMvc.perform(get("/api/evaluaciones-administrativas/expedientes/{id}/checklist", expedientePrueba.getId()))
                 .andExpect(status().isOk())
@@ -202,7 +202,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("POST /informes con conclusión FAVORABLE y requisitos completos -> 201 Created")
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void elaborarInforme_requisitosCompletos_retorna201() throws Exception {
         // Preparar requisitos para checklist apto
         DocumentoVersionado doc = DocumentoVersionado.builder()
@@ -266,7 +266,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("Flujo completo: BORRADOR -> EN_REVISION -> VISADO -> APROBADO con APTO_PARA_RESOLUCION")
-    @WithMockUser(username = "supervisor_muni", roles = {"SUPERVISOR_LICENCIAS"})
+    @WithMockUser(username = "supervisor_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void flujoCompleto_informeAprobado_habilitaAptoParaResolucion() throws Exception {
         InformeAdministrativo inf = InformeAdministrativo.builder()
                 .id(UUID.randomUUID())
@@ -343,7 +343,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("GET /pdf-preliminar -> 200 OK con Content-Type application/pdf")
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void descargarPdfPreliminar_retornaPdf() throws Exception {
         InformeAdministrativo inf = InformeAdministrativo.builder()
                 .id(UUID.randomUUID())
@@ -404,7 +404,7 @@ class EvaluacionAdministrativaIntegrationTest {
 
     @Test
     @DisplayName("POST /rectificaciones-ubicacion/{id}/evaluar -> 200 OK para EVALUADOR")
-    @WithMockUser(username = "evaluador_muni", roles = {"EVALUADOR"})
+    @WithMockUser(username = "evaluador_muni", roles = {"FUNCIONARIO_LICENCIAS"})
     void evaluarRectificacion_evaluador_retorna200() throws Exception {
         SolicitudRectificacionUbicacion sol = SolicitudRectificacionUbicacion.builder()
                 .id(UUID.randomUUID())

@@ -38,7 +38,7 @@ public class ResolucionAdministrativaController {
     private final ResolucionAdministrativaService resolucionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> crearBorrador(
             @Valid @RequestBody CrearResolucionDto dto,
             Authentication auth) {
@@ -48,7 +48,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('EVALUADOR', 'SUPERVISOR_LICENCIAS')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> actualizarBorrador(
             @PathVariable UUID id,
             @Valid @RequestBody ActualizarResolucionDto dto,
@@ -57,7 +57,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PostMapping("/{id}/aprobar")
-    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> aprobarResolucion(
             @PathVariable UUID id,
             @RequestBody(required = false) AprobarResolucionDto dto,
@@ -67,7 +67,7 @@ public class ResolucionAdministrativaController {
     }
 
     @PostMapping("/{id}/firmar")
-    @PreAuthorize("hasRole('AUTORIDAD_RESOLUTIVA')")
+    @PreAuthorize("hasRole('FUNCIONARIO_LICENCIAS')")
     public ResponseEntity<ResolucionAdministrativaDto> solicitarFirmaDigital(
             @PathVariable UUID id,
             @RequestBody(required = false) SolicitarFirmaDto dto,

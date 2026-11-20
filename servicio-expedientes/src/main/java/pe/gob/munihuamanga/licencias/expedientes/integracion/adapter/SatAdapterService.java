@@ -11,7 +11,7 @@ import java.util.Map;
  * Adaptador para consulta de estado tributario SAT Huamanga (MuniHuamanga V2 - ERS-1.3 / Corrección I02.1).
  * Deshabilita la simulación de pagos automáticos ("PAGADO" / números falsos de operación)
  * para evitar que sean interpretados como validaciones oficiales.
- * La conciliación de pagos se realiza mediante registro manual en ventanilla/caja por el CAJERO.
+ * La conciliación de pagos se realiza mediante registro manual en ventanilla/caja por el funcionario de licencias.
  */
 @Slf4j
 @Service
