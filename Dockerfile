@@ -2,13 +2,13 @@
 # Dockerfile Multi-Stage — Sistema de Gestión Digital de Licencias MuniHuamanga
 # Versión: v0.9.0-rc1
 # Arquitectura: Multi-module Maven (common-domain + servicio-expedientes)
-# Seguridad: Eclipse Temurin 21 JRE, Usuario no-root (UID 10001), Healthcheck
+# Seguridad: Eclipse Temurin 25 JRE, Usuario no-root (UID 10001), Healthcheck
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
 # ETAPA 1: Construcción y Empaquetado (Build Stage)
 # ------------------------------------------------------------------------------
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.9-eclipse-temurin-25-alpine AS builder
 
 WORKDIR /build
 
@@ -30,7 +30,7 @@ RUN mvn clean package -DskipTests -B
 # ------------------------------------------------------------------------------
 # ETAPA 2: Imagen de Ejecución Ligera y Segura (Runtime Stage)
 # ------------------------------------------------------------------------------
-FROM eclipse-temurin:21-jre-alpine AS runner
+FROM eclipse-temurin:25-jre-alpine AS runner
 
 LABEL maintainer="Equipo de Arquitectura MuniHuamanga <sistemas@munihuamanga.gob.pe>"
 LABEL version="0.9.0-rc1"

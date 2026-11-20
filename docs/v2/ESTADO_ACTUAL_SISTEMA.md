@@ -1,4 +1,4 @@
-# Estado Actual del Sistema — MuniHuamanga V2
+﻿# Estado Actual del Sistema — MuniHuamanga V2
 ## Informe de Auditoría y Estado Operativo Consolidado
 
 **Proyecto:** Sistema de Gestión de Licencias de Funcionamiento
@@ -81,7 +81,7 @@ graph TD
 
 ### 3.1. Portal Ciudadano V2 (Fase C.1)
 1. **Integración Completa con Borradores V2:** Operación desacoplada con autenticación JWT, geolocalización Leaflet 1.9.4, autoguardado, carga drag & drop con verificación SHA-256 en cliente/servidor y presentación atómica idempotente (`EXP-YYYY-XXXXX`).
-2. **Sincronización Bidireccional con Formato Anexo 1:** Botón interactivo `[📎 Adjuntar a mi Borrador]` para inyección directa de la declaración jurada.
+2. **Sincronización Bidireccional con Formato Anexo 1:** Botón interactivo `[ Adjuntar a mi Borrador]` para inyección directa de la declaración jurada.
 
 ### 3.2. Portal Interno (Backoffice) y Módulo SAT (Fase C.2)
 1. **Adaptación de Permisos y Segregación por Rol (RBAC):**

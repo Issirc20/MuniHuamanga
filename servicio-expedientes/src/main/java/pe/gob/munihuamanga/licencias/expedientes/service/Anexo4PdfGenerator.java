@@ -30,12 +30,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @Component
-public class Anexo4PdfGenerator {
+public class Anexo4PdfGenerator extends AbstractPdfMunicipalGenerator {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
-
-    // Tipografías oficiales
+    // Tipografías oficiales de Anexo 4
     private static final Font F_TITLE_INST = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, new Color(0, 51, 102));
     private static final Font F_TITLE_SUB = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7f, new Color(51, 65, 85));
     private static final Font F_TITLE_MAIN = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, Color.BLACK);
@@ -44,7 +41,6 @@ public class Anexo4PdfGenerator {
     private static final Font F_BOX_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 6f, Color.BLACK);
     private static final Font F_BOX_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, new Color(0, 51, 102));
 
-    private static final Font F_SEC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.8f, Color.WHITE);
     private static final Font F_COL_HEADER = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6f, Color.BLACK);
     private static final Font F_ITEM = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.BLACK);
     private static final Font F_ITEM_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, Color.BLACK);
@@ -52,12 +48,18 @@ public class Anexo4PdfGenerator {
     private static final Font F_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.DARK_GRAY);
     private static final Font F_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.2f, Color.BLACK);
 
-    private static final Font F_FOOT_NOTE = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 5.2f, Color.DARK_GRAY);
     private static final Font F_DECL_BODY = FontFactory.getFont(FontFactory.HELVETICA, 5.5f, new Color(30, 30, 30));
 
-    private static final Color COLOR_SEC_BAR = new Color(0, 51, 102);
     private static final Color BG_HEADER = new Color(240, 243, 246);
     private static final Color BORDER_COLOR = new Color(160, 160, 160);
+
+    public Anexo4PdfGenerator(org.springframework.core.io.ResourceLoader resourceLoader) {
+        super(resourceLoader);
+    }
+
+    public Anexo4PdfGenerator() {
+        super();
+    }
 
     public byte[] generarPdf(ExpedienteResponseDto exp) {
         Document document = new Document(PageSize.A4, 20f, 20f, 18f, 18f);

@@ -15,14 +15,15 @@ import pe.gob.munihuamanga.licencias.common.enums.EstadoResolucion;
 import pe.gob.munihuamanga.licencias.common.enums.TipoDecisionResolucion;
 import pe.gob.munihuamanga.licencias.common.enums.TipoVigenciaLicencia;
 import pe.gob.munihuamanga.licencias.expedientes.establecimientos.model.Establecimiento;
-import pe.gob.munihuamanga.licencias.expedientes.licencias.model.AuditoriaConsultaInspeccion;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.model.HistorialEmisionLicencia;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.model.LicenciaEmitida;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.HistorialEmisionLicenciaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.licencias.repository.LicenciaEmitidaRepository;
 import pe.gob.munihuamanga.licencias.expedientes.mapper.ExpedienteMapper;
+import pe.gob.munihuamanga.licencias.expedientes.model.AuditoriaOperacion;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
 import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.repository.AuditoriaOperacionRepository;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.ResolucionAdministrativa;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.ResolucionAdministrativaRepository;
@@ -63,7 +64,7 @@ public class LicenciaService {
     private final pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente comandosExpediente;
     private final pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor proveedorActor;
     private final pe.gob.munihuamanga.licencias.expedientes.rectificacion.repository.SolicitudRectificacionUbicacionRepository solicitudRectificacionUbicacionRepository;
-    private final pe.gob.munihuamanga.licencias.expedientes.licencias.repository.AuditoriaConsultaInspeccionRepository auditoriaConsultaInspeccionRepository;
+    private final AuditoriaOperacionRepository auditoriaOperacionRepository;
 
     @Transactional
     public LicenciaEmitidaDto emitirLicencia(EmitirLicenciaDto dto, Authentication auth) {
@@ -444,18 +445,20 @@ public class LicenciaService {
             mensaje = "LICENCIA NO VÁLIDA O INACTIVA (" + lic.getEstado() + ")";
         }
 
-        // Registro de auditoría inmutable de la consulta del inspector
-        AuditoriaConsultaInspeccion audit = AuditoriaConsultaInspeccion.builder()
+        // Registro de auditoría inmutable de la consulta del inspector unificado en auditoria_operaciones
+        AuditoriaOperacion audit = AuditoriaOperacion.builder()
                 .id(UUID.randomUUID())
-                .licencia(lic)
-                .tokenQr(token)
-                .inspectorUsername(inspectorUsername != null ? inspectorUsername : "INSPECTOR_ANONIMO")
-                .fechaConsulta(LocalDateTime.now())
+                .modulo("ITSE_INSPECCION")
+                .operacion("CONSULTA_QR")
+                .entidadId(lic.getId())
+                .usuario(inspectorUsername != null ? inspectorUsername : "INSPECTOR_ANONIMO")
+                .fechaHora(LocalDateTime.now())
                 .ipOrigen(ipOrigen)
                 .userAgent(userAgent)
                 .resultado(valida ? "CONSULTA_EXITOSA" : (esSimulada ? "CONSULTA_DEMOSTRACION" : "LICENCIA_INACTIVA_" + lic.getEstado()))
+                .detalle("Consulta QR con token: " + token)
                 .build();
-        auditoriaConsultaInspeccionRepository.save(audit);
+        auditoriaOperacionRepository.save(audit);
 
         return pe.gob.munihuamanga.licencias.common.dto.VerificacionInspectorDto.builder()
                 .codigoVerificacionQr(lic.getCodigoVerificacionQr())

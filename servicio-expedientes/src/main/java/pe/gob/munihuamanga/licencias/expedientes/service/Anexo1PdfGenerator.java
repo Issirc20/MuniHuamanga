@@ -40,57 +40,25 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @Component
-public class Anexo1PdfGenerator {
+public class Anexo1PdfGenerator extends AbstractPdfMunicipalGenerator {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-    // Paleta de colores oficial que replica formato-anexo1.html
-    private static final Color COLOR_PRIMARY_NAVY = new Color(0, 43, 92);      // #002b5c
-    private static final Color COLOR_BORDER = new Color(30, 41, 59);          // #1e293b
-    private static final Color COLOR_YELLOW_CELL = new Color(255, 253, 231);  // #fffde7 (celdas amarillas de llenado)
-    private static final Color COLOR_SUBHEADER_BG = new Color(241, 245, 249); // #f1f5f9
-    private static final Color COLOR_TEXT_VAL = new Color(0, 43, 92);         // #002b5c
-    private static final Color COLOR_LABEL_GRAY = new Color(100, 116, 139);   // #64748b
-    private static final Color COLOR_LIGHT_GRAY = new Color(248, 250, 252);
-
-    // Tipografías
-    private static final Font F_DOC_BADGE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, COLOR_PRIMARY_NAVY);
-    private static final Font F_DOC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.0f, Color.BLACK);
-    private static final Font F_DOC_LAW = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 5.8f, new Color(71, 85, 105));
-    private static final Font F_DOC_VERSION = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.0f, new Color(71, 85, 105));
-
+    // Tipografías complementarias de Anexo 1
     private static final Font F_META_LBL = FontFactory.getFont(FontFactory.HELVETICA, 5.5f, Color.BLACK);
     private static final Font F_META_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.2f, COLOR_TEXT_VAL);
-
-    private static final Font F_SEC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, Color.WHITE);
-    private static final Font F_SUBSEC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, COLOR_PRIMARY_NAVY);
-
     private static final Font F_TH = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, Color.BLACK);
     private static final Font F_ROW_GROUP = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, new Color(30, 41, 59));
     private static final Font F_ROW_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 5.6f, Color.BLACK);
-
-    private static final Font F_CELL_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 5.0f, COLOR_LABEL_GRAY);
-    private static final Font F_CELL_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.0f, COLOR_TEXT_VAL);
-    private static final Font F_CHECK_X = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.0f, COLOR_PRIMARY_NAVY);
-
     private static final Font F_LEGAL_TEXT = FontFactory.getFont(FontFactory.HELVETICA, 5.3f, new Color(20, 20, 20));
     private static final Font F_LEGAL_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.3f, Color.BLACK);
-    private static final Font F_FOOT_NOTE = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 5.0f, COLOR_LABEL_GRAY);
-
-    private final ResourceLoader resourceLoader;
-
-    @Value("${muni.documentos.escudo-path:classpath:static/img/escudo-huamanga.png}")
-    private String escudoPath;
 
     /** Constructor principal para Spring (inyección de dependencias). */
     public Anexo1PdfGenerator(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
+        super(resourceLoader);
     }
 
     /** Constructor sin args para uso en tests unitarios sin contexto Spring. */
     public Anexo1PdfGenerator() {
-        this.resourceLoader = null;
-        this.escudoPath = "classpath:static/img/escudo-huamanga.png";
+        super();
     }
 
     /**
@@ -517,7 +485,7 @@ public class Anexo1PdfGenerator {
         cLocal.setBorderWidth(1f);
         cLocal.setBackgroundColor(COLOR_YELLOW_CELL);
         cLocal.setPadding(3f);
-        Paragraph pLoc = new Paragraph("★ LOCAL SOLICITADO ★\n" + estVia + " " + estNro, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, COLOR_PRIMARY_NAVY));
+        Paragraph pLoc = new Paragraph("LOCAL SOLICITADO\n" + estVia + " " + estNro, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, COLOR_PRIMARY_NAVY));
         pLoc.setAlignment(Element.ALIGN_CENTER);
         cLocal.addElement(pLoc);
         tCroq.addCell(cLocal);
@@ -608,7 +576,7 @@ public class Anexo1PdfGenerator {
         cFirmaBox.setPadding(3f);
         cFirmaBox.setBackgroundColor(COLOR_YELLOW_CELL);
 
-        Paragraph pLinea = new Paragraph("____________________________________________________________", FontFactory.getFont(FontFactory.HELVETICA, 5.5f, Color.DARK_GRAY));
+        Paragraph pLinea = new Paragraph("-------------------------------------------------", FontFactory.getFont(FontFactory.HELVETICA, 5.5f, Color.DARK_GRAY));
         pLinea.setAlignment(Element.ALIGN_CENTER);
         cFirmaBox.addElement(pLinea);
 
@@ -867,49 +835,6 @@ public class Anexo1PdfGenerator {
     }
 
     private String valorLimpio(String s) {
-        if (s == null || s.trim().isEmpty() || "null".equalsIgnoreCase(s.trim())) {
-            return "-";
-        }
-        return s.trim();
-    }
-
-    private Image obtenerEscudo() {
-        try {
-            InputStream is = resolverInputStream(escudoPath, "/static/img/escudo-huamanga.png");
-            if (is != null) {
-                byte[] bytes;
-                try (is) {
-                    bytes = is.readAllBytes();
-                }
-                Image img = Image.getInstance(bytes);
-                img.scaleToFit(38f, 32f);
-                img.setAlignment(Element.ALIGN_CENTER);
-                return img;
-            }
-        } catch (Exception e) {
-            log.warn("Escudo institucional no disponible: {}", e.getMessage());
-        }
-        return null;
-    }
-
-    private InputStream resolverInputStream(String path, String classpathFallback) {
-        if (resourceLoader != null && path != null) {
-            try {
-                Resource resource = resourceLoader.getResource(path);
-                if (resource.exists()) {
-                    return resource.getInputStream();
-                }
-            } catch (Exception ignored) {}
-        }
-        InputStream is = getClass().getResourceAsStream(classpathFallback);
-        if (is != null) {
-            return is;
-        }
-        if (path != null && path.startsWith("classpath:")) {
-            String cp = path.substring("classpath:".length());
-            is = getClass().getResourceAsStream(cp.startsWith("/") ? cp : "/" + cp);
-            if (is != null) return is;
-        }
-        return null;
+        return sanitizar(s);
     }
 }

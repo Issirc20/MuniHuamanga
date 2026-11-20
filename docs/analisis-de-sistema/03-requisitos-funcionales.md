@@ -1,4 +1,4 @@
-# 03. Requisitos Funcionales (RF)
+﻿# 03. Requisitos Funcionales (RF)
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
 ### Municipalidad Provincial de Huamanga (Ayacucho, Perú) — Versión 2.0
 
@@ -129,16 +129,16 @@ stateDiagram-v2
 
 | Requisito Funcional | Módulo | Suite de Pruebas Automatizadas | Estado |
 |---|:---:|---|:---:|
-| **RF-01 (Cuentas/Establecimientos)** | M01 | `CuentaServiceTest`, `EstablecimientoServiceTest` | ✅ Verificado |
-| **RF-02 (Borradores V2)** | M02 | `BorradorServiceTest`, `BorradorControllerTest` | ✅ Verificado |
-| **RF-03 (Expedientes 10 Estados)** | M03 | `ExpedienteServiceTest`, `EstadoExpedienteValidatorTest` | ✅ Verificado |
-| **RF-04 (Pagos SAT)** | M04 | `PagoServiceTest`, `PagoControllerTest` | ✅ Verificado |
-| **RF-05 / RF-06 (Zonificación)** | M06 | `ZonificacionServiceTest`, `RectificacionUbicacionTest` | ✅ Verificado |
-| **RF-07 / RF-08 (Documentos)** | M03 | `DocumentoServiceTest`, `SubsanacionTest` | ✅ Verificado |
-| **RF-09 (TUPA Dinámico)** | M05 | `TarifaTupaServiceTest`, `CalculadoraDeTasaTest` | ✅ Verificado |
-| **RF-10 (Evaluación e Informes)** | M07 | `EvaluacionServiceTest`, `InformeAdministrativoTest` | ✅ Verificado |
-| **RF-11 (Resoluciones y Firma)** | M08 | `ResolucionServiceTest`, `FirmaDigitalAdapterTest` | ✅ Verificado |
-| **RF-12 (Licencias Oficiales)** | M09 | `LicenciaServiceTest`, `LicenciaPdfGeneratorTest` | ✅ Verificado |
-| **RF-13 (QR Diferenciado / Móvil)** | M10 | `VerificacionPublicaTest`, `VerificacionQrI09Test` | ✅ Verificado |
-| **RF-14 (Reclamaciones)** | M11 | `ReclamacionServiceTest` | ✅ Verificado |
-| **RF-15 (Seguridad y Auditoría)** | M12 | `ExpedienteSecurityAuthorizationTest`, `SecurityConfigProdTest` | ✅ Verificado |
+| **RF-01 (Cuentas/Establecimientos)** | M01 | `CuentaServiceTest`, `EstablecimientoServiceTest` |  Verificado |
+| **RF-02 (Borradores V2)** | M02 | `BorradorServiceTest`, `BorradorControllerTest` |  Verificado |
+| **RF-03 (Expedientes 10 Estados)** | M03 | `ExpedienteServiceTest`, `EstadoExpedienteValidatorTest` |  Verificado |
+| **RF-04 (Pagos SAT)** | M04 | `PagoServiceTest`, `PagoControllerTest` |  Verificado |
+| **RF-05 / RF-06 (Zonificación)** | M06 | `ZonificacionServiceTest`, `RectificacionUbicacionTest` |  Verificado |
+| **RF-07 / RF-08 (Documentos)** | M03 | `DocumentoServiceTest`, `SubsanacionTest` |  Verificado |
+| **RF-09 (TUPA Dinámico)** | M05 | `TarifaTupaServiceTest`, `CalculadoraDeTasaTest` |  Verificado |
+| **RF-10 (Evaluación e Informes)** | M07 | `EvaluacionServiceTest`, `InformeAdministrativoTest` |  Verificado |
+| **RF-11 (Resoluciones y Firma)** | M08 | `ResolucionServiceTest`, `FirmaDigitalAdapterTest` |  Verificado |
+| **RF-12 (Licencias Oficiales)** | M09 | `LicenciaServiceTest`, `LicenciaPdfGeneratorTest` |  Verificado |
+| **RF-13 (QR Diferenciado / Móvil)** | M10 | `VerificacionPublicaTest`, `VerificacionQrI09Test` |  Verificado |
+| **RF-14 (Reclamaciones)** | M11 | `ReclamacionServiceTest` |  Verificado |
+| **RF-15 (Seguridad y Auditoría)** | M12 | `ExpedienteSecurityAuthorizationTest`, `SecurityConfigProdTest` |  Verificado |

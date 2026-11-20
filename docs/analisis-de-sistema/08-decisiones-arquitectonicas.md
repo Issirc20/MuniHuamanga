@@ -1,4 +1,4 @@
-# 08. Decisiones Arquitectónicas (ADR) — Índice y Registro Canónico
+﻿# 08. Decisiones Arquitectónicas (ADR) — Índice y Registro Canónico
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
 ### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
 
@@ -14,7 +14,7 @@
 
 Para evitar divergencias técnicas y mantener una única fuente de verdad en la arquitectura de software, **el registro maestro y vinculante de Decisiones de Arquitectura de MuniHuamanga V2 reside en**:
 
-👉 **[`docs/v2/DECISIONES_ARQUITECTURA.md`](../v2/DECISIONES_ARQUITECTURA.md)**
+ **[`docs/v2/DECISIONES_ARQUITECTURA.md`](../v2/DECISIONES_ARQUITECTURA.md)**
 
 El presente documento actúa como **índice transversal de trazabilidad** y conserva los **antecedentes históricos de la Fase V1**, permitiendo auditar la evolución de las decisiones desde el diseño preliminar hasta la consolidación de MuniHuamanga V2.
 
@@ -96,7 +96,7 @@ Durante la fase inicial de concepción del proyecto (Fase V1) se adoptaron decis
 
 ---
 
-## 4. Trazabilidad de Evolución V1 ➡️ V2
+## 4. Trazabilidad de Evolución V1  V2
 
 ```mermaid
 graph LR
@@ -138,4 +138,4 @@ graph LR
 
 Para consultar las motivaciones, evaluaciones de alternativas, diagramas específicos y justificaciones normativas completas de las decisiones que rigen el estado actual del repositorio, remitirse directamente al documento maestro:
 
-📄 **[Decisiones de Arquitectura de Software (ADR) — MuniHuamanga V2](../v2/DECISIONES_ARQUITECTURA.md)**
+ **[Decisiones de Arquitectura de Software (ADR) — MuniHuamanga V2](../v2/DECISIONES_ARQUITECTURA.md)**

@@ -31,12 +31,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @Component
-public class Anexo3PdfGenerator {
+public class Anexo3PdfGenerator extends AbstractPdfMunicipalGenerator {
 
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
-
-    // Tipografías oficiales
+    // Tipografías oficiales de Anexo 3
     private static final Font F_TITLE_INST = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.5f, new Color(0, 51, 102));
     private static final Font F_TITLE_SUB = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7f, new Color(51, 65, 85));
     private static final Font F_TITLE_MAIN = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8.5f, Color.BLACK);
@@ -45,7 +42,6 @@ public class Anexo3PdfGenerator {
     private static final Font F_BOX_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 6f, Color.BLACK);
     private static final Font F_BOX_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.5f, new Color(0, 51, 102));
 
-    private static final Font F_SEC_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.8f, Color.WHITE);
     private static final Font F_COL_HEADER = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6f, Color.BLACK);
     private static final Font F_ITEM = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.BLACK);
     private static final Font F_ITEM_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, Color.BLACK);
@@ -53,18 +49,19 @@ public class Anexo3PdfGenerator {
     private static final Font F_LABEL = FontFactory.getFont(FontFactory.HELVETICA, 5.8f, Color.DARK_GRAY);
     private static final Font F_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.2f, Color.BLACK);
 
-    private static final Font F_FOOT_NOTE = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 5.2f, Color.DARK_GRAY);
     private static final Font F_NORM_TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 6.2f, new Color(0, 51, 102));
     private static final Font F_NORM_BODY = FontFactory.getFont(FontFactory.HELVETICA, 5.4f, new Color(40, 40, 40));
 
-    // Colores normativos oficiales CENEPRED
-    private static final Color COLOR_SEC_BAR = new Color(0, 51, 102); // Azul institucional Huamanga
-    private static final Color COLOR_RIESGO_BAJO = new Color(34, 197, 94);     // Verde
-    private static final Color COLOR_RIESGO_MEDIO = new Color(234, 179, 8);    // Amarillo
-    private static final Color COLOR_RIESGO_ALTO = new Color(249, 115, 22);    // Naranja
-    private static final Color COLOR_RIESGO_MUY_ALTO = new Color(239, 68, 68); // Rojo
     private static final Color BG_HEADER = new Color(240, 243, 246);
     private static final Color BORDER_COLOR = new Color(160, 160, 160);
+
+    public Anexo3PdfGenerator(org.springframework.core.io.ResourceLoader resourceLoader) {
+        super(resourceLoader);
+    }
+
+    public Anexo3PdfGenerator() {
+        super();
+    }
 
     public byte[] generarPdf(ExpedienteResponseDto exp) {
         Document document = new Document(PageSize.A4, 20f, 20f, 18f, 18f);
@@ -506,7 +503,7 @@ public class Anexo3PdfGenerator {
         }
 
         Paragraph p = new Paragraph();
-        p.add(new Phrase((seleccionado ? "★ [ X ] " : "[   ] ") + titulo + "\n", seleccionado ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7f, Color.BLACK) : FontFactory.getFont(FontFactory.HELVETICA, 6.5f, Color.DARK_GRAY)));
+        p.add(new Phrase((seleccionado ? "[ X ] " : "[   ] ") + titulo + "\n", seleccionado ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7f, Color.BLACK) : FontFactory.getFont(FontFactory.HELVETICA, 6.5f, Color.DARK_GRAY)));
         p.add(new Phrase(sub, FontFactory.getFont(FontFactory.HELVETICA, 5.2f, Color.BLACK)));
         p.setAlignment(Element.ALIGN_CENTER);
         c.addElement(p);

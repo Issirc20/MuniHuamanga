@@ -1,4 +1,4 @@
-# Guía de Módulos del Sistema (M01 – M12) — MuniHuamanga V2
+﻿# Guía de Módulos del Sistema (M01 – M12) — MuniHuamanga V2
 ## Catálogo Funcional, Técnico y de Integración Modular
 
 **Proyecto:** Sistema de Gestión de Licencias de Funcionamiento
@@ -67,7 +67,7 @@ graph TD
 * **Frontend:** Formularios en `portal-interno.html` (pestaña Operadores) y base para `portal-ciudadano.html`.
 * **Reglas de Negocio / Seguridad:** Validación estricta de titularidad en backend (`@PreAuthorize("@cuentaSecurity.isOwner(authentication, #id)")`, ADR-02).
 * **Pruebas:** `CuentaServiceTest`, `EstablecimientoServiceTest`, `CuentaSecurityTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -86,7 +86,7 @@ graph TD
 * **Frontend:** Lógica de formulario interactivo en `formato-anexo1.html`.
 * **Brecha Detectada en Fase A:** `portal-ciudadano.js` todavía envía directamente a `POST /api/expedientes`, sin aprovechar la API de borradores autoguardados.
 * **Pruebas:** `BorradorServiceTest`, `BorradorControllerTest`.
-* **Estado:** ✅ Backend implementado; interfaz de usuario pendiente de reconexión.
+* **Estado:**  Backend implementado; interfaz de usuario pendiente de reconexión.
 
 ---
 
@@ -106,7 +106,7 @@ graph TD
 * **Persistencia:** Tablas `expedientes`, `documentos_adjuntos`.
 * **Frontend:** Vistas de seguimiento en `portal-ciudadano.html` y gestión de expedientes en `portal-interno.html`.
 * **Pruebas:** `ExpedienteServiceTest`, `DocumentoServiceTest`, `SubsanacionTest`, `EstadoExpedienteValidatorTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -125,7 +125,7 @@ graph TD
 * **Frontend:** Pestaña "Pagos" en `portal-interno.html` con badges de estado y modales de validación.
 * **Reglas de Negocio:** No se admiten aprobaciones de expedientes sin pago previamente en estado `VALIDADO_MANUALMENTE` (ADR-06).
 * **Pruebas:** `PagoServiceTest`, `PagoControllerTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -141,7 +141,7 @@ graph TD
 * **Persistencia:** Tabla `tarifas_tupa`.
 * **Frontend:** Pestaña "TUPA" en `portal-interno.html`.
 * **Pruebas:** `TarifaTupaServiceTest`, `CalculadoraDeTasaTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -158,7 +158,7 @@ graph TD
 * **Persistencia:** Tablas `evaluaciones_zonificacion`, `solicitudes_rectificacion_ubicacion`.
 * **Frontend:** Pestaña "Zonificación" y "Rectificaciones" en `portal-interno.html`.
 * **Pruebas:** `ZonificacionServiceTest`, `RectificacionUbicacionTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -174,7 +174,7 @@ graph TD
 * **Persistencia:** Tabla `informes_administrativos`.
 * **Frontend:** Pestaña "Evaluación" en `portal-interno.html`.
 * **Pruebas:** `EvaluacionServiceTest`, `InformeAdministrativoTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -191,7 +191,7 @@ graph TD
 * **Persistencia:** Tabla `resoluciones_administrativas`, `secuencias_anuales`.
 * **Frontend:** Pestaña "Resoluciones" en `portal-interno.html`.
 * **Pruebas:** `ResolucionServiceTest`, `FirmaDigitalAdapterTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -208,7 +208,7 @@ graph TD
 * **Frontend:** Visualización y descarga en `portal-interno.html` y `portal-ciudadano.html`.
 * **Reglas de Negocio:** No se puede emitir una licencia si no existe resolución previa en estado `FIRMADA` (ADR-07).
 * **Pruebas:** `LicenciaServiceTest`, `LicenciaPdfGeneratorTest`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -226,7 +226,7 @@ graph TD
 * **Persistencia:** Índices dedicados en `licencias(codigo_qr)`.
 * **Frontend:** Interfaz web adaptativa `verificar-licencia.html` y script `verificar-licencia.js`.
 * **Pruebas:** `VerificacionPublicaTest`, `VerificacionQrI09Test`.
-* **Estado:** ✅ Implementado y Verificado al 100%.
+* **Estado:**  Implementado y Verificado al 100%.
 
 ---
 
@@ -242,7 +242,7 @@ graph TD
 * **Persistencia:** Tabla `reclamaciones_expedientes`.
 * **Frontend:** Interfaz backend completa; pantalla ciudadana específica pendiente de integrar en el menú del portal web.
 * **Pruebas:** `ReclamacionServiceTest`.
-* **Estado:** 🟡 Backend Completo / Frontend Pendiente.
+* **Estado:**  Backend Completo / Frontend Pendiente.
 
 ---
 
@@ -257,4 +257,4 @@ graph TD
 * **Persistencia:** Tabla `auditoria_expedientes`.
 * **Frontend:** Login modal y control de sesiones en `portal-interno.js` y `portal-ciudadano.js`.
 * **Pruebas:** `ExpedienteSecurityAuthorizationTest`, `SecurityConfigProdTest`, `AuditTest`.
-* **Estado:** 🟡 Backend Completo / Consola Gráfica de Auditoría Pendiente.
+* **Estado:**  Backend Completo / Consola Gráfica de Auditoría Pendiente.

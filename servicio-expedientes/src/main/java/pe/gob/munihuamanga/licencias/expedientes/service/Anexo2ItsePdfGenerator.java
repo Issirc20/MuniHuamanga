@@ -36,12 +36,9 @@ import java.time.format.DateTimeFormatter;
  */
 @Slf4j
 @Component
-public class Anexo2ItsePdfGenerator {
-
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+public class Anexo2ItsePdfGenerator extends AbstractPdfMunicipalGenerator {
 
     private static final Color COLOR_PRIMARY = new Color(0, 43, 92);
-    private static final Color COLOR_SEC_BAR = new Color(30, 58, 138);
     private static final Color COLOR_BORDER = new Color(148, 163, 184);
     private static final Color COLOR_BG_CELL = new Color(248, 250, 252);
     private static final Color COLOR_YELLOW_TINT = new Color(255, 253, 231);
@@ -59,18 +56,12 @@ public class Anexo2ItsePdfGenerator {
     private static final Font F_VAL = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 5.8f, Color.BLACK);
     private static final Font F_CHECK = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7.0f, COLOR_PRIMARY);
 
-    private final ResourceLoader resourceLoader;
-
-    @Value("${muni.documentos.escudo-path:classpath:static/img/escudo-huamanga.png}")
-    private String escudoPath;
-
     public Anexo2ItsePdfGenerator(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
+        super(resourceLoader);
     }
 
     public Anexo2ItsePdfGenerator() {
-        this.resourceLoader = null;
-        this.escudoPath = "classpath:static/img/escudo-huamanga.png";
+        super();
     }
 
     public byte[] generarPdf(ExpedienteResponseDto exp) {
@@ -118,9 +109,8 @@ public class Anexo2ItsePdfGenerator {
         cLogo.setVerticalAlignment(Element.ALIGN_MIDDLE);
 
         try {
-            Image logo = obtenerEscudoImage();
+            Image logo = obtenerEscudo(36f, 36f);
             if (logo != null) {
-                logo.scaleToFit(36, 36);
                 cLogo.addElement(logo);
             }
         } catch (Exception ignored) {}
@@ -413,20 +403,6 @@ public class Anexo2ItsePdfGenerator {
         c.setHorizontalAlignment(Element.ALIGN_CENTER);
         c.setVerticalAlignment(Element.ALIGN_MIDDLE);
         return c;
-    }
-
-    private Image obtenerEscudoImage() {
-        try {
-            if (resourceLoader != null) {
-                Resource resource = resourceLoader.getResource(escudoPath);
-                if (resource.exists()) {
-                    try (InputStream is = resource.getInputStream()) {
-                        return Image.getInstance(is.readAllBytes());
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-        return null;
     }
 
     private Anexo2ItseDto convertirExpedienteADto(ExpedienteResponseDto exp) {

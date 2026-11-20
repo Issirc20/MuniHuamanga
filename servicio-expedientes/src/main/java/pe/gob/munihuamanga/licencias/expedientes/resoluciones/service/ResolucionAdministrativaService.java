@@ -24,12 +24,12 @@ import pe.gob.munihuamanga.licencias.expedientes.evaluacion.service.ChecklistAdm
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.FirmaDigitalPort;
 import pe.gob.munihuamanga.licencias.expedientes.integracion.port.ResultadoFirmaDigital;
 import pe.gob.munihuamanga.licencias.expedientes.model.Expediente;
-import pe.gob.munihuamanga.licencias.expedientes.model.Usuario;
 import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ComandosExpediente;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.aplicacion.ProveedorActor;
+import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.Actor;
 import pe.gob.munihuamanga.licencias.expedientes.nucleo.dominio.EventoExpediente;
 import pe.gob.munihuamanga.licencias.expedientes.service.NotificacionEmailService;
 import pe.gob.munihuamanga.licencias.expedientes.repository.ExpedienteRepository;
-import pe.gob.munihuamanga.licencias.expedientes.repository.UsuarioRepository;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.HistorialResolucion;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.model.ResolucionAdministrativa;
 import pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.HistorialResolucionRepository;
@@ -56,7 +56,7 @@ public class ResolucionAdministrativaService {
     private final SecuenciaResolucionService secuenciaResolucionService;
     private final ResolucionPdfGenerator resolucionPdfGenerator;
     private final FirmaDigitalPort firmaDigitalPort;
-    private final UsuarioRepository usuarioRepository;
+    private final ProveedorActor proveedorActor;
     private final pe.gob.munihuamanga.licencias.expedientes.resoluciones.repository.OperacionFirmaRepository operacionFirmaRepository;
     private final ComandosExpediente comandosExpediente;
     private final NotificacionEmailService notificacionEmailService;
@@ -431,10 +431,8 @@ public class ResolucionAdministrativaService {
     }
 
     private UUID obtenerUsuarioId(Authentication auth) {
-        if (auth == null) return null;
-        return usuarioRepository.findByUsername(auth.getName())
-                .map(Usuario::getId)
-                .orElse(null);
+        Actor actor = proveedorActor.actual();
+        return (actor != null) ? actor.usuarioId() : null;
     }
 
     public ResolucionAdministrativaDto mapearDto(ResolucionAdministrativa r) {

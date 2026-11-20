@@ -1,4 +1,4 @@
-# 06. Drivers Arquitectónicos (Architectural Drivers)
+﻿# 06. Drivers Arquitectónicos (Architectural Drivers)
 ## Sistema de Gestión Documentaria de Licencia de Funcionamiento
 ### Municipalidad Provincial de Huamanga (Ayacucho, Perú) — Versión 2.0
 
@@ -18,16 +18,16 @@ graph TD
     classDef catNode fill:#2B6CB0,stroke:#1A365D,color:#ffffff,stroke-width:1px;
     classDef leafNode fill:#EDF2F7,stroke:#CBD5E0,color:#2D3748;
 
-    ROOT["🎯 Drivers Arquitectónicos V2"]:::rootNode
+    ROOT[" Drivers Arquitectónicos V2"]:::rootNode
 
-    BIZ["🏢 1. Drivers de Negocio"]:::catNode
+    BIZ[" 1. Drivers de Negocio"]:::catNode
     ROOT --> BIZ
     BIZ --> B1["Cumplimiento TUO Ley 28976"]:::leafNode
     BIZ --> B2["Cero Emisión de Licencias Falsas (Firma IOFE)"]:::leafNode
     BIZ --> B3["Celeridad: 1 a 15 días hábiles"]:::leafNode
     BIZ --> B4["Protección de Datos Personales (Ley 29733)"]:::leafNode
 
-    TECH["⚙️ 2. Drivers Técnicos"]:::catNode
+    TECH[" 2. Drivers Técnicos"]:::catNode
     ROOT --> TECH
     TECH --> T1["Java 21 LTS y Spring Boot 3.3.4"]:::leafNode
     TECH --> T2["Clean Architecture y Ports & Adapters"]:::leafNode
@@ -42,7 +42,7 @@ graph TD
     QUAL --> Q3["Mantenibilidad: 301 tests automatizados"]:::leafNode
     QUAL --> Q4["Inmutabilidad Documental con SHA-256"]:::leafNode
 
-    CONST["🔒 4. Restricciones Institucionales"]:::catNode
+    CONST[" 4. Restricciones Institucionales"]:::catNode
     ROOT --> CONST
     CONST --> C1["Monolito Modular (Proceso JVM único)"]:::leafNode
     CONST --> C2["Procesos Manuales SAT y Defensa Civil (ADR-06)"]:::leafNode
@@ -98,7 +98,7 @@ graph TD
 
 ---
 
-## 3. Matriz de Trazabilidad Drivers ➡️ Decisiones Arquitectónicas V2
+## 3. Matriz de Trazabilidad Drivers  Decisiones Arquitectónicas V2
 
 | Driver Primario | Fuerza Condicionante | Decisión Canónica Vinculante |
 |---|---|---|

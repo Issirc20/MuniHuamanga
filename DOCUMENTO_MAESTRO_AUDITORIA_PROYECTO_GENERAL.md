@@ -1,4 +1,4 @@
-# 🏛️ DOCUMENTO MAESTRO DE AUDITORÍA Y ESTADO GENERAL DEL PROYECTO
+﻿#  DOCUMENTO MAESTRO DE AUDITORÍA Y ESTADO GENERAL DEL PROYECTO
 ## Sistema de Gestión Digital de Licencias de Funcionamiento — MuniHuamanga V2
 ### Municipalidad Provincial de Huamanga (Ayacucho, Perú)
 
@@ -9,7 +9,7 @@
 
 ---
 
-## 📑 TABLA DE CONTENIDOS
+##  TABLA DE CONTENIDOS
 
 1. [Resumen Ejecutivo y Ficha Técnica del Proyecto](#1-resumen-ejecutivo-y-ficha-técnica-del-proyecto)
 2. [El Prototipo y la Experiencia de Usuario (UI/UX)](#2-el-prototipo-y-la-experiencia-de-usuario-uiux)
@@ -78,11 +78,11 @@ El frontend del sistema está alojado en el subdirectorio de recursos estáticos
 ```mermaid
 graph TD
     subgraph Frontend Web de MuniHuamanga V2
-        IDX["🌐 index.html<br/>Landing de Acceso y Redirección"]
-        CIU["👤 portal-ciudadano.html<br/>Mesa de Partes Virtual y Seguimiento"]
-        ANX["📋 formato-anexo1.html<br/>Formulario Oficial Asistido Anexo 1"]
-        INT["🏛️ portal-interno.html<br/>Backoffice Unificado de Funcionarios (RBAC)"]
-        VER["📱 verificar-licencia.html<br/>Consulta Pública QR y Vista Móvil Inspector"]
+        IDX[" index.html<br/>Landing de Acceso y Redirección"]
+        CIU[" portal-ciudadano.html<br/>Mesa de Partes Virtual y Seguimiento"]
+        ANX[" formato-anexo1.html<br/>Formulario Oficial Asistido Anexo 1"]
+        INT[" portal-interno.html<br/>Backoffice Unificado de Funcionarios (RBAC)"]
+        VER[" verificar-licencia.html<br/>Consulta Pública QR y Vista Móvil Inspector"]
     end
 
     IDX --> CIU
@@ -111,7 +111,7 @@ graph TD
 #### B. Formulario Asistido Ministerial Anexo 1 (`formato-anexo1.html` / `formato-anexo1.js`)
 - **Propósito:** Digitalización exhaustiva del formato ministerial aprobado por el D.S. N° 163-2020-PCM (Declaración Jurada para Licencia de Funcionamiento).
 - **Capacidades Clave:**
-  1. **Sincronización Bidireccional:** Detecta el parámetro de URL `?borradorId=...` o la sesión activa en el navegador. Al pulsar el botón `[📎 Adjuntar a mi Borrador]`, el formulario pre-carga los datos del borrador, permite completarlo y lo inyecta como PDF oficial firmado bajo el tipo `DECLARACION_JURADA_ANEXO1`.
+  1. **Sincronización Bidireccional:** Detecta el parámetro de URL `?borradorId=...` o la sesión activa en el navegador. Al pulsar el botón `[ Adjuntar a mi Borrador]`, el formulario pre-carga los datos del borrador, permite completarlo y lo inyecta como PDF oficial firmado bajo el tipo `DECLARACION_JURADA_ANEXO1`.
   2. **Calculadora Automática de Riesgo ITSE:** Evalúa en el navegador el tipo de giro comercial, el área ocupada ($m^2$) y el aforo, sugiriendo de inmediato si corresponde inspección *Ex-Ante* (Riesgo Alto/Muy Alto) o *Ex-Post* (Riesgo Bajo/Medio).
   3. **Validaciones en Tiempo Real:** Validación algorítmica de DNI (8 dígitos) y RUC (11 dígitos, verificación de prefijos 10 o 20).
 
@@ -161,12 +161,12 @@ A continuación, se detalla la auditoría de cada uno de los archivos que confor
 ```mermaid
 graph LR
     subgraph Acervo Documental MuniHuamanga
-        DOC_ANALISIS["📂 docs/analisis-de-sistema/<br/>Requerimientos y Casos"]
-        DOC_ARQ["📂 docs/arquitectura/<br/>Estilo, Enfoque y C4"]
-        DOC_V2["📂 docs/v2/<br/>Incrementos y Cierres"]
-        DOC_AUD["📂 docs/auditoria/<br/>Dictámenes de Calidad"]
-        DOC_DESP["📂 docs/despliegue/<br/>Manuales de Operación"]
-        DOC_SCRUM["📂 docs/scrum/<br/>Gestión Ágil y Sprints"]
+        DOC_ANALISIS[" docs/analisis-de-sistema/<br/>Requerimientos y Casos"]
+        DOC_ARQ[" docs/arquitectura/<br/>Estilo, Enfoque y C4"]
+        DOC_V2[" docs/v2/<br/>Incrementos y Cierres"]
+        DOC_AUD[" docs/auditoria/<br/>Dictámenes de Calidad"]
+        DOC_DESP[" docs/despliegue/<br/>Manuales de Operación"]
+        DOC_SCRUM[" docs/scrum/<br/>Gestión Ágil y Sprints"]
     end
 ```
 
@@ -296,8 +296,8 @@ Es común en la industria caer en la trampa de adoptar microservicios de manera 
 ```mermaid
 graph TD
     subgraph Evaluación Arquitectónica
-        MS["❌ Microservicios Distribuidos<br/>- Latencia de red HTTP inter-servicios (10-50 ms)<br/>- Transacciones distribuidas (Saga / 2PC complejas)<br/>- Costos elevados de infraestructura (8-16 GB RAM mínima)<br/>- Puntos únicos de fallo y monitoreo distribuido complejo"]
-        MM["✅ Monolito Modular MuniHuamanga V2<br/>- Llamadas directas en memoria JVM (< 1 microsegundo)<br/>- Transacciones ACID locales consistentes (@Transactional)<br/>- Despliegue único y liviano (< 500 MB RAM)<br/>- 12 Bounded Contexts desacoplados lógicamente"]
+        MS[" Microservicios Distribuidos<br/>- Latencia de red HTTP inter-servicios (10-50 ms)<br/>- Transacciones distribuidas (Saga / 2PC complejas)<br/>- Costos elevados de infraestructura (8-16 GB RAM mínima)<br/>- Puntos únicos de fallo y monitoreo distribuido complejo"]
+        MM[" Monolito Modular MuniHuamanga V2<br/>- Llamadas directas en memoria JVM (< 1 microsegundo)<br/>- Transacciones ACID locales consistentes (@Transactional)<br/>- Despliegue único y liviano (< 500 MB RAM)<br/>- 12 Bounded Contexts desacoplados lógicamente"]
     end
 ```
 
@@ -428,20 +428,20 @@ Este capítulo responde a la pregunta central de la auditoría sobre el avance r
 
 | Componente / Módulo | Estado | Evidencia de Calidad y Pruebas |
 |---|:---:|---|
-| **Línea Base y Arquitectura** | ✅ 100% | Monolito Modular compilando limpiamente en Java 21 LTS y Spring Boot 3.3.4. Estructura multi-módulo Maven (`common-domain` y `servicio-expedientes`). |
-| **M01: Cuentas y Operadores** | ✅ 100% | Registro de titulares, operadores institucionales y locales comerciales desacoplados. |
-| **M02: Solicitudes Borrador** | ✅ 100% | Autoguardado progresivo, validación previa de checklist y presentación atómica idempotente. |
-| **M03: Expedientes y Documentos** | ✅ 100% | Máquina de 10 estados finita, versionado inmutable de documentos con hash SHA-256 y renderizado OpenPDF de Anexos 1, 3 y 4. |
-| **M04: Pagos SAT** | ✅ 100% | Liquidación TUPA, emisión de vouchers con código de barras y bandeja de validación manual para cajeros con trazabilidad histórica inmutable. |
-| **M05: Tarifario TUPA Dinámico** | ✅ 100% | Mantenimiento en caliente por API REST (`PUT /api/tupa/tarifas/{id}`) con fallback resiliente. |
-| **M06: Zonificación y Rectificación** | ✅ 100% | Dictamen de compatibilidad de uso PDU y flujo de solicitudes de rectificación de ubicación. |
-| **M07: Evaluación e Informes** | ✅ 100% | Elaboración de informes técnicos previos desglosados y notificaciones por correo. |
-| **M08: Resoluciones y Firma Digital** | ✅ 100% | Correlativo atómico anual pesimista (`RES-YYYY-XXXXX`), puerto `FirmaDigitalPort` y política *fail-closed*. |
-| **M09: Licencias Oficiales** | ✅ 100% | Emisión atómica de certificado (`LIC-YYYY-XXXXX`), doble marco ornamental, marcas de agua y notas legales. |
-| **M10: Verificación QR y Móvil** | ✅ 100% | Token criptográfico no enumerable, vista pública con minimización estricta (Ley 29733) y vista inspector con georreferenciación Leaflet. |
-| **Frontend Ciudadano (Fase C.1)** | ✅ 100% | Wizard interactivo de 4 pasos, carga Drag & Drop con SHA-256 en cliente, mapa Leaflet y sincronización con Anexo 1. |
-| **Frontend Interno (Fase C.2)** | ✅ 100% | Consola unificada con adaptación dinámica por rol (RBAC), bandeja de pagos SAT y gestión de estados V2. |
-| **Batería de Pruebas Automatizadas** | ✅ 100% | **310 pruebas automatizadas** ejecutándose con 0 errores y 0 omisiones en Maven Surefire. |
+| **Línea Base y Arquitectura** |  100% | Monolito Modular compilando limpiamente en Java 21 LTS y Spring Boot 3.3.4. Estructura multi-módulo Maven (`common-domain` y `servicio-expedientes`). |
+| **M01: Cuentas y Operadores** |  100% | Registro de titulares, operadores institucionales y locales comerciales desacoplados. |
+| **M02: Solicitudes Borrador** |  100% | Autoguardado progresivo, validación previa de checklist y presentación atómica idempotente. |
+| **M03: Expedientes y Documentos** |  100% | Máquina de 10 estados finita, versionado inmutable de documentos con hash SHA-256 y renderizado OpenPDF de Anexos 1, 3 y 4. |
+| **M04: Pagos SAT** |  100% | Liquidación TUPA, emisión de vouchers con código de barras y bandeja de validación manual para cajeros con trazabilidad histórica inmutable. |
+| **M05: Tarifario TUPA Dinámico** |  100% | Mantenimiento en caliente por API REST (`PUT /api/tupa/tarifas/{id}`) con fallback resiliente. |
+| **M06: Zonificación y Rectificación** |  100% | Dictamen de compatibilidad de uso PDU y flujo de solicitudes de rectificación de ubicación. |
+| **M07: Evaluación e Informes** |  100% | Elaboración de informes técnicos previos desglosados y notificaciones por correo. |
+| **M08: Resoluciones y Firma Digital** |  100% | Correlativo atómico anual pesimista (`RES-YYYY-XXXXX`), puerto `FirmaDigitalPort` y política *fail-closed*. |
+| **M09: Licencias Oficiales** |  100% | Emisión atómica de certificado (`LIC-YYYY-XXXXX`), doble marco ornamental, marcas de agua y notas legales. |
+| **M10: Verificación QR y Móvil** |  100% | Token criptográfico no enumerable, vista pública con minimización estricta (Ley 29733) y vista inspector con georreferenciación Leaflet. |
+| **Frontend Ciudadano (Fase C.1)** |  100% | Wizard interactivo de 4 pasos, carga Drag & Drop con SHA-256 en cliente, mapa Leaflet y sincronización con Anexo 1. |
+| **Frontend Interno (Fase C.2)** |  100% | Consola unificada con adaptación dinámica por rol (RBAC), bandeja de pagos SAT y gestión de estados V2. |
+| **Batería de Pruebas Automatizadas** |  100% | **310 pruebas automatizadas** ejecutándose con 0 errores y 0 omisiones en Maven Surefire. |
 
 ---
 
